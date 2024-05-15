@@ -123,7 +123,7 @@ if (file.exists(DATASET)) {
 ## Read a set of files each time  --------------------------------------------
 
 ## read some files for testing
-nts   <- 5
+nts   <- 3
 files <- unique(c(head(  file$file, nts),
                   sample(file$file, nts*2, replace = T),
                   tail(  file$file, nts*3)))

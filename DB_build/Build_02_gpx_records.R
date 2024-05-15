@@ -60,7 +60,7 @@ knitr::opts_chunk$set(fig.pos    = '!h'     )
 ## __ Set environment  ---------------------------------------------------------
 Sys.setenv(TZ = "UTC")
 tic <- Sys.time()
-Script.Name <- "~/CODE/training_location_analysis/DB_build/Build_01_GoldenCheetah_activities_records_json.R"
+Script.Name <- "~/CODE/training_location_analysis/DB_build/Build_02_gpx_records.R"
 
 if (!interactive()) {
   dir.create("../runtime/", showWarnings = F, recursive = T)
@@ -158,7 +158,7 @@ if (length(files) < 1) {
 
 data <- data.table()
 for (af in files) {
-  cat(basename(af), "..")
+  cat("\n", basename(af), ".")
 
   # samples <- read_sf( gunzip(af, remove = FALSE, temporary = TRUE, skip = TRUE ),
   #                  layer = "track_points")
@@ -180,27 +180,47 @@ for (af in files) {
   suppressWarnings({
     spat$gpxtpx_TrackPointExtension <- NULL
     spat$ns3_TrackPointExtension    <- NULL
+    spat$desc                       <- NULL
+    spat$ageofdgpsdata              <- NULL
+    spat$course                     <- NULL
   })
+  cat(" .")
 
   if (any(names(spat) == "time") == F) {
-    cat(" NO TIMED DATA ..\n")
+    cat(" NO TIMED DATA .")
     next()
   }
 
-  ## get location and extension data
-  samples <- data.table(
-    remove_empty(
-      readGPX(af),
-      which = "cols"))
-  suppressWarnings({
-    samples[, time      := NULL]
-    samples[, latitude  := NULL]
-    samples[, longitude := NULL]
-    samples[, altitude  := NULL]
-    samples[, distance  := NULL]
-  })
 
-  samples <- cbind(spat, samples, act_ME)
+  ## get location and extension data
+  options(show.error.messages = FALSE)
+  try({
+    samples <- data.table(
+      remove_empty(
+        readGPX(af),
+        which = "cols"))
+
+    suppressWarnings({
+      samples[, time      := NULL]
+      samples[, latitude  := NULL]
+      samples[, longitude := NULL]
+      samples[, altitude  := NULL]
+      samples[, distance  := NULL]
+    })
+  })
+  options(show.error.messages = TRUE)
+
+  cat(" .")
+
+
+  if (exists("samples")) {
+    if (nrow(samples) > 0) {
+      samples <- cbind(spat, samples, act_ME)
+    }
+  } else {
+    samples <- cbind(spat, act_ME)
+  }
+
 
 
   # res <- merge(spat, samples, all = T)
@@ -219,7 +239,7 @@ for (af in files) {
   if (nrow(samples) < 2) { next() }
 
   names(samples)[names(samples) == "src"] <- "source"
-  names(samples)[names(samples) == "ele"] <- "Z"
+  names(samples)[names(samples) == "ele"] <- "ALT"
 
   ## keep initial coordinates
   latlon <- st_coordinates(samples$geometry)
@@ -245,9 +265,10 @@ for (af in files) {
   samples   <- cbind(samples, latlon)
   samples[, geometry := NULL ]
 
+  cat(" .")
 
   data <- rbind(data, samples, fill = T)
-  cat("\n")
+  rm(samples)
 }
 
 
@@ -265,14 +286,14 @@ data <- remove_empty(data, which = "cols")
 names(data) <- sub("\\.$",  "", names(data))
 names(data) <- sub("[ ]+$", "", names(data))
 names(data) <- sub("^[ ]+", "", names(data))
-names(data)[names(data) == "heart_rate"] <- "HR"
+names(data)[names(data) == "heart_rate"]  <- "HR"
+names(data)[names(data) == "temperature"] <- "TEMP"
 
 
 grep("heart",names(DB), ignore.case = T, value = T)
-grep("speed",names(DB), ignore.case = T, value = T)
+grep("alt",names(DB), ignore.case = T, value = T)
 
-names(data)
-
+DB |> filter(!is.na(ALT)) |> head() |> collect()
 
 ## fix some types
 class(data$HR)                   <- "double"
@@ -282,7 +303,7 @@ which(names(data) == names(data)[(duplicated(names(data)))])
 stopifnot(!any(duplicated(names(data))))
 
 
-stop("are u ready?")
+
 
 if (file.exists(DATASET)) {
 
@@ -329,7 +350,7 @@ if (file.exists(DATASET)) {
   DB <- DB |> full_join(data) |> compute()
 
   data$filemtime
-  class(DB$filemtime)
+  class(DB$parsed)
   DB
 
   ## write only new months within data
@@ -351,7 +372,7 @@ if (file.exists(DATASET)) {
   ## report lines files and dates
   new_rows  <- unlist(DB |> tally() |> collect())
   new_files <- unlist(DB |> select(file) |> distinct() |> count() |> collect())
-  new_days  <- unlist(DB |> select(time) |> mutate(time= as.Date(time)) |> distinct() |> count() |> collect())
+  new_days  <- unlist(DB |> select(time) |> mutate(time = as.Date(time)) |> distinct() |> count() |> collect())
   new_vars  <- length(names(DB))
 
   cat("\n")
@@ -371,16 +392,6 @@ if (file.exists(DATASET)) {
   #     DB |> count() |> collect()
   # )
 
-} else {
-  ## Initialize database manually  ---------------------------------------------
-  write_dataset(data,
-                DATASET,
-                compression            = DBcodec,
-                compression_level      = DBlevel,
-                format                 = "parquet",
-                partitioning           = c("year", "month"),
-                existing_data_behavior = "overwrite",
-                hive_style             = F)
 }
 
 
