@@ -114,16 +114,13 @@ if (file.exists(DATASET)) {
 }
 
 
-##  TODO remove changed files from DB
-
-##  TODO remove deleted files from DB
 
 
 
-## Read a banch of files each time  --------------------------------------------
+## Read a set of files each time  --------------------------------------------
 
 ## read some files for testing
-nts   <- 25
+nts   <- 5
 files <- unique(c(head(  file$file, nts),
                   sample(file$file, nts*2),
                   tail(  file$file, nts*3)))
