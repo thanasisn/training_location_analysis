@@ -54,10 +54,6 @@ knitr::opts_chunk$set(fig.pos    = '!h'     )
 ###TODO explore this tools
 # library(cycleRtools)
 # https://github.com/trackerproject/trackeR
-# GC_activity("Athan",activity = "~/TRAIN/GoldenCheetah/Athan/activities/2008_12_19_16_00_00.json")
-# GC_activity("Athan")
-# GC_metrics("Athan")
-# read_ride(file = af)
 
 
 #+ echo=FALSE, include=TRUE
@@ -83,7 +79,7 @@ library(sf,         quietly = TRUE, warn.conflicts = FALSE)
 library(trip,       quietly = TRUE, warn.conflicts = FALSE)
 
 # devtools::install_github("trackerproject/trackeR")
-library(trackeR,     quietly = TRUE, warn.conflicts = FALSE)
+library(trackeR,    quietly = TRUE, warn.conflicts = FALSE)
 
 
 
@@ -99,34 +95,43 @@ file <- list.files(path        = GPX_DIR,
                    ignore.case = TRUE,
                    full.names  = TRUE)
 
+## ignore some files
+file <- grep("\\/Points\\/", file, invert = T, value = T)
+file <- grep("\\/Plans\\/",  file, invert = T, value = T)
+
 file <- data.table(file      = file,
                    filemtime = floor_date(file.mtime(file), unit = "seconds"))
 
 
 
-file <- file[ file == "/home/athan/GISdata/GPX/2015_FDOR/Tracks/2015-09-12_walk.gpx", ]
+# file <- file[ file %in% c(
+#   "/home/athan/GISdata/GPX/2015_FDOR/Tracks/2015-09-12_walk.gpx",
+#   "/home/athan/GISdata/GPX/2024/2024-01-01_673db2fee649f600.gpx",
+#   "/home/athan/GISdata/GPX/2024/2024-01-03_1131.gpx"
+# ), ]
 
 
 
 
-# ##  Open dataset  --------------------------------------------------------------
-# if (file.exists(DATASET)) {
-#   DB <- open_dataset(DATASET,
-#                      partitioning  = c("year", "month"),
-#                      unify_schemas = T)
-#   db_rows  <- unlist(DB |> tally() |> collect())
-#   db_files <- unlist(DB |> select(file) |> distinct() |> count() |> collect())
-#   db_days  <- unlist(DB |> select(time) |> mutate(time= as.Date(time)) |> distinct() |> count() |> collect())
-#   db_vars  <- length(names(DB))
-#
-#   ##  Check what to do
-#   wehave <- DB |> select(file, filemtime) |> unique() |> collect() |> data.table()
-#
-#   ##  Ignore files with the same name and mtime
-#   file <- file[ !(file %in% wehave$file & filemtime %in% wehave$filemtime) ]
-# } else {
-#   cat("WILL INIT DB!\n")
-# }
+
+##  Open dataset  --------------------------------------------------------------
+if (file.exists(DATASET)) {
+  DB <- open_dataset(DATASET,
+                     partitioning  = c("year", "month"),
+                     unify_schemas = T)
+  db_rows  <- unlist(DB |> tally() |> collect())
+  db_files <- unlist(DB |> select(file) |> distinct() |> count() |> collect())
+  db_days  <- unlist(DB |> select(time) |> mutate(time = as.Date(time)) |> distinct() |> count() |> collect())
+  db_vars  <- length(names(DB))
+
+  ##  Check what to do
+  wehave <- DB |> select(file, filemtime) |> unique() |> collect() |> data.table()
+
+  ##  Ignore files with the same name and mtime
+  file <- file[ !(file %in% wehave$file & filemtime %in% wehave$filemtime) ]
+} else {
+  stop("NO DB, run #01 !\n")
+}
 
 
 
@@ -151,11 +156,11 @@ if (length(files) < 1) {
 
 
 
-gather <- data.table()
+data <- data.table()
 for (af in files) {
   cat(basename(af), "..")
 
-  # temp <- read_sf( gunzip(af, remove = FALSE, temporary = TRUE, skip = TRUE ),
+  # samples <- read_sf( gunzip(af, remove = FALSE, temporary = TRUE, skip = TRUE ),
   #                  layer = "track_points")
 
   ### Prepare meta data  -------------------------------------------------------
@@ -167,241 +172,86 @@ for (af in files) {
     dataset    = "gpx repo"
   )
 
-  temp <- read_sf(af,
-                  layer = "track_points")
+  ## get geo data mainly
+  spat <- remove_empty(
+    read_sf(af,
+            layer = "track_points"), which = "cols")
 
-  temp <- remove_empty(temp, which = "cols")
+  suppressWarnings({
+    spat$gpxtpx_TrackPointExtension <- NULL
+    spat$ns3_TrackPointExtension    <- NULL
+  })
 
-  stop()
+  if (any(names(spat) == "time") == F) {
+    cat(" NO TIMED DATA ..\n")
+    next()
+  }
+
+  ## get location and extension data
+  samples <- data.table(
+    remove_empty(
+      readGPX(af),
+      which = "cols"))
+  suppressWarnings({
+    samples[, time      := NULL]
+    samples[, latitude  := NULL]
+    samples[, longitude := NULL]
+    samples[, altitude  := NULL]
+    samples[, distance  := NULL]
+  })
+
+  samples <- cbind(spat, samples, act_ME)
+
+
+  # res <- merge(spat, samples, all = T)
+  # res <- cbind(res, act_ME)
+  # names(teast) %in% names(res)
+  # names(res) %in% names(teast)
+  # which(names(teast) == "time")
+  # which(teast[,5] != teast[, 7])
+  # which(names(gather) == "time")
+  # gather[ which(gather[,5] != gather[, 7]) , ]
+  # gather[ time == time.1, ]
+
+
   ## This assumes that dates in file are correct.......
-  temp <- temp[ order(temp$time, na.last = FALSE), ]
-  if (nrow(temp)<2) { next() }
+  samples <- samples[ order(samples$time, na.last = FALSE), ]
+  if (nrow(samples) < 2) { next() }
 
-  names(temp)[names(temp) == "src"] <- "source"
-  names(temp)[names(temp) == "ele"] <- "Z"
+  names(samples)[names(samples) == "src"] <- "source"
+  names(samples)[names(samples) == "ele"] <- "Z"
 
   ## keep initial coordinates
-  latlon <- st_coordinates(temp$geometry)
+  latlon <- st_coordinates(samples$geometry)
   latlon <- data.table(latlon)
-  names(latlon)[names(latlon) == "X"] <- "Xdeg"
-  names(latlon)[names(latlon) == "Y"] <- "Ydeg"
+  names(latlon)[names(latlon) == "X"] <- "X_LON"
+  names(latlon)[names(latlon) == "Y"] <- "Y_LAT"
 
-  ## add distance between points in meters
-  temp$dist <- c(0, trackDistance(st_coordinates(temp$geometry), longlat = TRUE)) * 1000
+  ## 2d distance between points in meters
+  samples$dist_2D <- c(0, trackDistance(st_coordinates(samples$geometry), longlat = TRUE)) * 1000
 
   ## add time between points
-  temp$timediff <- 0
-  for (i in 2:nrow(temp)) {
-    temp$timediff[i] <- difftime( temp$time[i], temp$time[i-1] )
-  }
+  samples$timediff <- c(0, diff(samples$time))
 
   ## create speed
-  temp <- temp |> mutate(kph = (dist/1000) / (timediff/3600)) |> collapse()
+  samples <- samples |> mutate(kph_2D = (dist_2D/1000) / (timediff/3600)) |> collapse()
 
-  # st_crs(EPSG)
   ## parse coordinates for process in meters
-  temp   <- st_transform(temp, crs = EPSG)
-  trkcco <- st_coordinates(temp)
-  temp   <- data.table(temp)
-  temp$X <- unlist(trkcco[,1])
-  temp$Y <- unlist(trkcco[,2])
-  temp   <- cbind(temp, latlon)
-
-  re <- temp[, .(time,
-                 X, Y, Z,
-                 Xdeg, Ydeg,
-                 dist, timediff, kph,
-                 filename  = af,
-                 F_mtime   = file.mtime(af),
-                 name      = "gpx file",
-                 sport     = as.character(NA),
-                 sub_sport = as.character(NA),
-                 source
-  )]
-
-  re[, year  := year(time)  ]
-
-  gather <- rbind(gather, re)
-}
+  samples   <- st_transform(samples, crs = EPSG_PMERC)
+  trkcco    <- st_coordinates(samples)
+  samples   <- data.table(samples)
+  samples$X <- unlist(trkcco[,1])
+  samples$Y <- unlist(trkcco[,2])
+  samples   <- cbind(samples, latlon)
+  samples[, geometry := NULL ]
 
 
-
-
-data <- data.table()
-for (af in files) {
-
-  ### Prepare meta data  -------------------------------------------------------
-  act_ME <- data.table(
-    ## get general meta data
-    file       = af,
-    filemtime  = as.POSIXct(floor_date(file.mtime(af), unit = "seconds"), tz = "UTC"),
-    time       = as.POSIXct(strptime(jride$STARTTIME, "%Y/%m/%d %T", tz = "UTC")),
-    parsed     = as.POSIXct(Sys.time(), tz = "UTC"),
-    dataset    = "GoldenCheetah",
-    RECINTSECS = jride$RECINTSECS,
-    DEVICETYPE = jride$DEVICETYPE,
-    IDENTIFIER = jride$IDENTIFIER,
-    ## get metrics
-    data.frame(jride$TAGS)
-  )
-
-
-  ## drop some data
-  act_ME$Month    <- NULL
-  act_ME$Weekday  <- NULL
-  act_ME$Year     <- NULL
-  act_ME$Filename <- NULL
-
-  ## Assuming all data are from one person
-  act_ME$Athlete  <- NULL
-
-
-  ## Read manual edited values  ------------------------------------------------
-  if (!is.null(jride$OVERRIDES)) {
-    ss        <- data.frame(t(diag(as.matrix(jride$OVERRIDES))))
-    names(ss) <- paste0("OVRD_", names(jride$OVERRIDES))
-    act_ME    <- cbind(act_ME, ss)
-    rm(ss)
-  }
-
-
-  ## Prepare records  ----------------------------------------------------------
-  if (!is.null(jride$SAMPLES)) {
-    samples <- data.table(jride$SAMPLES)
-
-    ## create proper time
-    samples[, time := SECS + act_ME$time ]
-    samples[, SECS := NULL]
-
-    ## for available coordinates
-    wewant <- c("time", "LAT", "LON")
-    if (all(wewant %in% names(samples))) {
-
-      ## use 3d coordinates
-      # temp <- st_as_sf(re,
-      #                  coords = c("position_long", "position_lat","enhanced_altitude"))
-
-      ## use 2d coordinates
-      samples <- st_as_sf(samples,
-                          coords = c("LON", "LAT"),
-                          crs    = EPSG_WGS84)
-
-      ## keep initial coordinates
-      latlon <- st_coordinates(samples$geometry)
-      latlon <- data.table(latlon)
-      names(latlon)[names(latlon) == "X"] <- "X_LON"
-      names(latlon)[names(latlon) == "Y"] <- "Y_LAT"
-
-      ## 2d distance between points in meters
-      samples$dist_2D <- c(0, trackDistance(st_coordinates(samples$geometry), longlat = TRUE)) * 1000
-
-      ## add time between points
-      samples$timediff <- c(0, diff(samples$time))
-
-      ## create speed
-      samples <- samples |> mutate(kph_2D = (dist_2D/1000) / (timediff/3600)) |> collapse()
-
-      ## parse coordinates for process in meters
-      samples   <- st_transform(samples, crs = EPSG_PMERC)
-      trkcco    <- st_coordinates(samples)
-      samples   <- data.table(samples)
-      samples$X <- unlist(trkcco[,1])
-      samples$Y <- unlist(trkcco[,2])
-      samples   <- cbind(samples, latlon)
-
-      samples[, grep("^geometry$", colnames(samples)) := NULL]
-    }
-  } else {
-    cat(" NO LOCATION ..")
-  }
-
-
-  ## Read extra data  ----------------------------------------------------------
-  if (!is.null(jride$XDATA)) {
-    xdata <- data.table(jride$XDATA)
-
-    ##  For single var table
-    if (all(c("VALUE", "UNIT")  %in% names(xdata))) {
-
-      vname   <- xdata$VALUE
-      vunit   <- xdata$UNIT
-
-      ii <- which(!is.na(vname))
-
-      da        <- xdata$SAMPLES[[ii]]
-      da$KM     <- NULL
-      da$time   <- da$SECS + act_ME$time
-      da$SECS   <- NULL
-      names(da) <- c(paste0(vname[ii], ".", vunit[ii]), "time")
-
-      samples <- merge(samples, da, all = T)
-      # stopifnot(!any(duplicated(names(samples))))
-    }
-    rm(da)
-
-    ##  For multiple var table
-    if (all(c("VALUES", "UNITS")  %in% names(xdata))) {
-
-      values  <- xdata$VALUES
-      units   <- xdata$UNITS
-      xsampls <- xdata$SAMPLES
-
-      for (i in 1:length(values)) {
-
-        if (is.null(values[[i]])) { next }
-
-        ## there are cases of misalignment
-        nn <- paste0(values[[i]], ".", units[[i]][1:length(values[[i]])])
-        da <- xsampls[[i]]
-
-        dd        <- data.table(Reduce(rbind, da$VALUES))
-        names(dd) <- nn
-
-        res <- data.table(time = da$SECS + act_ME$time,
-                          dd)
-
-        samples <- merge(samples, res, all = T)
-        # stopifnot(!any(duplicated(names(samples))))
-      }
-      rm(res, dd, da, nn)
-    }
-
-    # ##  For single var table
-    # if (all(c("VALUE", "UNIT")  %in% names(xdata))) {
-    #   stop("test more")
-    # }
-
-  } else {
-    cat(" NO XDATA")
-  }
+  data <- rbind(data, samples, fill = T)
   cat("\n")
-
-  ## Combine metadata with records
-  if (exists("samples")) {
-    ## remove duplicate column
-    act_ME[, time := NULL]
-    act_ME <- cbind(act_ME, samples, fill = TRUE)
-    # stopifnot(!any(duplicated(names(act_ME))))
-  }
-  rm(samples)
-
-  data <- rbind(data, act_ME, fill = TRUE)
 }
 
 
-## Convert to numbers  ---------------------------------------------------------
-for (avar in names(data)) {
-  if (is.character(data[[avar]])) {
-    ## find empty and replace
-    data[[avar]] <- sub("[ ]*$",        "", data[[avar]])
-    data[[avar]] <- sub("^[ ]*",        "", data[[avar]])
-    data[[avar]] <- sub("^[ ]*$",       NA, data[[avar]])
-    data[[avar]] <- sub("^[ ]*NA[ ]*$", NA, data[[avar]])
-    if (!all(is.na((as.numeric(data[[avar]]))))) {
-      data[[avar]] <- as.numeric(data[[avar]])
-    }
-  }
-}
+
 
 ## Prepare for import to DB  ---------------------------------------------------
 data <- data.table(data)
@@ -409,25 +259,30 @@ data[, year  := as.integer(year(time))  ]
 data[, month := as.integer(month(time)) ]
 
 ## Drop NA columns
-data <- janitor::remove_empty(data, which = "cols")
+data <- remove_empty(data, which = "cols")
 
 ## fix names
 names(data) <- sub("\\.$",  "", names(data))
 names(data) <- sub("[ ]+$", "", names(data))
 names(data) <- sub("^[ ]+", "", names(data))
+names(data)[names(data) == "heart_rate"] <- "HR"
+
+
+grep("heart",names(DB), ignore.case = T, value = T)
+grep("speed",names(DB), ignore.case = T, value = T)
+
+names(data)
+
 
 ## fix some types
 class(data$HR)                   <- "double"
-class(data$FIELD_135)            <- "double"
-class(data$FIELD_136)            <- "double"
-class(data$CAD)                  <- "double"
-class(data$OVRD_total_kcalories) <- "double"
-class(data$Spike.Time)           <- "double"
 
 
 which(names(data) == names(data)[(duplicated(names(data)))])
 stopifnot(!any(duplicated(names(data))))
 
+
+stop("are u ready?")
 
 if (file.exists(DATASET)) {
 

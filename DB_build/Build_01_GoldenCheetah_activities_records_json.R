@@ -53,10 +53,7 @@ knitr::opts_chunk$set(fig.pos    = '!h'     )
 
 ###TODO explore this tools
 # library(cycleRtools)
-# GC_activity("Athan",activity = "~/TRAIN/GoldenCheetah/Athan/activities/2008_12_19_16_00_00.json")
-# GC_activity("Athan")
-# GC_metrics("Athan")
-# read_ride(file = af)
+# https://github.com/trackerproject/trackeR
 
 
 #+ echo=FALSE, include=TRUE
@@ -75,10 +72,16 @@ library(arrow,      quietly = TRUE, warn.conflicts = FALSE)
 library(data.table, quietly = TRUE, warn.conflicts = FALSE)
 library(dplyr,      quietly = TRUE, warn.conflicts = FALSE)
 library(filelock,   quietly = TRUE, warn.conflicts = FALSE)
+library(janitor,    quietly = TRUE, warn.conflicts = FALSE)
 library(jsonlite,   quietly = TRUE, warn.conflicts = FALSE)
 library(lubridate,  quietly = TRUE, warn.conflicts = FALSE)
 library(sf,         quietly = TRUE, warn.conflicts = FALSE)
 library(trip,       quietly = TRUE, warn.conflicts = FALSE)
+
+# devtools::install_github("trackerproject/trackeR")
+library(trackeR,    quietly = TRUE, warn.conflicts = FALSE)
+
+
 
 source("./DEFINITIONS.R")
 
@@ -122,7 +125,7 @@ if (file.exists(DATASET)) {
 ## read some files for testing
 nts   <- 5
 files <- unique(c(head(  file$file, nts),
-                  sample(file$file, nts*2),
+                  sample(file$file, nts*2, replace = T),
                   tail(  file$file, nts*3)))
 
 # files <- unique(c(tail(file$file, 50)))
@@ -148,6 +151,8 @@ expect <- c("STARTTIME",
 data <- data.table()
 for (af in files) {
   cat(basename(af), "..")
+
+  # readJSON(af)
 
   jride <- fromJSON(af)$RIDE
 
