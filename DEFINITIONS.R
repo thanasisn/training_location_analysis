@@ -9,7 +9,8 @@ DBlevel <- 5
 
 
 ##  Input paths  ---------------------------------------------------------------
-GC_DIR <- "~/TRAIN/GoldenCheetah/Athan/activities"
+GC_DIR  <- "~/TRAIN/GoldenCheetah/Athan/activities"
+GPX_DIR <- "~/GISdata/GPX"
 
 
 ##  Other variables  -----------------------------------------------------------

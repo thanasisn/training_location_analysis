@@ -1,7 +1,7 @@
 #!/usr/bin/env Rscript
 # /* Copyright (C) 2022 Athanasios Natsis <natsisphysicist@gmail.com> */
 #' ---
-#' title:         "Golden Cheetah read activities summary directly from individual files"
+#' title:         "Parse gpx file to database"
 #' author:
 #'   - Natsis Athanasios^[natsisphysicist@gmail.com]
 #'
@@ -39,7 +39,7 @@
 
 #+ echo=F, include=T
 
-#### Golden Cheetah read activities summary directly from individual files
+#### Parse gpx file to database"
 
 ## __ Document options  --------------------------------------------------------
 
@@ -53,6 +53,7 @@ knitr::opts_chunk$set(fig.pos    = '!h'     )
 
 ###TODO explore this tools
 # library(cycleRtools)
+# https://github.com/trackerproject/trackeR
 # GC_activity("Athan",activity = "~/TRAIN/GoldenCheetah/Athan/activities/2008_12_19_16_00_00.json")
 # GC_activity("Athan")
 # GC_metrics("Athan")
@@ -75,10 +76,16 @@ library(arrow,      quietly = TRUE, warn.conflicts = FALSE)
 library(data.table, quietly = TRUE, warn.conflicts = FALSE)
 library(dplyr,      quietly = TRUE, warn.conflicts = FALSE)
 library(filelock,   quietly = TRUE, warn.conflicts = FALSE)
+library(janitor,    quietly = TRUE, warn.conflicts = FALSE)
 library(jsonlite,   quietly = TRUE, warn.conflicts = FALSE)
 library(lubridate,  quietly = TRUE, warn.conflicts = FALSE)
 library(sf,         quietly = TRUE, warn.conflicts = FALSE)
 library(trip,       quietly = TRUE, warn.conflicts = FALSE)
+
+# devtools::install_github("trackerproject/trackeR")
+library(trackeR,     quietly = TRUE, warn.conflicts = FALSE)
+
+
 
 source("./DEFINITIONS.R")
 
@@ -86,32 +93,40 @@ source("./DEFINITIONS.R")
 lock(paste0(DATASET, ".lock"))
 
 ##  List files to parse  -------------------------------------------------------
-file <- list.files(path       = GC_DIR,
-                   pattern    = "*.json",
-                   full.names = TRUE)
+file <- list.files(path        = GPX_DIR,
+                   pattern     = "*.gpx",
+                   recursive   = TRUE,
+                   ignore.case = TRUE,
+                   full.names  = TRUE)
 
 file <- data.table(file      = file,
                    filemtime = floor_date(file.mtime(file), unit = "seconds"))
 
 
-##  Open dataset  --------------------------------------------------------------
-if (file.exists(DATASET)) {
-  DB <- open_dataset(DATASET,
-                     partitioning  = c("year", "month"),
-                     unify_schemas = T)
-  db_rows  <- unlist(DB |> tally() |> collect())
-  db_files <- unlist(DB |> select(file) |> distinct() |> count() |> collect())
-  db_days  <- unlist(DB |> select(time) |> mutate(time= as.Date(time)) |> distinct() |> count() |> collect())
-  db_vars  <- length(names(DB))
 
-  ##  Check what to do
-  wehave <- DB |> select(file, filemtime) |> unique() |> collect() |> data.table()
+file <- file[ file == "/home/athan/GISdata/GPX/2015_FDOR/Tracks/2015-09-12_walk.gpx", ]
 
-  ##  Ignore files with the same name and mtime
-  file <- file[ !(file %in% wehave$file & filemtime %in% wehave$filemtime) ]
-} else {
-  cat("WILL INIT DB!\n")
-}
+
+
+
+# ##  Open dataset  --------------------------------------------------------------
+# if (file.exists(DATASET)) {
+#   DB <- open_dataset(DATASET,
+#                      partitioning  = c("year", "month"),
+#                      unify_schemas = T)
+#   db_rows  <- unlist(DB |> tally() |> collect())
+#   db_files <- unlist(DB |> select(file) |> distinct() |> count() |> collect())
+#   db_days  <- unlist(DB |> select(time) |> mutate(time= as.Date(time)) |> distinct() |> count() |> collect())
+#   db_vars  <- length(names(DB))
+#
+#   ##  Check what to do
+#   wehave <- DB |> select(file, filemtime) |> unique() |> collect() |> data.table()
+#
+#   ##  Ignore files with the same name and mtime
+#   file <- file[ !(file %in% wehave$file & filemtime %in% wehave$filemtime) ]
+# } else {
+#   cat("WILL INIT DB!\n")
+# }
 
 
 
@@ -122,7 +137,7 @@ if (file.exists(DATASET)) {
 ## read some files for testing
 nts   <- 5
 files <- unique(c(head(  file$file, nts),
-                  sample(file$file, nts*2),
+                  sample(file$file, nts*2, replace = T),
                   tail(  file$file, nts*3)))
 
 # files <- unique(c(tail(file$file, 50)))
@@ -134,31 +149,86 @@ if (length(files) < 1) {
 }
 
 
-## expected fields in GoldenCheeatah files
-expect <- c("STARTTIME",
-            "RECINTSECS",
-            "DEVICETYPE",
-            "OVERRIDES",
-            "IDENTIFIER",
-            "TAGS",
-            "INTERVALS",
-            "SAMPLES",
-            "XDATA")
 
-data <- data.table()
+
+gather <- data.table()
 for (af in files) {
   cat(basename(af), "..")
 
-  jride <- fromJSON(af)$RIDE
+  # temp <- read_sf( gunzip(af, remove = FALSE, temporary = TRUE, skip = TRUE ),
+  #                  layer = "track_points")
 
-  ## check for new fields
-  stopifnot(all(names(jride) %in% expect))
+  ### Prepare meta data  -------------------------------------------------------
+  act_ME <- data.table(
+    ## get general meta data
+    file       = af,
+    filemtime  = as.POSIXct(floor_date(file.mtime(af), unit = "seconds"), tz = "UTC"),
+    parsed     = as.POSIXct(Sys.time(), tz = "UTC"),
+    dataset    = "gpx repo"
+  )
 
-  # dfs <- names(jride)
-  # for (a in dfs) {
-  #   cat(a, length(jride[[a]]), "\n")
-  #   cat(a, class(jride[[a]]), "\n")
-  # }
+  temp <- read_sf(af,
+                  layer = "track_points")
+
+  temp <- remove_empty(temp, which = "cols")
+
+  stop()
+  ## This assumes that dates in file are correct.......
+  temp <- temp[ order(temp$time, na.last = FALSE), ]
+  if (nrow(temp)<2) { next() }
+
+  names(temp)[names(temp) == "src"] <- "source"
+  names(temp)[names(temp) == "ele"] <- "Z"
+
+  ## keep initial coordinates
+  latlon <- st_coordinates(temp$geometry)
+  latlon <- data.table(latlon)
+  names(latlon)[names(latlon) == "X"] <- "Xdeg"
+  names(latlon)[names(latlon) == "Y"] <- "Ydeg"
+
+  ## add distance between points in meters
+  temp$dist <- c(0, trackDistance(st_coordinates(temp$geometry), longlat = TRUE)) * 1000
+
+  ## add time between points
+  temp$timediff <- 0
+  for (i in 2:nrow(temp)) {
+    temp$timediff[i] <- difftime( temp$time[i], temp$time[i-1] )
+  }
+
+  ## create speed
+  temp <- temp |> mutate(kph = (dist/1000) / (timediff/3600)) |> collapse()
+
+  # st_crs(EPSG)
+  ## parse coordinates for process in meters
+  temp   <- st_transform(temp, crs = EPSG)
+  trkcco <- st_coordinates(temp)
+  temp   <- data.table(temp)
+  temp$X <- unlist(trkcco[,1])
+  temp$Y <- unlist(trkcco[,2])
+  temp   <- cbind(temp, latlon)
+
+  re <- temp[, .(time,
+                 X, Y, Z,
+                 Xdeg, Ydeg,
+                 dist, timediff, kph,
+                 filename  = af,
+                 F_mtime   = file.mtime(af),
+                 name      = "gpx file",
+                 sport     = as.character(NA),
+                 sub_sport = as.character(NA),
+                 source
+  )]
+
+  re[, year  := year(time)  ]
+
+  gather <- rbind(gather, re)
+}
+
+
+
+
+data <- data.table()
+for (af in files) {
 
   ### Prepare meta data  -------------------------------------------------------
   act_ME <- data.table(
