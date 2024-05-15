@@ -174,7 +174,11 @@ for (af in files) {
   act_ME$Year     <- NULL
   act_ME$Filename <- NULL
 
-  ## read manual edited values
+  ## Assuming all data are from one person
+  act_ME$Athlete  <- NULL
+
+
+  ## Read manual edited values  ------------------------------------------------
   if (!is.null(jride$OVERRIDES)) {
     ss        <- data.frame(t(diag(as.matrix(jride$OVERRIDES))))
     names(ss) <- paste0("OVRD_", names(jride$OVERRIDES))
@@ -183,8 +187,7 @@ for (af in files) {
   }
 
 
-  ### Prepare records ----------------------------------
-
+  ## Prepare records ----------------------------------
   if (!is.null(jride$SAMPLES)) {
     samples <- data.table(jride$SAMPLES)
 
@@ -221,7 +224,7 @@ for (af in files) {
       samples <- samples |> mutate(kph_2D = (dist_2D/1000) / (timediff/3600)) |> collapse()
 
       ## parse coordinates for process in meters
-      samples   <- st_transform(samples, crs = EPSG)
+      samples   <- st_transform(samples, crs = EPSG_PMERC)
       trkcco    <- st_coordinates(samples)
       samples   <- data.table(samples)
       samples$X <- unlist(trkcco[,1])
@@ -236,9 +239,9 @@ for (af in files) {
   }
 
 
+  ## Read extra data ----------------------------------
   if (!is.null(jride$XDATA)) {
     xdata <- data.table(jride$XDATA)
-
 
     ##  For single var table
     if (all(c("VALUE", "UNIT")  %in% names(xdata))) {
@@ -255,9 +258,9 @@ for (af in files) {
       names(da) <- c(paste0(vname[ii], ".", vunit[ii]), "time")
 
       samples <- merge(samples, da, all = T)
+      # stopifnot(!any(duplicated(names(samples))))
     }
     rm(da)
-
 
     ##  For multiple var table
     if (all(c("VALUES", "UNITS")  %in% names(xdata))) {
@@ -280,29 +283,35 @@ for (af in files) {
                           dd)
 
         samples <- merge(samples, res, all = T)
+        # stopifnot(!any(duplicated(names(samples))))
       }
+      rm(res, dd, da, nn)
     }
 
-    ##  For single var table
-    if (all(c("VALUE", "UNIT")  %in% names(xdata))) {
-      stop("test more")
-    }
+    # ##  For single var table
+    # if (all(c("VALUE", "UNIT")  %in% names(xdata))) {
+    #   stop("test more")
+    # }
 
   } else {
     cat(" NO XDATA")
   }
   cat("\n")
 
-
   if (exists("samples")) {
+
+    ## remove duplicate column
+    act_ME[, time := NULL]
     act_ME <- cbind(act_ME, samples, fill = TRUE)
+    # stopifnot(!any(duplicated(names(act_ME))))
   }
+  rm(samples)
 
   data <- rbind(data, act_ME, fill = TRUE)
 }
 
 
-## convert types if possible
+## convert types to numbers -------
 for (avar in names(data)) {
   if (is.character(data[[avar]])) {
     ## find empty and replace
@@ -316,6 +325,7 @@ for (avar in names(data)) {
   }
 }
 
+## preapare for import to DB
 data <- data.table(data)
 data[, year  := as.integer(year(time))  ]
 data[, month := as.integer(month(time)) ]
@@ -326,13 +336,15 @@ names(data) <- sub("\\.$",  "", names(data))
 names(data) <- sub("[ ]+$", "", names(data))
 names(data) <- sub("^[ ]+", "", names(data))
 
-any(duplicated(names(data)))
 
-
+which(names(data) == names(data)[(duplicated(names(data)))])
+stopifnot(!any(duplicated(names(data))))
 
 
 ## TODO check for new variables in the db
 
+
+cd
 
 stop("Are u ready")
 
@@ -378,202 +390,6 @@ write_dataset(DB |> filter(year %in% new),
 #               hive_style   = F)
 
 
-
-
-stop()
-
-
-
-
-
-### homogenize data ####
-
-
-
-
-
-## duplicate name columns check
-for (avar in tocheck) {
-  getit <- grep(paste0(avar, "\\.[xy]"), names(metrics), value = TRUE)
-  if (all(metrics[[getit[1]]] == metrics[[getit[2]]], na.rm = TRUE)) {
-    metrics[[getit[2]]] <- NULL
-    names(metrics)[names(metrics) == getit[1]] <- avar
-  }
-}
-metrics <- rm.cols.dups.DT(metrics)
-metrics <- rm.cols.NA.DT(metrics)
-
-## drop columns with zero or NA only
-for (avar in names(metrics)) {
-  if (all(metrics[[avar]] %in% c(NA, 0))) {
-    metrics[[avar]] <- NULL
-  }
-}
-setorder(metrics, time)
-
-## get duplicate columns
-dup.vec <- which(duplicated(t(metrics)))
-dup.vec <- names(metrics)[dup.vec]
-
-# create a vector with the checksum for each column keeps the column names as row names
-col.checksums <- sapply(metrics, function(x) digest::digest(x, "md5"), USE.NAMES = T)
-dup.cols      <- data.table(col.name = names(col.checksums), hash.value = col.checksums)
-dup.cols      <- dup.cols[dup.cols, on = "hash.value"][col.name != i.col.name,]
-
-
-
-## remove manual
-metrics[, DEVICETYPE        := NULL]
-metrics[, RECINTSECS        := NULL]
-metrics[, Device.Info       := NULL]
-metrics[, VO2max.detected   := NULL]
-metrics[, Workout.Title     := NULL]
-metrics[, X1_sec_Peak_Power := NULL]
-metrics[, NP                := NULL]
-metrics[, IF                := NULL]
-metrics[, filemtime         := NULL]
-metrics[, file              := NULL]
-metrics[, Checksum          := NULL]
-metrics[, Calendar_Text     := NULL]
-metrics[, Athlete           := NULL]
-metrics[, Weekday           := NULL]
-
-## drop zeros on some columns
-
-wecare <- grep("temp", names(metrics), value = TRUE, ignore.case = TRUE)
-for (avar in wecare) {
-  metrics[[avar]][metrics[[avar]] < -200] <- NA
-}
-
-wecare <- c(
-  grep("EOA",              names(metrics), value = TRUE, ignore.case = TRUE),
-  grep("Feel",             names(metrics), value = TRUE, ignore.case = TRUE),
-  grep("Heart",            names(metrics), value = TRUE, ignore.case = TRUE),
-  grep("IF",               names(metrics), value = TRUE, ignore.case = TRUE),
-  grep("LNP",              names(metrics), value = TRUE, ignore.case = TRUE),
-  grep("RPE",              names(metrics), value = TRUE, ignore.case = TRUE),
-  grep("RTP",              names(metrics), value = TRUE, ignore.case = TRUE),
-  grep("TISS",             names(metrics), value = TRUE, ignore.case = TRUE),
-  grep("VI$",              names(metrics), value = TRUE, ignore.case = TRUE),
-  grep("Weight",           names(metrics), value = TRUE, ignore.case = TRUE),
-  grep("_HRV$",            names(metrics), value = TRUE, ignore.case = TRUE),
-  grep("_Peak_Hr$",        names(metrics), value = TRUE, ignore.case = TRUE),
-  grep("_Peak_Pace$",      names(metrics), value = TRUE, ignore.case = TRUE),
-  grep("_Peak_Power_HR$",  names(metrics), value = TRUE, ignore.case = TRUE),
-  grep("_Peak_WPK$",       names(metrics), value = TRUE, ignore.case = TRUE),
-  grep("_Sustained_Time$", names(metrics), value = TRUE, ignore.case = TRUE),
-  grep("_W_bal_",          names(metrics), value = TRUE, ignore.case = TRUE),
-  grep("_core_temperatur", names(metrics), value = TRUE, ignore.case = TRUE),
-  grep("_in_Zone$",        names(metrics), value = TRUE, ignore.case = TRUE),
-  grep("_in_zone$",        names(metrics), value = TRUE, ignore.case = TRUE),
-  grep("_ratio",           names(metrics), value = TRUE, ignore.case = TRUE),
-  grep("balance",          names(metrics), value = TRUE, ignore.case = TRUE),
-  grep("best",             names(metrics), value = TRUE, ignore.case = TRUE),
-  grep("bikeintensity",    names(metrics), value = TRUE, ignore.case = TRUE),
-  grep("bikescore",        names(metrics), value = TRUE, ignore.case = TRUE),
-  grep("bikestress",       names(metrics), value = TRUE, ignore.case = TRUE),
-  grep("cadence",          names(metrics), value = TRUE, ignore.case = TRUE),
-  grep("carrying",         names(metrics), value = TRUE, ignore.case = TRUE),
-  grep("daniels",          names(metrics), value = TRUE, ignore.case = TRUE),
-  grep("detected",         names(metrics), value = TRUE, ignore.case = TRUE),
-  grep("distance",         names(metrics), value = TRUE, ignore.case = TRUE),
-  grep("effect",           names(metrics), value = TRUE, ignore.case = TRUE),
-  grep("efficiency",       names(metrics), value = TRUE, ignore.case = TRUE),
-  grep("estimated",        names(metrics), value = TRUE, ignore.case = TRUE),
-  grep("fatigue_index",    names(metrics), value = TRUE, ignore.case = TRUE),
-  grep("govss",            names(metrics), value = TRUE, ignore.case = TRUE),
-  grep("iwf",              names(metrics), value = TRUE, ignore.case = TRUE),
-  grep("length",           names(metrics), value = TRUE, ignore.case = TRUE),
-  grep("pace",             names(metrics), value = TRUE, ignore.case = TRUE),
-  grep("pacing_index",     names(metrics), value = TRUE, ignore.case = TRUE),
-  grep("power",            names(metrics), value = TRUE, ignore.case = TRUE),
-  grep("relative",         names(metrics), value = TRUE, ignore.case = TRUE),
-  grep("response",         names(metrics), value = TRUE, ignore.case = TRUE),
-  grep("skiba",            names(metrics), value = TRUE, ignore.case = TRUE),
-  grep("speed",            names(metrics), value = TRUE, ignore.case = TRUE),
-  grep("time",             names(metrics), value = TRUE, ignore.case = TRUE),
-  grep("vdot",             names(metrics), value = TRUE, ignore.case = TRUE),
-  grep("watts",            names(metrics), value = TRUE, ignore.case = TRUE),
-  grep("_W_",              names(metrics), value = TRUE, ignore.case = TRUE),
-  grep("work",             names(metrics), value = TRUE, ignore.case = TRUE),
-  NULL)
-
-wecare <- names(metrics)[names(metrics) %in% wecare]
-for (avar in wecare) {
-  metrics[[avar]][metrics[[avar]] == 0] <- NA
-}
-metrics <- rm.cols.dups.DT(metrics)
-metrics <- rm.cols.NA.DT(metrics)
-
-
-
-
-
-
-## get duplicate columns
-dup.vec <- which(duplicated(t(metrics)))
-dup.vec <- names(metrics)[dup.vec]
-if (length(dup.vec) > 0) {
-  cat("\n\nDuplicate columns exist\n\n")
-}
-
-# create a vector with the checksum for each column keeps the column names as row names
-col.checksums <- sapply(metrics, function(x) digest::digest(x, "md5"), USE.NAMES = T)
-dup.cols      <- data.table(col.name = names(col.checksums), hash.value = col.checksums)
-dup.cols      <- dup.cols[dup.cols, on = "hash.value"][col.name != i.col.name,]
-dup.cols
-
-metrics[, Weight                    := NULL ]
-metrics[, Equipment.Weight          := NULL ]
-metrics[, Aerobic.Training.Effect   := NULL ]
-metrics[, Anaerobic.Training.Effect := NULL ]
-metrics[, Recovery.Time             := NULL ]
-metrics[, Performance.Condition     := NULL ]
-metrics[, Duration.y                := NULL ]
-metrics[, OVRD_workout_time         := NULL ]
-# metrics[, Workout.Code              := NULL ]
-metrics[, Workout_Title             := NULL ]
-metrics[, Activities                := NULL ]
-
-
-if (all(metrics$Sport.x == metrics$Sport.y, na.rm = T)) {
-  metrics$Sport <- metrics$Sport.x
-  metrics$Sport.x <- NULL
-  metrics$Sport.y <- NULL
-}
-
-
-
-
-####  Export for others  ####
-
-
-# #### compare all columns ####
-# relations <- data.table()
-# comb <- names(metrics)
-# for (ii in 1:(length(comb) - 1)) {
-#     for (jj in (ii + 1):length(comb)) {
-#         cat(ii, jj, comb[ii], comb[jj], "\n")
-#         mean   = mean(  as.numeric(metrics[[comb[ii]]]) / as.numeric(metrics[[comb[jj]]]), na.rm = T)
-#         median = median(as.numeric(metrics[[comb[ii]]]) / as.numeric(metrics[[comb[jj]]]), na.rm = T)
-#         cov    = cov(x = as.numeric(metrics[[comb[ii]]]), y = as.numeric(metrics[[comb[jj]]]), use = "pairwise.complete.obs")
-#         cor    = cor(x = as.numeric(metrics[[comb[ii]]]), y = as.numeric(metrics[[comb[jj]]]), use = "pairwise.complete.obs")
-#
-#         relations <- rbind(relations,
-#                            data.table(Acol = comb[ii],
-#                                       Bcol = comb[jj],
-#                                       mean = mean,
-#                                       median = median,
-#                                       cov = cov,
-#                                       cor = cor))
-#     }
-# }
-# relations <- relations[ !(is.na(mean) & is.na(median) & is.na(cor) & is.na(cov)) ]
-#
-# relations[ abs(median - 1) < 0.001, ]
-# relations[ abs(mean   - 1) < 0.001, ]
-# relations[ abs(cor    - 1) < 0.001, ]
-# relations[ abs(cov    - 1) < 0.005, ]
 
 
 
