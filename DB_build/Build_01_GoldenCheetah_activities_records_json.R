@@ -62,6 +62,7 @@ knitr::opts_chunk$set(fig.pos    = '!h'     )
 #+ echo=FALSE, include=TRUE
 ## __ Set environment  ---------------------------------------------------------
 Sys.setenv(TZ = "UTC")
+tic <- Sys.time()
 Script.Name <- "~/CODE/training_location_analysis/DB_build/Build_01_GoldenCheetaj_activities_records_json.R"
 
 if (!interactive()) {
@@ -82,7 +83,7 @@ library(trip,       quietly = TRUE, warn.conflicts = FALSE)
 source("./DEFINITIONS.R")
 
 
-##  List files to parse
+##  List files to parse  -------------------------------------------------------
 file <- list.files(path       = GC_DIR,
                    pattern    = "*.json",
                    full.names = TRUE)
@@ -91,21 +92,21 @@ file <- data.table(file      = file,
                    filemtime = floor_date(file.mtime(file), unit = "seconds"))
 
 
-# ##  Open dataset
-# if (file.exists(DATASET)) {
-#   DB <- open_dataset(DATASET,
-#                      partitioning  = c("year"),
-#                      unify_schemas = T)
-#   db_rows <- unlist(DB |> tally() |> collect())
-#
-#   ##  Check what to do
-#   wehave <- DB |> select(file, filemtime) |> unique() |> collect() |> data.table()
-#
-#   ##  Ignore files with the same name and mtime
-#   file <- file[ !(file %in% wehave$file & filemtime %in% wehave$filemtime) ]
-# } else {
-#   stop("Init DB manually!")
-# }
+##  Open dataset  --------------------------------------------------------------
+if (file.exists(DATASET)) {
+  DB <- open_dataset(DATASET,
+                     partitioning  = c("year", "month"),
+                     unify_schemas = T)
+  db_rows <- unlist(DB |> tally() |> collect())
+
+  ##  Check what to do
+  wehave <- DB |> select(file, filemtime) |> unique() |> collect() |> data.table()
+
+  ##  Ignore files with the same name and mtime
+  file <- file[ !(file %in% wehave$file & filemtime %in% wehave$filemtime) ]
+} else {
+  stop("Init DB manually!")
+}
 
 
 ##  TODO remove changed files from DB
@@ -113,20 +114,21 @@ file <- data.table(file      = file,
 
 
 
-
-# files <- sample(file$file, 10)
-nts <- 4
-
+## read some files for testing
+nts   <- 10
 files <- unique(c(head(  file$file, nts),
-                  sample(file$file, nts*3),
-                  tail(  file$file, nts)))
+                  sample(file$file, nts*2),
+                  tail(  file$file, nts*3)))
+
+# files <- unique(c(tail(file$file, 50)))
+
 
 
 if (length(files) < 1) {
   stop("Nothing to do!")
 }
 
-
+## expected fields in GoldenCheeatah files
 expect <- c("STARTTIME",
             "RECINTSECS",
             "DEVICETYPE",
@@ -137,14 +139,13 @@ expect <- c("STARTTIME",
             "SAMPLES",
             "XDATA")
 
-
 data <- data.table()
 for (af in files) {
   cat(af, "..")
 
   jride <- fromJSON(af)$RIDE
 
-  ## chech for new fields
+  ## check for new fields
   stopifnot(all(names(jride) %in% expect))
 
   # dfs <- names(jride)
@@ -153,8 +154,7 @@ for (af in files) {
   #   cat(a, class(jride[[a]]), "\n")
   # }
 
-
-  ### Prepare meta data ----------------------------------
+  ### Prepare meta data  -------------------------------------------------------
   act_ME <- data.table(
     ## get general meta data
     file       = af,
@@ -187,7 +187,7 @@ for (af in files) {
   }
 
 
-  ## Prepare records ----------------------------------
+  ## Prepare records  ----------------------------------------------------------
   if (!is.null(jride$SAMPLES)) {
     samples <- data.table(jride$SAMPLES)
 
@@ -195,7 +195,7 @@ for (af in files) {
     samples[, time := SECS + act_ME$time ]
     samples[, SECS := NULL]
 
-    ## check
+    ## for available coordinates
     wewant <- c("time", "LAT", "LON")
     if (all(wewant %in% names(samples))) {
 
@@ -233,13 +233,12 @@ for (af in files) {
 
       samples[, grep("^geometry$", colnames(samples)) := NULL]
     }
-
   } else {
     cat("NO LOCATIONS ..")
   }
 
 
-  ## Read extra data ----------------------------------
+  ## Read extra data  ----------------------------------------------------------
   if (!is.null(jride$XDATA)) {
     xdata <- data.table(jride$XDATA)
 
@@ -298,8 +297,8 @@ for (af in files) {
   }
   cat("\n")
 
+  ## Combine metadata with records
   if (exists("samples")) {
-
     ## remove duplicate column
     act_ME[, time := NULL]
     act_ME <- cbind(act_ME, samples, fill = TRUE)
@@ -311,7 +310,7 @@ for (af in files) {
 }
 
 
-## convert types to numbers -------
+## Convert to numbers  ---------------------------------------------------------
 for (avar in names(data)) {
   if (is.character(data[[avar]])) {
     ## find empty and replace
@@ -325,40 +324,76 @@ for (avar in names(data)) {
   }
 }
 
-## preapare for import to DB
+## Prepare for import to DB  ---------------------------------------------------
 data <- data.table(data)
 data[, year  := as.integer(year(time))  ]
 data[, month := as.integer(month(time)) ]
-
 
 ## fix names
 names(data) <- sub("\\.$",  "", names(data))
 names(data) <- sub("[ ]+$", "", names(data))
 names(data) <- sub("^[ ]+", "", names(data))
 
+## fix some types
+class(data$HR)        <- "double"
+class(data$FIELD_135) <- "double"
 
 which(names(data) == names(data)[(duplicated(names(data)))])
 stopifnot(!any(duplicated(names(data))))
 
 
-## TODO check for new variables in the db
+##  Check and create for new variables in the db  ------------------------------
+newvars <- names(data)[!names(data) %in% names(DB)]
+if (length(newvars) > 0) {
+  cat("New variables detected!\n")
+
+  for (varname in newvars) {
+    vartype <- typeof(data[[nv]])
+    cat("--", varname, ":", vartype, "--\n")
+
+    if (!is.character(varname)) stop()
+    if (is.null(vartype)) stop()
+
+    if (!any(names(DB) == varname)) {
+      cat("Create column: ", varname, "\n")
+      ## create template var
+      a  <- NA; class(a) <- vartype
+      DB <- DB |> mutate( !!varname := a) |> compute()
+
+      ## Rewrite the whole dataset
+      write_dataset(DB,
+                    DATASET,
+                    compression            = "brotli",
+                    compression_level      = 5,
+                    format                 = "parquet",
+                    partitioning           = c("year", "month"),
+                    existing_data_behavior = "overwrite",
+                    hive_style             = F)
+    } else {
+      warning(paste0("Variable exist: ", varname, "\n", " !! IGNORING VARIABLE INIT !!"))
+    }
+    ## Reopen the dataset
+    DB <- open_dataset(DATASET,
+                       partitioning  = c("year", "month"),
+                       unify_schemas = T)
+  }
+}
 
 
-cd
 
-stop("Are u ready")
-
-## merge all rows
+##  Add new data to the DB  ----------------------------------------------------
 DB <- DB |> full_join(data) |> compute()
 
 cat("\nNew rows:", nrow(DB) - db_rows, "\n")
 
-## write only new months within gather
-new <- unique(data[, year])
+## write only new months within data
+new <- unique(data[, year, month])
+setorder(new, year, month)
 
-cat("\nUpdate:", new, "\n")
+cat("\nUpdate:", "\n")
+cat(paste(" ", new$year, new$month),sep = "\n")
 
-write_dataset(DB |> filter(year %in% new),
+write_dataset(DB |> filter(year %in% new$year & month %in% new$month),
               DATASET,
               compression            = "brotli",
               compression_level      = 5,
@@ -368,33 +403,35 @@ write_dataset(DB |> filter(year %in% new),
               hive_style             = F)
 
 
+## check uniqueness?
+stopifnot(
+  DB |> select(!parsed) |> distinct() |> count() |> collect() ==
+    DB |> count() |> collect()
+)
 
 
 
-
-
-
-
-
-
-
-## Init data base manually
+## Initialize database manually  -----------------------------------------------
 # stop()
-# write_dataset(data,
-#               DATASET,
-#               compression            = "brotli",
-#               compression_level      = 5,
-#               format       = "parquet",
-#               partitioning = c("year", "month"),
-#               existing_data_behavior = "delete_matching",
-#               hive_style   = F)
+write_dataset(data,
+              DATASET,
+              compression            = "brotli",
+              compression_level      = 5,
+              format       = "parquet",
+              partitioning = c("year", "month"),
+              existing_data_behavior = "overwrite",
+              hive_style   = F)
 
 
 
 
 
-
-
-
-####_ END _####
-
+#' **END**
+#+ include=T, echo=F
+tac <- Sys.time()
+cat(sprintf("%s %s@%s %s %f mins\n\n", Sys.time(), Sys.info()["login"],
+            Sys.info()["nodename"], basename(Script.Name), difftime(tac,tic,units = "mins")))
+# if (difftime(tac,tic,units = "sec") > 30) {
+#   system("mplayer /usr/share/sounds/freedesktop/stereo/dialog-warning.oga", ignore.stdout = T, ignore.stderr = T)
+#   system(paste("notify-send -u normal -t 30000 ", Script.Name, " 'R script ended'"))
+# }
