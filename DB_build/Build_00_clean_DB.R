@@ -86,7 +86,7 @@ DB <- open_dataset(DATASET,
 ##  Set some measurements
 db_rows  <- unlist(DB |> tally() |> collect())
 db_files <- unlist(DB |> select(file) |> distinct() |> count() |> collect())
-db_days  <- unlist(DB |> select(time) |> mutate(time= as.Date(time)) |> distinct() |> count() |> collect())
+db_days  <- unlist(DB |> select(time) |> mutate(time = as.Date(time)) |> distinct() |> count() |> collect())
 db_vars  <- length(names(DB))
 
 ##  Get file list

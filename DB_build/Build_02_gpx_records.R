@@ -99,6 +99,9 @@ file <- list.files(path        = GPX_DIR,
 file <- grep("\\/Points\\/", file, invert = T, value = T)
 file <- grep("\\/Plans\\/",  file, invert = T, value = T)
 
+
+## TODO add gpx from Goldencheetah imports
+
 file <- data.table(file      = file,
                    filemtime = floor_date(file.mtime(file), unit = "seconds"))
 
@@ -140,7 +143,7 @@ if (file.exists(DATASET)) {
 ## Read a set of files each time  --------------------------------------------
 
 ## read some files for testing
-nts   <- 5
+nts   <- 6
 files <- unique(c(head(  file$file, nts),
                   sample(file$file, nts*2, replace = T),
                   tail(  file$file, nts*3)))
@@ -168,14 +171,17 @@ for (af in files) {
     ## get general meta data
     file       = af,
     filemtime  = as.POSIXct(floor_date(file.mtime(af), unit = "seconds"), tz = "UTC"),
-    parsed     = as.POSIXct(Sys.time(), tz = "UTC"),
     dataset    = "gpx repo"
   )
 
   ## get geo data mainly
   spat <- remove_empty(
     read_sf(af,
-            layer = "track_points"), which = "cols")
+            layer = "track_points"),
+    which = "cols")
+
+  # st_read(af,
+  #         layer = "track_points")
 
   suppressWarnings({
     spat$gpxtpx_TrackPointExtension <- NULL
@@ -270,7 +276,7 @@ for (af in files) {
   data <- rbind(data, samples, fill = T)
   rm(samples)
 }
-
+cat("\n")
 
 
 
@@ -385,6 +391,9 @@ if (file.exists(DATASET)) {
   cat("Total files:", new_files, "\n")
   cat("Total days: ",  new_days, "\n")
   cat("Total vars: ",  new_vars, "\n")
+
+
+  DB |> select(file, dataset) |> distinct() |> select(dataset) |> collect() |> table()
 
   # ## check uniqueness?
   # stopifnot(

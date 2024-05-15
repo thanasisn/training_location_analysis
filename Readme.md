@@ -4,13 +4,13 @@
 ## Create a database
 
 - [x] Include .json from GoldenCheetah
-- [ ] Include .fit from rest of Garmin fit files
-- [ ] Include .gpx from other sources
+- [ ] Include .fit from Garmin
+- [x] Include .gpx from other sources
 - [ ] Include from Google location
 - [ ] Database maintenance
-   - Remove deleted files
-   - Remove modified files
-   - Check for duplicated records
+   - [x] Remove data from deleted files
+   - [x] Remove data from modified files
+   - [ ] Check for duplicated records
 
 ## Quality check of location data
 

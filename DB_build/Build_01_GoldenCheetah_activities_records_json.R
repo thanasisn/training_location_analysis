@@ -123,7 +123,7 @@ if (file.exists(DATASET)) {
 ## Read a set of files each time  --------------------------------------------
 
 ## read some files for testing
-nts   <- 3
+nts   <- 6
 files <- unique(c(head(  file$file, nts),
                   sample(file$file, nts*2, replace = T),
                   tail(  file$file, nts*3)))
@@ -171,7 +171,6 @@ for (af in files) {
     file       = af,
     filemtime  = as.POSIXct(floor_date(file.mtime(af), unit = "seconds"), tz = "UTC"),
     time       = as.POSIXct(strptime(jride$STARTTIME, "%Y/%m/%d %T", tz = "UTC")),
-    parsed     = as.POSIXct(Sys.time(), tz = "UTC"),
     dataset    = "GoldenCheetah",
     RECINTSECS = jride$RECINTSECS,
     DEVICETYPE = jride$DEVICETYPE,
@@ -358,7 +357,7 @@ class(data$FIELD_136)            <- "double"
 class(data$CAD)                  <- "double"
 class(data$OVRD_total_kcalories) <- "double"
 class(data$Spike.Time)           <- "double"
-
+class(data$PERFORMANCECONDITION) <- "double"
 
 which(names(data) == names(data)[(duplicated(names(data)))])
 stopifnot(!any(duplicated(names(data))))
