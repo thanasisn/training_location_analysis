@@ -105,17 +105,20 @@ if (file.exists(DATASET)) {
   ##  Ignore files with the same name and mtime
   file <- file[ !(file %in% wehave$file & filemtime %in% wehave$filemtime) ]
 } else {
-  stop("Init DB manually!")
+  cat("WILL INIT DB!\n")
 }
 
 
 ##  TODO remove changed files from DB
+
 ##  TODO remove deleted files from DB
 
 
 
+## Read a banch of files each time  --------------------------------------------
+
 ## read some files for testing
-nts   <- 10
+nts   <- 6
 files <- unique(c(head(  file$file, nts),
                   sample(file$file, nts*2),
                   tail(  file$file, nts*3)))
@@ -141,7 +144,7 @@ expect <- c("STARTTIME",
 
 data <- data.table()
 for (af in files) {
-  cat(af, "..")
+  cat(basename(af), "..")
 
   jride <- fromJSON(af)$RIDE
 
@@ -161,6 +164,7 @@ for (af in files) {
     filemtime  = floor_date(file.mtime(af), unit = "seconds"),
     time       = as.POSIXct(strptime(jride$STARTTIME, "%Y/%m/%d %T", tz = "UTC")),
     parsed     = Sys.time(),
+    dataset    = "GoldenCheetah",
     RECINTSECS = jride$RECINTSECS,
     DEVICETYPE = jride$DEVICETYPE,
     IDENTIFIER = jride$IDENTIFIER,
@@ -234,7 +238,7 @@ for (af in files) {
       samples[, grep("^geometry$", colnames(samples)) := NULL]
     }
   } else {
-    cat("NO LOCATIONS ..")
+    cat(" NO LOCATION ..")
   }
 
 
@@ -329,100 +333,106 @@ data <- data.table(data)
 data[, year  := as.integer(year(time))  ]
 data[, month := as.integer(month(time)) ]
 
+## Drop NA columns
+data <- janitor::remove_empty(data, which = "cols")
+
 ## fix names
 names(data) <- sub("\\.$",  "", names(data))
 names(data) <- sub("[ ]+$", "", names(data))
 names(data) <- sub("^[ ]+", "", names(data))
 
 ## fix some types
-class(data$HR)        <- "double"
-class(data$FIELD_135) <- "double"
+class(data$HR)                   <- "double"
+class(data$FIELD_135)            <- "double"
+class(data$FIELD_136)            <- "double"
+class(data$CAD)                  <- "double"
+class(data$OVRD_total_kcalories) <- "double"
+class(data$Spike.Time)           <- "double"
+
 
 which(names(data) == names(data)[(duplicated(names(data)))])
 stopifnot(!any(duplicated(names(data))))
 
 
-##  Check and create for new variables in the db  ------------------------------
-newvars <- names(data)[!names(data) %in% names(DB)]
-if (length(newvars) > 0) {
-  cat("New variables detected!\n")
+if (file.exists(DATASET)) {
 
-  for (varname in newvars) {
-    vartype <- typeof(data[[nv]])
-    cat("--", varname, ":", vartype, "--\n")
+  ##  Check and create for new variables in the db  ----------------------------
+  newvars <- names(data)[!names(data) %in% names(DB)]
+  if (length(newvars) > 0) {
+    cat("New variables detected!\n")
 
-    if (!is.character(varname)) stop()
-    if (is.null(vartype)) stop()
+    for (varname in newvars) {
+      vartype <- typeof(data[[varname]])
+      cat("--", varname, ":", vartype, "--\n")
 
-    if (!any(names(DB) == varname)) {
-      cat("Create column: ", varname, "\n")
-      ## create template var
-      a  <- NA; class(a) <- vartype
-      DB <- DB |> mutate( !!varname := a) |> compute()
+      if (!is.character(varname)) stop()
+      if (is.null(vartype) | vartype == "NULL") stop()
 
-      ## Rewrite the whole dataset
-      write_dataset(DB,
-                    DATASET,
-                    compression            = "brotli",
-                    compression_level      = 5,
-                    format                 = "parquet",
-                    partitioning           = c("year", "month"),
-                    existing_data_behavior = "overwrite",
-                    hive_style             = F)
-    } else {
-      warning(paste0("Variable exist: ", varname, "\n", " !! IGNORING VARIABLE INIT !!"))
+      if (!any(names(DB) == varname)) {
+        cat("Create column: ", varname, "\n")
+        ## create template var
+        a  <- NA; class(a) <- vartype
+        DB <- DB |> mutate( !!varname := a) |> compute()
+
+        ## Rewrite the whole dataset?
+        write_dataset(DB,
+                      DATASET,
+                      compression            = DBcodec,
+                      compression_level      = DBlevel,
+                      format                 = "parquet",
+                      partitioning           = c("year", "month"),
+                      existing_data_behavior = "overwrite",
+                      hive_style             = F)
+      } else {
+        warning(paste0("Variable exist: ", varname, "\n", " !! IGNORING VARIABLE INIT !!"))
+      }
+      ## Reopen the dataset
+      DB <- open_dataset(DATASET,
+                         format            = "parquet",
+                         partitioning      = c("year", "month"),
+                         unify_schemas     = T)
     }
-    ## Reopen the dataset
-    DB <- open_dataset(DATASET,
-                       partitioning  = c("year", "month"),
-                       unify_schemas = T)
   }
+
+
+  ##  Add new data to the DB  --------------------------------------------------
+  DB <- DB |> full_join(data) |> compute()
+
+  cat("\nNew rows:", nrow(DB) - db_rows, "\n")
+
+  ## write only new months within data
+  new <- unique(data[, year, month])
+  setorder(new, year, month)
+
+  cat("\nUpdate:", "\n")
+  cat(paste(" ", new$year, new$month),sep = "\n")
+
+  write_dataset(DB |> filter(year %in% new$year & month %in% new$month),
+                DATASET,
+                compression            = DBcodec,
+                compression_level      = DBlevel,
+                format                 = "parquet",
+                partitioning           = c("year", "month"),
+                existing_data_behavior = "delete_matching",
+                hive_style             = F)
+
+  ## check uniqueness?
+  stopifnot(
+    DB |> select(!parsed) |> distinct() |> count() |> collect() ==
+      DB |> count() |> collect()
+  )
+
+} else {
+  ## Initialize database manually  ---------------------------------------------
+  write_dataset(data,
+                DATASET,
+                compression            = DBcodec,
+                compression_level      = DBlevel,
+                format                 = "parquet",
+                partitioning           = c("year", "month"),
+                existing_data_behavior = "overwrite",
+                hive_style             = F)
 }
-
-
-
-##  Add new data to the DB  ----------------------------------------------------
-DB <- DB |> full_join(data) |> compute()
-
-cat("\nNew rows:", nrow(DB) - db_rows, "\n")
-
-## write only new months within data
-new <- unique(data[, year, month])
-setorder(new, year, month)
-
-cat("\nUpdate:", "\n")
-cat(paste(" ", new$year, new$month),sep = "\n")
-
-write_dataset(DB |> filter(year %in% new$year & month %in% new$month),
-              DATASET,
-              compression            = "brotli",
-              compression_level      = 5,
-              format                 = "parquet",
-              partitioning           = c("year", "month"),
-              existing_data_behavior = "delete_matching",
-              hive_style             = F)
-
-
-## check uniqueness?
-stopifnot(
-  DB |> select(!parsed) |> distinct() |> count() |> collect() ==
-    DB |> count() |> collect()
-)
-
-
-
-## Initialize database manually  -----------------------------------------------
-# stop()
-write_dataset(data,
-              DATASET,
-              compression            = "brotli",
-              compression_level      = 5,
-              format       = "parquet",
-              partitioning = c("year", "month"),
-              existing_data_behavior = "overwrite",
-              hive_style   = F)
-
-
 
 
 
