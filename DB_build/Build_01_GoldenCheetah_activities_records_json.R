@@ -82,6 +82,8 @@ library(trip,       quietly = TRUE, warn.conflicts = FALSE)
 
 source("./DEFINITIONS.R")
 
+## make sure only one parser is this working??
+lock(paste0(DATASET, ".lock"))
 
 ##  List files to parse  -------------------------------------------------------
 file <- list.files(path       = GC_DIR,
@@ -121,7 +123,7 @@ if (file.exists(DATASET)) {
 ## Read a banch of files each time  --------------------------------------------
 
 ## read some files for testing
-nts   <- 10
+nts   <- 25
 files <- unique(c(head(  file$file, nts),
                   sample(file$file, nts*2),
                   tail(  file$file, nts*3)))
@@ -133,6 +135,7 @@ files <- unique(c(head(  file$file, nts),
 if (length(files) < 1) {
   stop("Nothing to do!")
 }
+
 
 ## expected fields in GoldenCheeatah files
 expect <- c("STARTTIME",
@@ -164,9 +167,9 @@ for (af in files) {
   act_ME <- data.table(
     ## get general meta data
     file       = af,
-    filemtime  = floor_date(file.mtime(af), unit = "seconds"),
+    filemtime  = as.POSIXct(floor_date(file.mtime(af), unit = "seconds"), tz = "UTC"),
     time       = as.POSIXct(strptime(jride$STARTTIME, "%Y/%m/%d %T", tz = "UTC")),
-    parsed     = Sys.time(),
+    parsed     = as.POSIXct(Sys.time(), tz = "UTC"),
     dataset    = "GoldenCheetah",
     RECINTSECS = jride$RECINTSECS,
     DEVICETYPE = jride$DEVICETYPE,
@@ -174,6 +177,7 @@ for (af in files) {
     ## get metrics
     data.frame(jride$TAGS)
   )
+
 
   ## drop some data
   act_ME$Month    <- NULL
@@ -279,7 +283,8 @@ for (af in files) {
 
         if (is.null(values[[i]])) { next }
 
-        nn <- paste0(values[[i]], ".", units[[i]])
+        ## there are cases of misalignment
+        nn <- paste0(values[[i]], ".", units[[i]][1:length(values[[i]])])
         da <- xsampls[[i]]
 
         dd        <- data.table(Reduce(rbind, da$VALUES))
@@ -401,6 +406,9 @@ if (file.exists(DATASET)) {
   ##  Add new data to the DB  --------------------------------------------------
   DB <- DB |> full_join(data) |> compute()
 
+  data$filemtime
+  class(DB$filemtime)
+  DB
 
   ## write only new months within data
   new <- unique(data[, year, month])

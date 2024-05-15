@@ -74,7 +74,6 @@ library(lubridate,  quietly = TRUE, warn.conflicts = FALSE)
 source("./DEFINITIONS.R")
 
 
-
 ##  Open dataset  --------------------------------------------------------------
 if (!file.exists(DATASET)) {
   stop("NO DB!\n")
@@ -105,6 +104,7 @@ removefl <- wehave[exists == F | currenct == F]
 
 
 if (nrow(removefl) > 0){
+  cat("Removing", nrow(removefl), "files\n")
 
   # DB |> filter(file %in% removefl$file) |> count() |> collect()
   # DB |> filter(!file %in% removefl$file & year %in% removefl$year & month %in% removefl$month) |> count() |> collect()
@@ -142,16 +142,9 @@ if (nrow(removefl) > 0){
   cat("Total files:", new_files, "\n")
   cat("Total days: ",  new_days, "\n")
   cat("Total vars: ",  new_vars, "\n")
+} else {
+  cat("No files to remove\n")
 }
-
-
-
-
-stop()
-##  TODO remove changed files from DB
-
-##  TODO remove deleted files from DB
-
 
 
 
