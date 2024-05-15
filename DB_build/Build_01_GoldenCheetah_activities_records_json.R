@@ -97,7 +97,10 @@ if (file.exists(DATASET)) {
   DB <- open_dataset(DATASET,
                      partitioning  = c("year", "month"),
                      unify_schemas = T)
-  db_rows <- unlist(DB |> tally() |> collect())
+  db_rows  <- unlist(DB |> tally() |> collect())
+  db_files <- unlist(DB |> select(file) |> distinct() |> count() |> collect())
+  db_days  <- unlist(DB |> select(time) |> mutate(time= as.Date(time)) |> distinct() |> count() |> collect())
+  db_vars  <- length(names(DB))
 
   ##  Check what to do
   wehave <- DB |> select(file, filemtime) |> unique() |> collect() |> data.table()
@@ -118,7 +121,7 @@ if (file.exists(DATASET)) {
 ## Read a banch of files each time  --------------------------------------------
 
 ## read some files for testing
-nts   <- 6
+nts   <- 10
 files <- unique(c(head(  file$file, nts),
                   sample(file$file, nts*2),
                   tail(  file$file, nts*3)))
@@ -398,7 +401,6 @@ if (file.exists(DATASET)) {
   ##  Add new data to the DB  --------------------------------------------------
   DB <- DB |> full_join(data) |> compute()
 
-  cat("\nNew rows:", nrow(DB) - db_rows, "\n")
 
   ## write only new months within data
   new <- unique(data[, year, month])
@@ -416,11 +418,28 @@ if (file.exists(DATASET)) {
                 existing_data_behavior = "delete_matching",
                 hive_style             = F)
 
-  ## check uniqueness?
-  stopifnot(
-    DB |> select(!parsed) |> distinct() |> count() |> collect() ==
-      DB |> count() |> collect()
-  )
+  ## report lines files and dates
+  new_rows  <- unlist(DB |> tally() |> collect())
+  new_files <- unlist(DB |> select(file) |> distinct() |> count() |> collect())
+  new_days  <- unlist(DB |> select(time) |> mutate(time= as.Date(time)) |> distinct() |> count() |> collect())
+  new_vars  <- length(names(DB))
+
+  cat("\n")
+  cat("New rows:   ",  new_rows - db_rows , "\n")
+  cat("New files:  ", new_files - db_files, "\n")
+  cat("New days:   ",  new_days - db_days , "\n")
+  cat("New vars:   ",  new_vars - db_vars , "\n")
+  cat("\n")
+  cat("Total rows: ",  new_rows, "\n")
+  cat("Total files:", new_files, "\n")
+  cat("Total days: ",  new_days, "\n")
+  cat("Total vars: ",  new_vars, "\n")
+
+  # ## check uniqueness?
+  # stopifnot(
+  #   DB |> select(!parsed) |> distinct() |> count() |> collect() ==
+  #     DB |> count() |> collect()
+  # )
 
 } else {
   ## Initialize database manually  ---------------------------------------------
