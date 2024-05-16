@@ -411,7 +411,7 @@ if (file.exists(DATASET)) {
   cat("Total files:", new_files, "\n")
   cat("Total days: ",  new_days, "\n")
   cat("Total vars: ",  new_vars, "\n")
-
+  cat("Size:       ", sum(file.size(list.files(DATASET, recursive = T, full.names = T))) / 2^20, "Mb\n")
 
   DB |> select(file, dataset) |> distinct() |> select(dataset) |> collect() |> table()
 

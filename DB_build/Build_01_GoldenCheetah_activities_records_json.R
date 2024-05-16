@@ -354,23 +354,17 @@ names(data) <- sub("^[ ]+", "", names(data))
 ## disambiguate names
 names(data)[names(data) == "Performance.Condition"] <- "Activity.Performance.Condition"
 
+## sanity check
 if (any(names(data) == "fill")) stop("This should not happened")
 
-
-
-
-
+## handle duplicate column
 if (!is.null(data$DEVICETYPE) | all(data$Device == data$DEVICETYPE)) {
   data[, DEVICETYPE := NULL]
 } else {
   stop("Fix device type\n")
 }
 
-
-
-stop()
-
-## fix some types
+## fix some data types
 class(data$HR)                   <- "double"
 class(data$FIELD_135)            <- "double"
 class(data$FIELD_136)            <- "double"
@@ -381,11 +375,13 @@ class(data$PERFORMANCECONDITION) <- "double"
 class(data$HR)                   <- "double"
 class(data$TEMP)                 <- "double"
 
+## check duplicate names
 which(names(data) == names(data)[(duplicated(names(data)))])
 stopifnot(!any(duplicated(names(data))))
 
+
 if (nrow(data) < 10) {
-  stop("Dont want to write")
+  stop("You don't want to write")
 }
 
 if (file.exists(DATASET)) {
@@ -456,17 +452,19 @@ if (file.exists(DATASET)) {
   new_vars  <- length(names(DB))
 
   cat("\n")
-  cat("New rows:   ",  new_rows - db_rows , "\n")
+  cat("New rows:   ", new_rows  - db_rows , "\n")
   cat("New files:  ", new_files - db_files, "\n")
-  cat("New days:   ",  new_days - db_days , "\n")
-  cat("New vars:   ",  new_vars - db_vars , "\n")
+  cat("New days:   ", new_days  - db_days , "\n")
+  cat("New vars:   ", new_vars  - db_vars , "\n")
   cat("\n")
-  cat("Total rows: ",  new_rows, "\n")
+  cat("Total rows: ", new_rows,  "\n")
   cat("Total files:", new_files, "\n")
-  cat("Total days: ",  new_days, "\n")
-  cat("Total vars: ",  new_vars, "\n")
+  cat("Total days: ", new_days,  "\n")
+  cat("Total vars: ", new_vars,  "\n")
+  cat("Size:       ", sum(file.size(list.files(DATASET, recursive = T, full.names = T))) / 2^20, "Mb\n")
 
   DB |> select(file, dataset) |> distinct() |> select(dataset) |> collect() |> table()
+
   # ## check uniqueness?
   # stopifnot(
   #   DB |> select(!parsed) |> distinct() |> count() |> collect() ==

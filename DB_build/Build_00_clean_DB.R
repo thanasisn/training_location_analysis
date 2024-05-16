@@ -151,7 +151,7 @@ if (nrow(removefl) > 0){
 }
 
 
-
+# DB |> filter(Device!=DEVICETYPE) |> count() |> collect()
 
 
 rowvec <- names(DB)[nchar(names(DB)) > 1]
@@ -162,11 +162,10 @@ md     <- stringdistmatrix(tolower(rowvec), tolower(colvec), method = "dl")
 md     <- stringdistmatrix(tolower(rowvec), tolower(colvec), method = "lcs")
 md     <- stringdistmatrix(tolower(rowvec), tolower(colvec), method = "hamming")
 md     <- stringdistmatrix(tolower(rowvec), tolower(colvec), method = "qgram")
-md     <- stringdistmatrix(tolower(rowvec), tolower(colvec), method = "cosine")
 md     <- stringdistmatrix(tolower(rowvec), tolower(colvec), method = "jaccard")
 md     <- stringdistmatrix(tolower(rowvec), tolower(colvec), method = "jw")
-md     <- stringdistmatrix(tolower(rowvec), tolower(colvec), method = "soundex")
-
+# md     <- stringdistmatrix(tolower(rowvec), tolower(colvec), method = "soundex")
+md     <- stringdistmatrix(tolower(rowvec), tolower(colvec), method = "cosine")
 
 {
   md[lower.tri(md, diag = T)] <- NA
@@ -185,29 +184,16 @@ md     <- stringdistmatrix(tolower(rowvec), tolower(colvec), method = "soundex")
 }
 
 
-agrep("Device", names(DB), ignore.case = T, value = T)
+# agrep("Device", names(DB), ignore.case = T, value = T)
 
 
 
-DB |>
-  select(file, DEVICETYPE) |>
-  filter(!is.na(DEVICETYPE) ) |>
-  distinct() |>
-  select(DEVICETYPE) |>
-  collect() |> table()
-
-DB |>
-  select(file, Device) |>
-  filter(!is.na(Device) ) |>
-  distinct() |>
-  select(Device) |>
-  collect() |> table()
-
+cat("Size:", sum(file.size(list.files(DATASET, recursive = T, full.names = T))) / 2^20, "Mb\n")
 
 
 ##  Remove a var
 # stop("")
-# write_dataset(DB |> select(!fill),
+# write_dataset(DB |> select(!DEVICETYPE),
 #               DATASET,
 #               compression            = DBcodec,
 #               compression_level      = DBlevel,

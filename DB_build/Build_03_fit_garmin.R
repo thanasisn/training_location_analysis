@@ -67,6 +67,8 @@ if (!interactive()) {
 }
 
 #+ echo=F, include=T
+# remotes::install_github("grimbough/FITfileR")
+# https://msmith.de/FITfileR/articles/FITfileR.html
 library(FITfileR,   quietly = TRUE, warn.conflicts = FALSE)
 library(data.table, quietly = TRUE, warn.conflicts = FALSE)
 library(lubridate,  quietly = TRUE, warn.conflicts = FALSE)
@@ -78,21 +80,12 @@ library(trip,       quietly = TRUE, warn.conflicts = FALSE)
 library(filelock,   quietly = TRUE, warn.conflicts = FALSE)
 library(rlang,      quietly = TRUE, warn.conflicts = FALSE)
 
-
-
-#'
-#' https://msmith.de/FITfileR/articles/FITfileR.html
-#'
-#' Have to run it manually for the first time to init the DB
-#'
-
 source("./DEFINITIONS.R")
 
 ## make sure only one parser is this working??
 lock(paste0(DATASET, ".lock"))
 
 
-BATCH      <- 100
 ## unzip in memory
 tempfl     <- "/dev/shm/tmp_fit/"
 
@@ -137,7 +130,7 @@ if (file.exists(DATASET)) {
 ## Read a set of files each time  --------------------------------------------
 
 ## read some files for testing
-nts   <- 5
+nts   <- 2
 files <- unique(c(head(  files$file, nts),
                   sample(files$file, nts*2, replace = T),
                   tail(  files$file, nts*3)))
@@ -164,7 +157,7 @@ for (af in files) {
     next()
   }
 
-  ## create in memory file
+  ## create temo file in memory
   unzip(af, unzip(af, list = T)$Name, overwrite = T, exdir = tempfl)
   from   <- paste0(tempfl, unzip(af, list = T)$Name)
   target <- paste0(tempfl, "temp.fit")
@@ -180,14 +173,41 @@ for (af in files) {
 
   res <- readFitFile(target)
 
+  stop("get all the data?")
+
   ## gather all points
   re <- records(res)
+
+
+  re <- records(res) |>
+    bind_rows() |>
+    arrange(timestamp) |>
+    data.table()
 
   if (!is_tibble(re)) {
     re <- rbindlist(re, fill = T)
   } else {
     re <- data.table(re)
   }
+
+  laps(res)
+  events(res)
+  file_id(res)
+  hrv(res)
+  monitoring(res)
+
+  listMessageTypes(res)
+  getMessagesByType(res, "activity")
+  getMessagesByType(res, "device_settings")
+  getMessagesByType(res, "gps_metadata")
+  getMessagesByType(res, "event")
+  getMessagesByType(res, "sport")
+  getMessagesByType(res, "session")
+  getMessagesByType(res, "file_creator")
+
+
+  ## get all the data?
+
 
   wewant <- c("timestamp",
               "position_lat",
@@ -244,6 +264,7 @@ for (af in files) {
   temp$Y <- unlist(trkcco[,2])
   temp   <- cbind(temp, latlon)
   temp[, geometry := NULL ]
+
 
   ## there is DEVICETYPE and Device
   re <- cbind(act_ME, temp, Device = file_id(res)$product)
