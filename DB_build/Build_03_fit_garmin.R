@@ -75,6 +75,7 @@ library(data.table, quietly = TRUE, warn.conflicts = FALSE)
 library(lubridate,  quietly = TRUE, warn.conflicts = FALSE)
 library(arrow,      quietly = TRUE, warn.conflicts = FALSE)
 library(tibble,     quietly = TRUE, warn.conflicts = FALSE)
+library(janitor,    quietly = TRUE, warn.conflicts = FALSE)
 library(dplyr,      quietly = TRUE, warn.conflicts = FALSE)
 library(sf,         quietly = TRUE, warn.conflicts = FALSE)
 library(trip,       quietly = TRUE, warn.conflicts = FALSE)
@@ -290,13 +291,14 @@ for (af in files) {
     temp$X <- unlist(trkcco[,1])
     temp$Y <- unlist(trkcco[,2])
     temp   <- cbind(temp, latlon)
-    temp[, geometry := NULL ]
+    temp[, geometry := NULL]
   }
   rm(act_ME)
   cat(" .")
 
   data <- plyr::rbind.fill(data, temp)
 }
+cat("\n")
 
 ## remove tmp dir
 unlink(tempfl, recursive = T)
@@ -304,8 +306,14 @@ unlink(tempfl, recursive = T)
 ## Prepare for import to DB  ---------------------------------------------------
 data <- data.table(data)
 attr(data$time, "tzone") <- "UTC"
-data[, year  := as.integer(year(time))  ]
-data[, month := as.integer(month(time)) ]
+data[, year  := as.integer(year(time)) ]
+data[, month := as.integer(month(time))]
+
+## fix some data types
+class(data$HR)   <- "double"
+class(data$TEMP) <- "double"
+class(data$CAD)  <- "double"
+
 
 ## Drop NA columns
 data <- remove_empty(data, which = "cols")
@@ -314,9 +322,6 @@ data <- remove_empty(data, which = "cols")
 DB <- DB |> full_join(data) |> compute()
 
 
-## fix some data types
-class(data$HR)   <- "double"
-class(data$TEMP) <- "double"
 
 ## check duplicate names
 which(names(data) == names(data)[(duplicated(names(data)))])
@@ -327,6 +332,95 @@ if (nrow(data) < 10) {
   stop("You don't want to write")
 }
 
+if (file.exists(DATASET)) {
+
+  ##  Check and create for new variables in the db  ----------------------------
+  newvars <- names(data)[!names(data) %in% names(DB)]
+  if (length(newvars) > 0) {
+    cat("New variables detected!\n")
+
+    for (varname in newvars) {
+      vartype <- typeof(data[[varname]])
+      cat("--", varname, ":", vartype, "--\n")
+
+      if (!is.character(varname))               stop()
+      if (is.null(vartype) | vartype == "NULL") stop()
+
+      if (!any(names(DB) == varname)) {
+        cat("Create column: ", varname, "\n")
+        ## create template var
+        a  <- NA; class(a) <- vartype
+        DB <- DB |> mutate( !!varname := a) |> compute()
+
+        ## Rewrite the whole dataset?
+        write_dataset(DB,
+                      DATASET,
+                      compression            = DBcodec,
+                      compression_level      = DBlevel,
+                      format                 = "parquet",
+                      partitioning           = c("year", "month"),
+                      existing_data_behavior = "overwrite",
+                      hive_style             = F)
+      } else {
+        warning(paste0("Variable exist: ", varname, "\n", " !! IGNORING VARIABLE INIT !!"))
+      }
+      ## Reopen the dataset
+      DB <- open_dataset(DATASET,
+                         format            = "parquet",
+                         partitioning      = c("year", "month"),
+                         unify_schemas     = T)
+    }
+  }
+
+
+  ##  Add new data to the DB  --------------------------------------------------
+  DB <- DB |> full_join(data) |> compute()
+
+
+
+  ## write only new months within data
+  new <- unique(data[, year, month])
+  setorder(new, year, month)
+
+  cat("\nUpdate:", "\n")
+  cat(paste(" ", new$year, new$month),sep = "\n")
+
+  write_dataset(DB |> filter(year %in% new$year & month %in% new$month),
+                DATASET,
+                compression            = DBcodec,
+                compression_level      = DBlevel,
+                format                 = "parquet",
+                partitioning           = c("year", "month"),
+                existing_data_behavior = "delete_matching",
+                hive_style             = F)
+
+  ## report lines files and dates
+  new_rows  <- unlist(DB |> tally() |> collect())
+  new_files <- unlist(DB |> select(file) |> distinct() |> count() |> collect())
+  new_days  <- unlist(DB |> select(time) |> mutate(time = as.Date(time)) |> distinct() |> count() |> collect())
+  new_vars  <- length(names(DB))
+
+  cat("\n")
+  cat("New rows:   ", new_rows  - db_rows , "\n")
+  cat("New files:  ", new_files - db_files, "\n")
+  cat("New days:   ", new_days  - db_days , "\n")
+  cat("New vars:   ", new_vars  - db_vars , "\n")
+  cat("\n")
+  cat("Total rows: ", new_rows,  "\n")
+  cat("Total files:", new_files, "\n")
+  cat("Total days: ", new_days,  "\n")
+  cat("Total vars: ", new_vars,  "\n")
+  cat("Size:       ", sum(file.size(list.files(DATASET, recursive = T, full.names = T))) / 2^20, "Mb\n")
+
+  DB |> select(file, dataset) |> distinct() |> select(dataset) |> collect() |> table()
+
+  # ## check uniqueness?
+  # stopifnot(
+  #   DB |> select(!parsed) |> distinct() |> count() |> collect() ==
+  #     DB |> count() |> collect()
+  # )
+
+}
 
 
 
