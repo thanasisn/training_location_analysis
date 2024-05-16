@@ -193,7 +193,9 @@ for (af in files) {
   laps(res)
   events(res)
   file_id(res)
-  hrv(res)
+
+  dd <- hrv(res)
+
   monitoring(res)
 
   listMessageTypes(res)
