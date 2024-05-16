@@ -153,24 +153,51 @@ library(stringdist)
 
 rowvec <- names(DB)[nchar(names(DB)) > 1]
 colvec <- names(DB)[nchar(names(DB)) > 1]
-md     <- stringdistmatrix(rowvec, colvec, method = "osa")
+md     <- stringdistmatrix(tolower(rowvec), tolower(colvec), method = "osa")
+md     <- stringdistmatrix(tolower(rowvec), tolower(colvec), method = "lv")
+md     <- stringdistmatrix(tolower(rowvec), tolower(colvec), method = "dl")
+md     <- stringdistmatrix(tolower(rowvec), tolower(colvec), method = "lcs")
+md     <- stringdistmatrix(tolower(rowvec), tolower(colvec), method = "hamming")
+md     <- stringdistmatrix(tolower(rowvec), tolower(colvec), method = "qgram")
+md     <- stringdistmatrix(tolower(rowvec), tolower(colvec), method = "cosine")
+md     <- stringdistmatrix(tolower(rowvec), tolower(colvec), method = "jaccard")
+md     <- stringdistmatrix(tolower(rowvec), tolower(colvec), method = "jw")
+md     <- stringdistmatrix(tolower(rowvec), tolower(colvec), method = "soundex")
 
-md[lower.tri(md, diag = T)] <- NA
 
-res <- data.frame()
-for (i in 1:nrow(md)) {
-  for (j in 1:ncol(md)) {
-    if (!is.na(md[i,j])) {
-      # cat(paste(md[i,j], rowvec[i], colvec[j], "\n" ))
-      res <- rbind(
-        res,
-        cbind(md[i,j], rowvec[i], colvec[j]) )
+{
+  md[lower.tri(md, diag = T)] <- NA
+  res <- data.frame()
+  for (i in 1:nrow(md)) {
+    for (j in 1:ncol(md)) {
+      if (!is.na(md[i,j])) {
+        res <- rbind(
+          res,
+          cbind(md[i,j], rowvec[i], colvec[j]) )
+      }
     }
   }
+  res$V1 <- as.numeric(res$V1)
+  head((res <- res[order(res$V1), ]), 25)
 }
-res$V1 <- as.numeric(res$V1)
 
-(res <- res[order(res$V1), ])
+dd <- DB |>
+  select(file, Performance.Condition, PERFORMANCECONDITION) |>
+  filter(!is.na(Performance.Condition) | !is.na(Performance.Condition)) |>
+  distinct() |> collect()
+
+
+##  Remove a var
+# stop("")
+# write_dataset(DB |> select(!fill),
+#               DATASET,
+#               compression            = DBcodec,
+#               compression_level      = DBlevel,
+#               format                 = "parquet",
+#               partitioning           = c("year", "month"),
+#               existing_data_behavior = "delete_matching",
+#               hive_style             = F)
+
 
 
 
