@@ -148,6 +148,30 @@ if (nrow(removefl) > 0){
 
 
 
+library(stringdist)
+
+
+rowvec <- names(DB)[nchar(names(DB)) > 1]
+colvec <- names(DB)[nchar(names(DB)) > 1]
+md     <- stringdistmatrix(rowvec, colvec, method = "osa")
+
+md[lower.tri(md, diag = T)] <- NA
+
+res <- data.frame()
+for (i in 1:nrow(md)) {
+  for (j in 1:ncol(md)) {
+    if (!is.na(md[i,j])) {
+      # cat(paste(md[i,j], rowvec[i], colvec[j], "\n" ))
+      res <- rbind(
+        res,
+        cbind(md[i,j], rowvec[i], colvec[j]) )
+    }
+  }
+}
+res$V1 <- as.numeric(res$V1)
+
+(res <- res[order(res$V1), ])
+
 
 
 #' **END**
