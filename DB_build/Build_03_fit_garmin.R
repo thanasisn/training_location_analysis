@@ -131,7 +131,7 @@ if (file.exists(DATASET)) {
 ## Read a set of files each time  --------------------------------------------
 
 ## read some files for testing
-nts   <- 1
+nts   <- 2
 files <- unique(c(head(  files$file, nts),
                   sample(files$file, nts*2, replace = T),
                   tail(  files$file, nts*3)))
@@ -223,27 +223,15 @@ for (af in files) {
   ## getMessagesByType(res, "file_creator")
 
 
-  names(re)
-
-
-  agrep("speed", names(DB), value = T)
-
-  DB |> select(RCAD) |> distinct() |> collect()
-
-  DB |> select(Sport)    |> distinct() |> collect()
-  DB |> select(SubSport) |> distinct() |> collect()
-
   if (!is.null(re)) {
     names(re)[names(re) == "timestamp"]          <- "time"
     names(re)[names(re) == "heart_rate"]         <- "HR"
     names(re)[names(re) == "temperature"]        <- "TEMP"
     names(re)[names(re) == "cadence"]            <- "CAD"
     names(re)[names(re) == "fractional_cadence"] <- "CADfract"
-
+    names(re)[names(re) == "enhanced_altitude"]  <- "ALT"
     act_ME <- cbind(act_ME, re)
   }
-
-
 
   if (!is.null(sp)) {
     act_ME <- cbind(act_ME,
@@ -258,90 +246,87 @@ for (af in files) {
                     Device = paste(fi$manufacturer, fi$product))
     rm(fi)
   }
-
+  cat(" .")
 
   ## get all the data?
 
+  ## process location
+  wewant <- c("time",
+              "position_lat",
+              "position_long",
+              "ALT")
+  temp <- act_ME
 
-  # wewant <- c("timestamp",
-  #             "position_lat",
-  #             "position_long",
-  #             "enhanced_altitude")
-  #
-  # if (!all(wewant %in% names(re))) {
-  #   cat("NO LOCATION")
-  #   stop("we want to parse!!")
-  #   next()
-  # }
-  #
-  # ## keep only 4D
-  # re <- re[, ..wewant]
-  #
-  # ## clean data
-  # re <- re[!(position_lat >= 179.9 & position_long  >= 179.9), ]
-  #
-  # ## add type
-  # sp <- getMessagesByType(res, message_type = "sport")
-  # re <- cbind(re, sp)
-  #
-  # names(re)[names(re) == "timestamp"]         <- "time"
-  # names(re)[names(re) == "enhanced_altitude"] <- "ALT"
-  #
-  # # temp <- st_as_sf(re,
-  # #                  coords = c("position_long", "position_lat","enhanced_altitude"))
-  #
-  # temp <- st_as_sf(re,
-  #                  coords = c("position_long", "position_lat"),
-  #                  crs = EPSG_WGS84)
-  #
-  # ## keep initial coordinates
-  # latlon <- st_coordinates(temp$geometry)
-  # latlon <- data.table(latlon)
-  # names(latlon)[names(latlon) == "X"] <- "X_LON"
-  # names(latlon)[names(latlon) == "Y"] <- "Y_LAT"
-  #
-  # ## add distance between points in meters
-  # temp$dist <- c(0, trackDistance(st_coordinates(temp$geometry), longlat = TRUE)) * 1000
-  #
-  # ## add time between points
-  # temp$timediff <- c(0, diff(temp$time))
-  #
-  # ## create speed
-  # temp <- temp |> mutate(kph = (dist/1000) / (timediff/3600)) |> collapse()
-  #
-  # # st_crs(EPSG)
-  # ## parse coordinates for process in meters
-  # temp   <- st_transform(temp, crs = EPSG_PMERC)
-  # trkcco <- st_coordinates(temp)
-  # temp   <- data.table(temp)
-  # temp$X <- unlist(trkcco[,1])
-  # temp$Y <- unlist(trkcco[,2])
-  # temp   <- cbind(temp, latlon)
-  # temp[, geometry := NULL ]
+  if (all(wewant %in% names(temp))) {
+    temp[position_lat  >= 179.99, position_lat  := NA]
+    temp[position_long >= 179.99, position_long := NA]
 
+    # temp <- st_as_sf(re,
+    #                  coords = c("position_long", "position_lat","enhanced_altitude"))
 
+    temp <- st_as_sf(re,
+                     coords = c("position_long", "position_lat"),
+                     crs = EPSG_WGS84)
 
-  data <- plyr::rbind.fill(data, act_ME)
+    ## keep initial coordinates
+    latlon <- st_coordinates(temp$geometry)
+    latlon <- data.table(latlon)
+    names(latlon)[names(latlon) == "X"] <- "X_LON"
+    names(latlon)[names(latlon) == "Y"] <- "Y_LAT"
+
+    ## add distance between points in meters
+    temp$dist <- c(0, trackDistance(st_coordinates(temp$geometry), longlat = TRUE)) * 1000
+
+    ## add time between points
+    temp$timediff <- c(0, diff(temp$time))
+
+    ## create speed
+    temp <- temp |> mutate(kph = (dist/1000) / (timediff/3600)) |> collapse()
+
+    ## parse coordinates for process in meters
+    temp   <- st_transform(temp, crs = EPSG_PMERC)
+    trkcco <- st_coordinates(temp)
+    temp   <- data.table(temp)
+    temp$X <- unlist(trkcco[,1])
+    temp$Y <- unlist(trkcco[,2])
+    temp   <- cbind(temp, latlon)
+    temp[, geometry := NULL ]
+  }
+  rm(act_ME)
+  cat(" .")
+
+  data <- plyr::rbind.fill(data, temp)
 }
 
-stop()
+## remove tmp dir
+unlink(tempfl, recursive = T)
 
-## set data types as in arrow
+## Prepare for import to DB  ---------------------------------------------------
+data <- data.table(data)
 attr(data$time, "tzone") <- "UTC"
 data[, year  := as.integer(year(time))  ]
 data[, month := as.integer(month(time)) ]
 
+## Drop NA columns
+data <- remove_empty(data, which = "cols")
+
 ## merge all rows
 DB <- DB |> full_join(data) |> compute()
 
-cat("\nNew rows:", nrow(DB) - db_rows, "\n")
+
+## fix some data types
+class(data$HR)   <- "double"
+class(data$TEMP) <- "double"
+
+## check duplicate names
+which(names(data) == names(data)[(duplicated(names(data)))])
+stopifnot(!any(duplicated(names(data))))
 
 
+if (nrow(data) < 10) {
+  stop("You don't want to write")
+}
 
-
-
-## remove tmp dir
-unlink(tempfl, recursive = T)
 
 
 
