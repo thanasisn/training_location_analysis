@@ -184,13 +184,25 @@ md     <- stringdistmatrix(tolower(rowvec), tolower(colvec), method = "soundex")
   head((res <- res[order(res$V1), ]), 25)
 }
 
+
+agrep("Device", names(DB), ignore.case = T, value = T)
+
+
+
 DB |>
-  select(file, pwr_PowerInWatts) |>
-  filter(!is.na(pwr_PowerInWatts) ) |>
+  select(file, DEVICETYPE) |>
+  filter(!is.na(DEVICETYPE) ) |>
   distinct() |>
-  # select(sat) |>
-  collect()
-# |> table()
+  select(DEVICETYPE) |>
+  collect() |> table()
+
+DB |>
+  select(file, Device) |>
+  filter(!is.na(Device) ) |>
+  distinct() |>
+  select(Device) |>
+  collect() |> table()
+
 
 
 ##  Remove a var

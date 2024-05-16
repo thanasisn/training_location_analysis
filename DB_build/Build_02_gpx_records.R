@@ -185,7 +185,6 @@ for (af in files) {
 
   ### Prepare meta data  -------------------------------------------------------
   act_ME <- data.table(
-    ## get general meta data
     file       = af,
     filemtime  = as.POSIXct(floor_date(file.mtime(af), unit = "seconds"), tz = "UTC"),
     dataset    = dataname

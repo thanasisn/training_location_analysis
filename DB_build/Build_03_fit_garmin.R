@@ -69,6 +69,7 @@ if (!interactive()) {
 #+ echo=F, include=T
 library(FITfileR,   quietly = TRUE, warn.conflicts = FALSE)
 library(data.table, quietly = TRUE, warn.conflicts = FALSE)
+library(lubridate,  quietly = TRUE, warn.conflicts = FALSE)
 library(arrow,      quietly = TRUE, warn.conflicts = FALSE)
 library(tibble,     quietly = TRUE, warn.conflicts = FALSE)
 library(dplyr,      quietly = TRUE, warn.conflicts = FALSE)
@@ -95,17 +96,21 @@ BATCH      <- 100
 ## unzip in memory
 tempfl     <- "/dev/shm/tmp_fit/"
 
+
+##  Get files to parse
 files <- list.files(path       = FIT_DIR,
                     pattern    = "*.zip",
                     recursive  = T,
                     full.names = T)
 
-expfiles <- expfiles[!grepl("Indoor_Cycling",  expfiles, ignore.case = T)]
-expfiles <- expfiles[!grepl("Yoga",            expfiles, ignore.case = T)]
-expfiles <- expfiles[!grepl("Strength",        expfiles, ignore.case = T)]
-expfiles <- expfiles[!grepl("Copy_of_Morning", expfiles, ignore.case = T)]
+files <- files[!grepl("Indoor_Cycling",  files, ignore.case = T)]
+files <- files[!grepl("Yoga",            files, ignore.case = T)]
+files <- files[!grepl("Strength",        files, ignore.case = T)]
+files <- files[!grepl("Copy_of_Morning", files, ignore.case = T)]
 
-stop()
+files <- data.table(file      = files,
+                    filemtime = floor_date(file.mtime(files), unit = "seconds"))
+
 
 ##  Open dataset  --------------------------------------------------------------
 if (file.exists(DATASET)) {
@@ -121,42 +126,39 @@ if (file.exists(DATASET)) {
   wehave <- DB |> select(file, filemtime) |> unique() |> collect() |> data.table()
 
   ##  Ignore files with the same name and mtime
-  file <- file[ !(file %in% wehave$file & filemtime %in% wehave$filemtime) ]
+  files <- files[ !(file %in% wehave$file & filemtime %in% wehave$filemtime) ]
 } else {
-  stop("NO DB!")
+  stop("NO DB, run #01 !\n")
 }
 
 
 
 
-## work on new files only
-wehave   <- DB |> select(filename) |> unique() |> collect()
-expfiles <- expfiles[!expfiles %in% wehave$filename]
-expfiles <- sort(expfiles)
+## Read a set of files each time  --------------------------------------------
+
+## read some files for testing
+nts   <- 5
+files <- unique(c(head(  files$file, nts),
+                  sample(files$file, nts*2, replace = T),
+                  tail(  files$file, nts*3)))
+
+# files <- unique(c(tail(file$file, 50)))
 
 
-if (length(expfiles) < 1) {
-  cat("\nNO NEW FILES TO PARSE!!\n\n")
-  stop()
-} else {
-  cat("\nFiles to parse:", length(expfiles), "\n\n")
+
+if (length(files) < 1) {
+  stop("Nothing to do!")
 }
 
 
-## test
-# expfiles <- head(expfiles, n = 10)
 
-if (length(expfiles) > BATCH) {
-  # expfiles <- sample(expfiles, BATCH)
-  expfiles <- head(expfiles, BATCH)
-}
 
 gather <- data.table()
-for (af in expfiles) {
-  cat(af,"\n")
+for (af in files) {
+  cat("\n", basename(af), ".")
 
   ## check for fit file
-  stopifnot( nrow(unzip(af, list = T)) == 1 )
+  stopifnot(nrow(unzip(af, list = T)) == 1)
   if (!grepl(".fit$", unzip(af, list = T)$Name)) {
     cat("SKIP not a fit file!!:", basename(af), "\n")
     next()
@@ -167,6 +169,14 @@ for (af in expfiles) {
   from   <- paste0(tempfl, unzip(af, list = T)$Name)
   target <- paste0(tempfl, "temp.fit")
   file.rename(from, target)
+
+
+  ### Prepare meta data  -------------------------------------------------------
+  act_ME <- data.table(
+    file       = af,
+    filemtime  = as.POSIXct(floor_date(file.mtime(af), unit = "seconds"), tz = "UTC"),
+    dataset    = "fit Garmin"
+  )
 
   res <- readFitFile(target)
 
@@ -185,7 +195,8 @@ for (af in expfiles) {
               "enhanced_altitude")
 
   if (!all(wewant %in% names(re))) {
-    cat("SKIP no location data!!:", basename(af), "\n")
+    cat("NO LOCATION")
+    stop("we want to parse!!")
     next()
   }
 
@@ -200,7 +211,7 @@ for (af in expfiles) {
   re <- cbind(re, sp)
 
   names(re)[names(re) == "timestamp"]         <- "time"
-  names(re)[names(re) == "enhanced_altitude"] <- "Z"
+  names(re)[names(re) == "enhanced_altitude"] <- "ALT"
 
   # temp <- st_as_sf(re,
   #                  coords = c("position_long", "position_lat","enhanced_altitude"))
@@ -212,67 +223,48 @@ for (af in expfiles) {
   ## keep initial coordinates
   latlon <- st_coordinates(temp$geometry)
   latlon <- data.table(latlon)
-  names(latlon)[names(latlon) == "X"] <- "Xdeg"
-  names(latlon)[names(latlon) == "Y"] <- "Ydeg"
+  names(latlon)[names(latlon) == "X"] <- "X_LON"
+  names(latlon)[names(latlon) == "Y"] <- "Y_LAT"
 
   ## add distance between points in meters
   temp$dist <- c(0, trackDistance(st_coordinates(temp$geometry), longlat = TRUE)) * 1000
 
   ## add time between points
-  temp$timediff <- 0
-  for (i in 2:nrow(temp)) {
-    temp$timediff[i] <- difftime( temp$time[i], temp$time[i-1] )
-  }
+  temp$timediff <- c(0, diff(temp$time))
 
   ## create speed
   temp <- temp |> mutate(kph = (dist/1000) / (timediff/3600)) |> collapse()
 
   # st_crs(EPSG)
   ## parse coordinates for process in meters
-  temp   <- st_transform(temp, crs = EPSG)
+  temp   <- st_transform(temp, crs = EPSG_PMERC)
   trkcco <- st_coordinates(temp)
   temp   <- data.table(temp)
   temp$X <- unlist(trkcco[,1])
   temp$Y <- unlist(trkcco[,2])
   temp   <- cbind(temp, latlon)
+  temp[, geometry := NULL ]
 
-  re <- temp[, .(time,
-                 X, Y, Z,
-                 Xdeg, Ydeg,
-                 dist, timediff, kph,
-                 filename  = af,
-                 F_mtime   = file.mtime(af),
-                 name,
-                 sport,
-                 sub_sport,
-                 source    = file_id(res)$product
-  )]
-
-  re[, year  := year(time)  ]
+  ## there is DEVICETYPE and Device
+  re <- cbind(act_ME, temp, Device = file_id(res)$product)
 
   gather <- rbind(gather, re)
 }
 
+stop()
+
 ## set data types as in arrow
 attr(gather$time, "tzone") <- "UTC"
-gather[, year  := as.integer(year) ]
+gather[, year  := as.integer(year(time))  ]
+gather[, month := as.integer(month(time)) ]
 
 ## merge all rows
 DB <- DB |> full_join(gather) |> compute()
 
 cat("\nNew rows:", nrow(DB) - db_rows, "\n")
 
-## write only new months within gather
-new <- unique(gather[, year])
 
-write_dataset(DB |> filter(year %in% new),
-              DATASET,
-              compression            = "brotli",
-              compression_level      = 5,
-              format                 = "parquet",
-              partitioning           = c("year"),
-              existing_data_behavior = "delete_matching",
-              hive_style             = F)
+
 
 
 ## remove tmp dir
