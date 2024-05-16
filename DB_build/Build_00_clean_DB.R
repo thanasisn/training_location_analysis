@@ -185,11 +185,12 @@ md     <- stringdistmatrix(tolower(rowvec), tolower(colvec), method = "soundex")
 }
 
 DB |>
-  select(file, Data) |>
-  filter(!is.na(Data) ) |>
+  select(file, pwr_PowerInWatts) |>
+  filter(!is.na(pwr_PowerInWatts) ) |>
   distinct() |>
-  select(Data) |>
-  collect() |> table()
+  # select(sat) |>
+  collect()
+# |> table()
 
 
 ##  Remove a var

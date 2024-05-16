@@ -77,6 +77,7 @@ library(jsonlite,   quietly = TRUE, warn.conflicts = FALSE)
 library(lubridate,  quietly = TRUE, warn.conflicts = FALSE)
 library(sf,         quietly = TRUE, warn.conflicts = FALSE)
 library(trip,       quietly = TRUE, warn.conflicts = FALSE)
+library(rlang,      quietly = TRUE, warn.conflicts = FALSE)
 
 # devtools::install_github("trackerproject/trackeR")
 library(trackeR,    quietly = TRUE, warn.conflicts = FALSE)
@@ -89,6 +90,8 @@ source("./DEFINITIONS.R")
 lock(paste0(DATASET, ".lock"))
 
 ##  List files to parse  -------------------------------------------------------
+
+## gpx from general repo
 file <- list.files(path        = GPX_DIR,
                    pattern     = "*.gpx",
                    recursive   = TRUE,
@@ -100,10 +103,17 @@ file <- grep("\\/Points\\/", file, invert = T, value = T)
 file <- grep("\\/Plans\\/",  file, invert = T, value = T)
 
 
-## TODO add gpx from Goldencheetah imports
+## gpx from Goldencheetah imports
+file2 <- list.files(path        = IMP_DIR,
+                    pattern     = "*.gpx",
+                    recursive   = TRUE,
+                    ignore.case = TRUE,
+                    full.names  = TRUE)
 
-file <- data.table(file      = file,
-                   filemtime = floor_date(file.mtime(file), unit = "seconds"))
+## combine all
+files <- c(file, file2)
+files <- data.table(file      = files,
+                    filemtime = floor_date(file.mtime(files), unit = "seconds"))
 
 
 
@@ -131,7 +141,7 @@ if (file.exists(DATASET)) {
   wehave <- DB |> select(file, filemtime) |> unique() |> collect() |> data.table()
 
   ##  Ignore files with the same name and mtime
-  file <- file[ !(file %in% wehave$file & filemtime %in% wehave$filemtime) ]
+  files <- files[ !(file %in% wehave$file & filemtime %in% wehave$filemtime) ]
 } else {
   stop("NO DB, run #01 !\n")
 }
@@ -143,10 +153,10 @@ if (file.exists(DATASET)) {
 ## Read a set of files each time  --------------------------------------------
 
 ## read some files for testing
-nts   <- 6
-files <- unique(c(head(  file$file, nts),
-                  sample(file$file, nts*2, replace = T),
-                  tail(  file$file, nts*3)))
+nts   <- 5
+files <- unique(c(head(  files$file, nts),
+                  sample(files$file, nts*2, replace = T),
+                  tail(  files$file, nts*3)))
 
 # files <- unique(c(tail(file$file, 50)))
 
@@ -157,8 +167,6 @@ if (length(files) < 1) {
 }
 
 
-
-
 data <- data.table()
 for (af in files) {
   cat("\n", basename(af), ".")
@@ -166,13 +174,25 @@ for (af in files) {
   # samples <- read_sf( gunzip(af, remove = FALSE, temporary = TRUE, skip = TRUE ),
   #                  layer = "track_points")
 
+  ## set data category
+  if        (grepl(path.expand(IMP_DIR), af)) {
+    dataname <- "gpx GoldenCheetah"
+  } else if (grepl(path.expand(GPX_DIR), af)) {
+    dataname <- "gpx repo"
+  } else {
+    dataname <- "uknown"
+  }
+
   ### Prepare meta data  -------------------------------------------------------
   act_ME <- data.table(
     ## get general meta data
     file       = af,
     filemtime  = as.POSIXct(floor_date(file.mtime(af), unit = "seconds"), tz = "UTC"),
-    dataset    = "gpx repo"
+    dataset    = dataname
   )
+
+
+
 
   ## get geo data mainly
   spat <- remove_empty(
@@ -302,14 +322,17 @@ names(data)[names(data) == "temperature"] <- "TEMP"
 # DB |> filter(!is.na(ALT)) |> head() |> collect()
 
 ## fix some types
-class(data$HR)                   <- "double"
+class(data$HR)   <- "double"
+class(data$TEMP) <- "double"
 
 
 # which(names(data) == names(data)[(duplicated(names(data)))])
 # stopifnot(!any(duplicated(names(data))))
 
 
-
+if (nrow(data) < 10) {
+  stop("Dont want to write")
+}
 
 if (file.exists(DATASET)) {
 

@@ -77,6 +77,7 @@ library(jsonlite,   quietly = TRUE, warn.conflicts = FALSE)
 library(lubridate,  quietly = TRUE, warn.conflicts = FALSE)
 library(sf,         quietly = TRUE, warn.conflicts = FALSE)
 library(trip,       quietly = TRUE, warn.conflicts = FALSE)
+library(rlang,      quietly = TRUE, warn.conflicts = FALSE)
 
 # devtools::install_github("trackerproject/trackeR")
 library(trackeR,    quietly = TRUE, warn.conflicts = FALSE)
@@ -123,7 +124,7 @@ if (file.exists(DATASET)) {
 ## Read a set of files each time  --------------------------------------------
 
 ## read some files for testing
-nts   <- 6
+nts   <- 5
 files <- unique(c(head(  file$file, nts),
                   sample(file$file, nts*2, replace = T),
                   tail(  file$file, nts*3)))
@@ -150,7 +151,7 @@ expect <- c("STARTTIME",
 
 data <- data.table()
 for (af in files) {
-  cat(basename(af), "..")
+  cat(basename(af), ".")
 
   # readJSON(af)
 
@@ -171,14 +172,14 @@ for (af in files) {
     file       = af,
     filemtime  = as.POSIXct(floor_date(file.mtime(af), unit = "seconds"), tz = "UTC"),
     time       = as.POSIXct(strptime(jride$STARTTIME, "%Y/%m/%d %T", tz = "UTC")),
-    dataset    = "GoldenCheetah",
+    dataset    = "json GoldenCheetah",
     RECINTSECS = jride$RECINTSECS,
     DEVICETYPE = jride$DEVICETYPE,
     IDENTIFIER = jride$IDENTIFIER,
     ## get metrics
     data.frame(jride$TAGS)
   )
-
+  cat(" .")
 
   ## drop some data
   act_ME$Month    <- NULL
@@ -197,7 +198,7 @@ for (af in files) {
     act_ME    <- cbind(act_ME, ss)
     rm(ss)
   }
-
+  cat(" .")
 
   ## Prepare records  ----------------------------------------------------------
   if (!is.null(jride$SAMPLES)) {
@@ -245,8 +246,9 @@ for (af in files) {
 
       samples[, grep("^geometry$", colnames(samples)) := NULL]
     }
+    cat(" .")
   } else {
-    cat(" NO LOCATION ..")
+    cat(" NO LOCATION .")
   }
 
 
@@ -271,6 +273,7 @@ for (af in files) {
       samples <- merge(samples, da, all = T)
     }
     rm(da)
+    cat(" .")
 
     ##  For multiple var table
     if (all(c("VALUES", "UNITS")  %in% names(xdata))) {
@@ -297,6 +300,7 @@ for (af in files) {
       }
       rm(res, dd, da, nn)
     }
+    cat(" .")
 
     # ##  For single var table
     # if (all(c("VALUE", "UNIT")  %in% names(xdata))) {
@@ -318,7 +322,7 @@ for (af in files) {
 
   data <- plyr::rbind.fill(data, act_ME)
 }
-
+cat("\n")
 
 ## Convert to numbers  ---------------------------------------------------------
 for (avar in names(data)) {
@@ -362,6 +366,8 @@ class(data$CAD)                  <- "double"
 class(data$OVRD_total_kcalories) <- "double"
 class(data$Spike.Time)           <- "double"
 class(data$PERFORMANCECONDITION) <- "double"
+class(data$HR)                   <- "double"
+class(data$TEMP)                 <- "double"
 
 which(names(data) == names(data)[(duplicated(names(data)))])
 stopifnot(!any(duplicated(names(data))))
