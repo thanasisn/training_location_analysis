@@ -14,13 +14,12 @@
 
 ## Quality check of location data
 
-- [ ] Deduplicate
-- [ ] Clean
-- [ ] Remove errors
-- [ ] Columns to combine
+- [ ] Deduplicate points
+- [ ] Remove errors in records
+- [ ] Combine columns/variables
 
-## Apply analysis from my other projects
+## Merge analysis from my other projects
 
-- [ ] Training analysis
-- [ ] Location analysis
+- [ ] [Training analysis](https://github.com/thanasisn/IStillBreakStuff/tree/main/training_analysis)
+- [ ] [Location analysis](https://github.com/thanasisn/IStillBreakStuff/tree/main/gpx_tools/gpx_db)
 
