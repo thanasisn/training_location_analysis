@@ -70,9 +70,13 @@ library(arrow,      quietly = TRUE, warn.conflicts = FALSE)
 library(dplyr,      quietly = TRUE, warn.conflicts = FALSE)
 library(filelock,   quietly = TRUE, warn.conflicts = FALSE)
 library(lubridate,  quietly = TRUE, warn.conflicts = FALSE)
+library(stringdist, quietly = TRUE, warn.conflicts = FALSE)
+library(rlang,      quietly = TRUE, warn.conflicts = FALSE)
 
 source("./DEFINITIONS.R")
 
+## make sure only one parser is this working??
+lock <- lock(paste0(DATASET, ".lock"))
 
 ##  Open dataset  --------------------------------------------------------------
 if (!file.exists(DATASET)) {
@@ -148,7 +152,6 @@ if (nrow(removefl) > 0){
 
 
 
-library(stringdist)
 
 
 rowvec <- names(DB)[nchar(names(DB)) > 1]
@@ -181,10 +184,12 @@ md     <- stringdistmatrix(tolower(rowvec), tolower(colvec), method = "soundex")
   head((res <- res[order(res$V1), ]), 25)
 }
 
-dd <- DB |>
-  select(file, Performance.Condition, PERFORMANCECONDITION) |>
-  filter(!is.na(Performance.Condition) | !is.na(Performance.Condition)) |>
-  distinct() |> collect()
+DB |>
+  select(file, Data) |>
+  filter(!is.na(Data) ) |>
+  distinct() |>
+  select(Data) |>
+  collect() |> table()
 
 
 ##  Remove a var

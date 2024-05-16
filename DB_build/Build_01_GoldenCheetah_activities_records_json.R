@@ -51,7 +51,7 @@ knitr::opts_chunk$set(fig.align  = "center" )
 knitr::opts_chunk$set(cache      =  FALSE   )  ## !! breaks calculations
 knitr::opts_chunk$set(fig.pos    = '!h'     )
 
-###TODO explore this tools
+## TODO explore this tools
 # library(cycleRtools)
 # https://github.com/trackerproject/trackeR
 
@@ -104,7 +104,7 @@ if (file.exists(DATASET)) {
                      unify_schemas = T)
   db_rows  <- unlist(DB |> tally() |> collect())
   db_files <- unlist(DB |> select(file) |> distinct() |> count() |> collect())
-  db_days  <- unlist(DB |> select(time) |> mutate(time= as.Date(time)) |> distinct() |> count() |> collect())
+  db_days  <- unlist(DB |> select(time) |> mutate(time = as.Date(time)) |> distinct() |> count() |> collect())
   db_vars  <- length(names(DB))
 
   ##  Check what to do
@@ -269,7 +269,6 @@ for (af in files) {
       names(da) <- c(paste0(vname[ii], ".", vunit[ii]), "time")
 
       samples <- merge(samples, da, all = T)
-      # stopifnot(!any(duplicated(names(samples))))
     }
     rm(da)
 
@@ -295,7 +294,6 @@ for (af in files) {
                           dd)
 
         samples <- merge(samples, res, all = T)
-        # stopifnot(!any(duplicated(names(samples))))
       }
       rm(res, dd, da, nn)
     }
@@ -314,12 +312,11 @@ for (af in files) {
   if (exists("samples")) {
     ## remove duplicate column
     act_ME[, time := NULL]
-    act_ME <- cbind(act_ME, samples, fill = TRUE)
-    # stopifnot(!any(duplicated(names(act_ME))))
+    act_ME <- cbind(act_ME, samples)
   }
   rm(samples)
 
-  data <- rbind(data, act_ME, fill = TRUE)
+  data <- plyr::rbind.fill(data, act_ME)
 }
 
 
@@ -350,6 +347,13 @@ names(data) <- sub("\\.$",  "", names(data))
 names(data) <- sub("[ ]+$", "", names(data))
 names(data) <- sub("^[ ]+", "", names(data))
 
+## disambiguate names
+names(data)[names(data) == "Performance.Condition"] <- "Activity.Performance.Condition"
+
+if (any(names(data) == "fill")) stop("This should not happened")
+
+
+
 ## fix some types
 class(data$HR)                   <- "double"
 class(data$FIELD_135)            <- "double"
@@ -362,6 +366,9 @@ class(data$PERFORMANCECONDITION) <- "double"
 which(names(data) == names(data)[(duplicated(names(data)))])
 stopifnot(!any(duplicated(names(data))))
 
+if (nrow(data) < 10) {
+  stop("Dont want to write")
+}
 
 if (file.exists(DATASET)) {
 
@@ -407,9 +414,6 @@ if (file.exists(DATASET)) {
   ##  Add new data to the DB  --------------------------------------------------
   DB <- DB |> full_join(data) |> compute()
 
-  data$filemtime
-  class(DB$filemtime)
-  DB
 
   ## write only new months within data
   new <- unique(data[, year, month])
@@ -430,7 +434,7 @@ if (file.exists(DATASET)) {
   ## report lines files and dates
   new_rows  <- unlist(DB |> tally() |> collect())
   new_files <- unlist(DB |> select(file) |> distinct() |> count() |> collect())
-  new_days  <- unlist(DB |> select(time) |> mutate(time= as.Date(time)) |> distinct() |> count() |> collect())
+  new_days  <- unlist(DB |> select(time) |> mutate(time = as.Date(time)) |> distinct() |> count() |> collect())
   new_vars  <- length(names(DB))
 
   cat("\n")
@@ -444,6 +448,7 @@ if (file.exists(DATASET)) {
   cat("Total days: ",  new_days, "\n")
   cat("Total vars: ",  new_vars, "\n")
 
+  DB |> select(file, dataset) |> distinct() |> select(dataset) |> collect() |> table()
   # ## check uniqueness?
   # stopifnot(
   #   DB |> select(!parsed) |> distinct() |> count() |> collect() ==
@@ -452,6 +457,7 @@ if (file.exists(DATASET)) {
 
 } else {
   ## Initialize database manually  ---------------------------------------------
+  cat("\nInitialize new data base\n")
   write_dataset(data,
                 DATASET,
                 compression            = DBcodec,

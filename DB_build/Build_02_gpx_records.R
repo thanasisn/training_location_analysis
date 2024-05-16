@@ -1,7 +1,7 @@
 #!/usr/bin/env Rscript
 # /* Copyright (C) 2022 Athanasios Natsis <natsisphysicist@gmail.com> */
 #' ---
-#' title:         "Parse gpx file to database"
+#' title:         "Parse gpx files to database"
 #' author:
 #'   - Natsis Athanasios^[natsisphysicist@gmail.com]
 #'
@@ -51,7 +51,7 @@ knitr::opts_chunk$set(fig.align  = "center" )
 knitr::opts_chunk$set(cache      =  FALSE   )  ## !! breaks calculations
 knitr::opts_chunk$set(fig.pos    = '!h'     )
 
-###TODO explore this tools
+## TODO explore this tools
 # library(cycleRtools)
 # https://github.com/trackerproject/trackeR
 
@@ -273,7 +273,7 @@ for (af in files) {
 
   cat(" .")
 
-  data <- rbind(data, samples, fill = T)
+  data <- plyr::rbind.fill(data, samples)
   rm(samples)
 }
 cat("\n")
@@ -296,17 +296,17 @@ names(data)[names(data) == "heart_rate"]  <- "HR"
 names(data)[names(data) == "temperature"] <- "TEMP"
 
 
-grep("heart",names(DB), ignore.case = T, value = T)
-grep("alt",names(DB), ignore.case = T, value = T)
+# grep("heart",names(DB), ignore.case = T, value = T)
+# grep("alt",names(DB), ignore.case = T, value = T)
 
-DB |> filter(!is.na(ALT)) |> head() |> collect()
+# DB |> filter(!is.na(ALT)) |> head() |> collect()
 
 ## fix some types
 class(data$HR)                   <- "double"
 
 
-which(names(data) == names(data)[(duplicated(names(data)))])
-stopifnot(!any(duplicated(names(data))))
+# which(names(data) == names(data)[(duplicated(names(data)))])
+# stopifnot(!any(duplicated(names(data))))
 
 
 
@@ -322,7 +322,7 @@ if (file.exists(DATASET)) {
       vartype <- typeof(data[[varname]])
       cat("--", varname, ":", vartype, "--\n")
 
-      if (!is.character(varname)) stop()
+      if (!is.character(varname))               stop()
       if (is.null(vartype) | vartype == "NULL") stop()
 
       if (!any(names(DB) == varname)) {
@@ -355,9 +355,7 @@ if (file.exists(DATASET)) {
   ##  Add new data to the DB  --------------------------------------------------
   DB <- DB |> full_join(data) |> compute()
 
-  data$filemtime
-  class(DB$parsed)
-  DB
+
 
   ## write only new months within data
   new <- unique(data[, year, month])
