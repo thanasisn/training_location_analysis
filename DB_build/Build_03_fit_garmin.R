@@ -145,8 +145,6 @@ if (length(files) < 1) {
 }
 
 
-
-
 data <- data.table()
 for (af in files) {
   cat("\n", basename(af), ".")
@@ -158,7 +156,7 @@ for (af in files) {
     next()
   }
 
-  ## create temo file in memory
+  ## create temporary file in memory
   unzip(af, unzip(af, list = T)$Name, overwrite = T, exdir = tempfl)
   from   <- paste0(tempfl, unzip(af, list = T)$Name)
   target <- paste0(tempfl, "temp.fit")
@@ -225,9 +223,42 @@ for (af in files) {
   ## getMessagesByType(res, "file_creator")
 
 
+  names(re)
 
 
-  stop("combine")
+  agrep("speed", names(DB), value = T)
+
+  DB |> select(RCAD) |> distinct() |> collect()
+
+  DB |> select(Sport)    |> distinct() |> collect()
+  DB |> select(SubSport) |> distinct() |> collect()
+
+  if (!is.null(re)) {
+    names(re)[names(re) == "timestamp"]          <- "time"
+    names(re)[names(re) == "heart_rate"]         <- "HR"
+    names(re)[names(re) == "temperature"]        <- "TEMP"
+    names(re)[names(re) == "cadence"]            <- "CAD"
+    names(re)[names(re) == "fractional_cadence"] <- "CADfract"
+
+    act_ME <- cbind(act_ME, re)
+  }
+
+
+
+  if (!is.null(sp)) {
+    act_ME <- cbind(act_ME,
+                    Name     = sp$name,
+                    Sport    = sp$sport,
+                    SubSport = sp$sub_sport)
+    rm(sp)
+  }
+
+  if (!is.null(fi)) {
+    act_ME <- cbind(act_ME,
+                    Device = paste(fi$manufacturer, fi$product))
+    rm(fi)
+  }
+
 
   ## get all the data?
 
@@ -287,12 +318,10 @@ for (af in files) {
   # temp$Y <- unlist(trkcco[,2])
   # temp   <- cbind(temp, latlon)
   # temp[, geometry := NULL ]
-  #
-  #
-  # ## there is DEVICETYPE and Device
-  # re <- cbind(act_ME, temp, Device = file_id(res)$product)
-  #
-  # data <- rbind(data, re)
+
+
+
+  data <- plyr::rbind.fill(data, act_ME)
 }
 
 stop()
