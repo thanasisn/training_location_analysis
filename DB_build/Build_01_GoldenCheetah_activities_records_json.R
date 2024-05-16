@@ -358,6 +358,18 @@ if (any(names(data) == "fill")) stop("This should not happened")
 
 
 
+
+
+if (!is.null(data$DEVICETYPE) | all(data$Device == data$DEVICETYPE)) {
+  data[, DEVICETYPE := NULL]
+} else {
+  stop("Fix device type\n")
+}
+
+
+
+stop()
+
 ## fix some types
 class(data$HR)                   <- "double"
 class(data$FIELD_135)            <- "double"
