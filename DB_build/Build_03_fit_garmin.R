@@ -171,9 +171,8 @@ for (af in files) {
     dataset    = "fit Garmin"
   )
 
-  ##  Open filer for read
+  ##  Open file for read
   res <- readFitFile(target)
-
   cat(" .")
 
   ## gather all points
@@ -228,7 +227,7 @@ for (af in files) {
 
 
 
-
+  stop("combine")
 
   ## get all the data?
 
