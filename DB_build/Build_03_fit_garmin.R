@@ -58,8 +58,9 @@ knitr::opts_chunk$set(fig.pos    = '!h'     )
 #+ echo=FALSE, include=TRUE
 ## __ Set environment  ---------------------------------------------------------
 Sys.setenv(TZ = "UTC")
-Script.Name <- "./parse_garmin_fit.R"
 tic <- Sys.time()
+Script.Name <- "./parse_garmin_fit.R"
+
 
 if (!interactive()) {
   dir.create("../runtime/", showWarnings = F, recursive = T)
@@ -90,7 +91,7 @@ lock(paste0(DATASET, ".lock"))
 tempfl     <- "/dev/shm/tmp_fit/"
 
 
-##  Get files to parse
+##  List files to parse  -------------------------------------------------------
 files <- list.files(path       = FIT_DIR,
                     pattern    = "*.zip",
                     recursive  = T,
@@ -130,7 +131,7 @@ if (file.exists(DATASET)) {
 ## Read a set of files each time  --------------------------------------------
 
 ## read some files for testing
-nts   <- 2
+nts   <- 1
 files <- unique(c(head(  files$file, nts),
                   sample(files$file, nts*2, replace = T),
                   tail(  files$file, nts*3)))
@@ -146,7 +147,7 @@ if (length(files) < 1) {
 
 
 
-gather <- data.table()
+data <- data.table()
 for (af in files) {
   cat("\n", basename(af), ".")
 
@@ -163,7 +164,6 @@ for (af in files) {
   target <- paste0(tempfl, "temp.fit")
   file.rename(from, target)
 
-
   ### Prepare meta data  -------------------------------------------------------
   act_ME <- data.table(
     file       = af,
@@ -171,118 +171,140 @@ for (af in files) {
     dataset    = "fit Garmin"
   )
 
+  ##  Open filer for read
   res <- readFitFile(target)
 
-  stop("get all the data?")
+  cat(" .")
 
   ## gather all points
-  re <- records(res)
-
-
   re <- records(res) |>
     bind_rows() |>
     arrange(timestamp) |>
     data.table()
 
-  if (!is_tibble(re)) {
-    re <- rbindlist(re, fill = T)
-  } else {
-    re <- data.table(re)
-  }
+  stopifnot(nrow(re)>0)
 
-  laps(res)
-  events(res)
-  file_id(res)
+  # if (!is_tibble(re)) {
+  #   re <- rbindlist(re, fill = T)
+  # } else {
+  #   re <- data.table(re)
+  # }
 
-  dd <- hrv(res)
+  ## details for the activity
+  # la <- laps(res)
 
-  monitoring(res)
+  ## events during the activity
+  # ev <- events(res)
 
-  listMessageTypes(res)
-  getMessagesByType(res, "activity")
-  getMessagesByType(res, "device_settings")
-  getMessagesByType(res, "gps_metadata")
-  getMessagesByType(res, "event")
-  getMessagesByType(res, "sport")
-  getMessagesByType(res, "session")
-  getMessagesByType(res, "file_creator")
+  ## device id
+  fi <- file_id(res)
+
+  ## unknown how to parse
+  ## Could create hrv stats directly
+  # dd <- hrv(res)
+  # if (!is.null(dd)) {
+  #   if (nrow(dd)>0) {
+  #     stop("ddd")
+  #   }
+  # }
+
+  # monitoring(res)
+
+  # listMessageTypes(res)
+  # getMessagesByType(res, "activity")
+  # getMessagesByType(res, "zones_target")
+  # getMessagesByType(res, "user_profile")
+  # getMessagesByType(res, "device_settings")
+  # getMessagesByType(res, "gps_metadata")
+  # getMessagesByType(res, "event")
+  sp <- getMessagesByType(res, "sport")
+
+  ## more details like laps
+  # se <- getMessagesByType(res, "session")
+
+  ## harware/soft version
+  ## getMessagesByType(res, "file_creator")
+
+
+
+
 
 
   ## get all the data?
 
 
-  wewant <- c("timestamp",
-              "position_lat",
-              "position_long",
-              "enhanced_altitude")
-
-  if (!all(wewant %in% names(re))) {
-    cat("NO LOCATION")
-    stop("we want to parse!!")
-    next()
-  }
-
-  ## keep only 4D
-  re <- re[, ..wewant]
-
-  ## clean data
-  re <- re[!(position_lat >= 179.9 & position_long  >= 179.9), ]
-
-  ## add type
-  sp <- getMessagesByType(res, message_type = "sport")
-  re <- cbind(re, sp)
-
-  names(re)[names(re) == "timestamp"]         <- "time"
-  names(re)[names(re) == "enhanced_altitude"] <- "ALT"
-
+  # wewant <- c("timestamp",
+  #             "position_lat",
+  #             "position_long",
+  #             "enhanced_altitude")
+  #
+  # if (!all(wewant %in% names(re))) {
+  #   cat("NO LOCATION")
+  #   stop("we want to parse!!")
+  #   next()
+  # }
+  #
+  # ## keep only 4D
+  # re <- re[, ..wewant]
+  #
+  # ## clean data
+  # re <- re[!(position_lat >= 179.9 & position_long  >= 179.9), ]
+  #
+  # ## add type
+  # sp <- getMessagesByType(res, message_type = "sport")
+  # re <- cbind(re, sp)
+  #
+  # names(re)[names(re) == "timestamp"]         <- "time"
+  # names(re)[names(re) == "enhanced_altitude"] <- "ALT"
+  #
+  # # temp <- st_as_sf(re,
+  # #                  coords = c("position_long", "position_lat","enhanced_altitude"))
+  #
   # temp <- st_as_sf(re,
-  #                  coords = c("position_long", "position_lat","enhanced_altitude"))
-
-  temp <- st_as_sf(re,
-                   coords = c("position_long", "position_lat"),
-                   crs = EPSG_WGS84)
-
-  ## keep initial coordinates
-  latlon <- st_coordinates(temp$geometry)
-  latlon <- data.table(latlon)
-  names(latlon)[names(latlon) == "X"] <- "X_LON"
-  names(latlon)[names(latlon) == "Y"] <- "Y_LAT"
-
-  ## add distance between points in meters
-  temp$dist <- c(0, trackDistance(st_coordinates(temp$geometry), longlat = TRUE)) * 1000
-
-  ## add time between points
-  temp$timediff <- c(0, diff(temp$time))
-
-  ## create speed
-  temp <- temp |> mutate(kph = (dist/1000) / (timediff/3600)) |> collapse()
-
-  # st_crs(EPSG)
-  ## parse coordinates for process in meters
-  temp   <- st_transform(temp, crs = EPSG_PMERC)
-  trkcco <- st_coordinates(temp)
-  temp   <- data.table(temp)
-  temp$X <- unlist(trkcco[,1])
-  temp$Y <- unlist(trkcco[,2])
-  temp   <- cbind(temp, latlon)
-  temp[, geometry := NULL ]
-
-
-  ## there is DEVICETYPE and Device
-  re <- cbind(act_ME, temp, Device = file_id(res)$product)
-
-  gather <- rbind(gather, re)
+  #                  coords = c("position_long", "position_lat"),
+  #                  crs = EPSG_WGS84)
+  #
+  # ## keep initial coordinates
+  # latlon <- st_coordinates(temp$geometry)
+  # latlon <- data.table(latlon)
+  # names(latlon)[names(latlon) == "X"] <- "X_LON"
+  # names(latlon)[names(latlon) == "Y"] <- "Y_LAT"
+  #
+  # ## add distance between points in meters
+  # temp$dist <- c(0, trackDistance(st_coordinates(temp$geometry), longlat = TRUE)) * 1000
+  #
+  # ## add time between points
+  # temp$timediff <- c(0, diff(temp$time))
+  #
+  # ## create speed
+  # temp <- temp |> mutate(kph = (dist/1000) / (timediff/3600)) |> collapse()
+  #
+  # # st_crs(EPSG)
+  # ## parse coordinates for process in meters
+  # temp   <- st_transform(temp, crs = EPSG_PMERC)
+  # trkcco <- st_coordinates(temp)
+  # temp   <- data.table(temp)
+  # temp$X <- unlist(trkcco[,1])
+  # temp$Y <- unlist(trkcco[,2])
+  # temp   <- cbind(temp, latlon)
+  # temp[, geometry := NULL ]
+  #
+  #
+  # ## there is DEVICETYPE and Device
+  # re <- cbind(act_ME, temp, Device = file_id(res)$product)
+  #
+  # data <- rbind(data, re)
 }
 
 stop()
 
 ## set data types as in arrow
-attr(gather$time, "tzone") <- "UTC"
-gather[, year  := as.integer(year(time))  ]
-gather[, month := as.integer(month(time)) ]
+attr(data$time, "tzone") <- "UTC"
+data[, year  := as.integer(year(time))  ]
+data[, month := as.integer(month(time)) ]
 
 ## merge all rows
-DB <- DB |> full_join(gather) |> compute()
+DB <- DB |> full_join(data) |> compute()
 
 cat("\nNew rows:", nrow(DB) - db_rows, "\n")
 

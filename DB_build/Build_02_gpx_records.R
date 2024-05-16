@@ -82,15 +82,12 @@ library(rlang,      quietly = TRUE, warn.conflicts = FALSE)
 # devtools::install_github("trackerproject/trackeR")
 library(trackeR,    quietly = TRUE, warn.conflicts = FALSE)
 
-
-
 source("./DEFINITIONS.R")
 
 ## make sure only one parser is this working??
 lock(paste0(DATASET, ".lock"))
 
 ##  List files to parse  -------------------------------------------------------
-
 ## gpx from general repo
 file <- list.files(path        = GPX_DIR,
                    pattern     = "*.gpx",
@@ -114,17 +111,6 @@ file2 <- list.files(path        = IMP_DIR,
 files <- c(file, file2)
 files <- data.table(file      = files,
                     filemtime = floor_date(file.mtime(files), unit = "seconds"))
-
-
-
-# file <- file[ file %in% c(
-#   "/home/athan/GISdata/GPX/2015_FDOR/Tracks/2015-09-12_walk.gpx",
-#   "/home/athan/GISdata/GPX/2024/2024-01-01_673db2fee649f600.gpx",
-#   "/home/athan/GISdata/GPX/2024/2024-01-03_1131.gpx"
-# ), ]
-
-
-
 
 
 ##  Open dataset  --------------------------------------------------------------
@@ -153,7 +139,7 @@ if (file.exists(DATASET)) {
 ## Read a set of files each time  --------------------------------------------
 
 ## read some files for testing
-nts   <- 5
+nts   <- 6
 files <- unique(c(head(  files$file, nts),
                   sample(files$file, nts*2, replace = T),
                   tail(  files$file, nts*3)))
@@ -189,6 +175,7 @@ for (af in files) {
     filemtime  = as.POSIXct(floor_date(file.mtime(af), unit = "seconds"), tz = "UTC"),
     dataset    = dataname
   )
+  cat(" .")
 
 
 
@@ -199,8 +186,6 @@ for (af in files) {
             layer = "track_points"),
     which = "cols")
 
-  # st_read(af,
-  #         layer = "track_points")
 
   suppressWarnings({
     spat$gpxtpx_TrackPointExtension <- NULL
@@ -245,18 +230,6 @@ for (af in files) {
   } else {
     samples <- cbind(spat, act_ME)
   }
-
-
-
-  # res <- merge(spat, samples, all = T)
-  # res <- cbind(res, act_ME)
-  # names(teast) %in% names(res)
-  # names(res) %in% names(teast)
-  # which(names(teast) == "time")
-  # which(teast[,5] != teast[, 7])
-  # which(names(gather) == "time")
-  # gather[ which(gather[,5] != gather[, 7]) , ]
-  # gather[ time == time.1, ]
 
 
   ## This assumes that dates in file are correct.......
@@ -306,6 +279,8 @@ data[, month := as.integer(month(time)) ]
 
 ## Drop NA columns
 data <- remove_empty(data, which = "cols")
+data$track_seg_point_id <- NULL
+data$dgpsid             <- NULL
 
 ## fix names
 names(data) <- sub("\\.$",  "", names(data))
@@ -320,17 +295,17 @@ names(data)[names(data) == "temperature"] <- "TEMP"
 
 # DB |> filter(!is.na(ALT)) |> head() |> collect()
 
-## fix some types
+## fix some data types
 class(data$HR)   <- "double"
 class(data$TEMP) <- "double"
 
-
-# which(names(data) == names(data)[(duplicated(names(data)))])
-# stopifnot(!any(duplicated(names(data))))
+## check duplicate names
+which(names(data) == names(data)[(duplicated(names(data)))])
+stopifnot(!any(duplicated(names(data))))
 
 
 if (nrow(data) < 10) {
-  stop("Dont want to write")
+  stop("You don't want to write")
 }
 
 if (file.exists(DATASET)) {
@@ -402,15 +377,15 @@ if (file.exists(DATASET)) {
   new_vars  <- length(names(DB))
 
   cat("\n")
-  cat("New rows:   ",  new_rows - db_rows , "\n")
+  cat("New rows:   ", new_rows  - db_rows , "\n")
   cat("New files:  ", new_files - db_files, "\n")
-  cat("New days:   ",  new_days - db_days , "\n")
-  cat("New vars:   ",  new_vars - db_vars , "\n")
+  cat("New days:   ", new_days  - db_days , "\n")
+  cat("New vars:   ", new_vars  - db_vars , "\n")
   cat("\n")
-  cat("Total rows: ",  new_rows, "\n")
+  cat("Total rows: ", new_rows,  "\n")
   cat("Total files:", new_files, "\n")
-  cat("Total days: ",  new_days, "\n")
-  cat("Total vars: ",  new_vars, "\n")
+  cat("Total days: ", new_days,  "\n")
+  cat("Total vars: ", new_vars,  "\n")
   cat("Size:       ", sum(file.size(list.files(DATASET, recursive = T, full.names = T))) / 2^20, "Mb\n")
 
   DB |> select(file, dataset) |> distinct() |> select(dataset) |> collect() |> table()

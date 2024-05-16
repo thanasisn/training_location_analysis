@@ -90,12 +90,12 @@ source("./DEFINITIONS.R")
 lock(paste0(DATASET, ".lock"))
 
 ##  List files to parse  -------------------------------------------------------
-file <- list.files(path       = GC_DIR,
+files <- list.files(path       = GC_DIR,
                    pattern    = "*.json",
                    full.names = TRUE)
 
-file <- data.table(file      = file,
-                   filemtime = floor_date(file.mtime(file), unit = "seconds"))
+files <- data.table(file      = files,
+                    filemtime = floor_date(file.mtime(files), unit = "seconds"))
 
 
 ##  Open dataset  --------------------------------------------------------------
@@ -112,7 +112,7 @@ if (file.exists(DATASET)) {
   wehave <- DB |> select(file, filemtime) |> unique() |> collect() |> data.table()
 
   ##  Ignore files with the same name and mtime
-  file <- file[ !(file %in% wehave$file & filemtime %in% wehave$filemtime) ]
+  files <- files[ !(file %in% wehave$file & filemtime %in% wehave$filemtime) ]
 } else {
   cat("WILL INIT DB!\n")
 }
@@ -124,10 +124,10 @@ if (file.exists(DATASET)) {
 ## Read a set of files each time  --------------------------------------------
 
 ## read some files for testing
-nts   <- 5
-files <- unique(c(head(  file$file, nts),
-                  sample(file$file, nts*2, replace = T),
-                  tail(  file$file, nts*3)))
+nts   <- 6
+files <- unique(c(head(  files$file, nts),
+                  sample(files$file, nts*2, replace = T),
+                  tail(  files$file, nts*3)))
 
 # files <- unique(c(tail(file$file, 50)))
 
@@ -151,7 +151,7 @@ expect <- c("STARTTIME",
 
 data <- data.table()
 for (af in files) {
-  cat(basename(af), ".")
+  cat("\n", basename(af), ".")
 
   # readJSON(af)
 
@@ -168,7 +168,6 @@ for (af in files) {
 
   ### Prepare meta data  -------------------------------------------------------
   act_ME <- data.table(
-    ## get general meta data
     file       = af,
     filemtime  = as.POSIXct(floor_date(file.mtime(af), unit = "seconds"), tz = "UTC"),
     time       = as.POSIXct(strptime(jride$STARTTIME, "%Y/%m/%d %T", tz = "UTC")),
@@ -310,7 +309,7 @@ for (af in files) {
   } else {
     cat(" NO XDATA")
   }
-  cat("\n")
+  cat(" .")
 
   ## Combine metadata with records
   if (exists("samples")) {
@@ -318,9 +317,9 @@ for (af in files) {
     act_ME[, time := NULL]
     act_ME <- cbind(act_ME, samples)
   }
-  rm(samples)
 
   data <- plyr::rbind.fill(data, act_ME)
+  rm(samples)
 }
 cat("\n")
 
@@ -344,7 +343,7 @@ data[, year  := as.integer(year(time))  ]
 data[, month := as.integer(month(time)) ]
 
 ## Drop NA columns
-data <- janitor::remove_empty(data, which = "cols")
+data <- remove_empty(data, which = "cols")
 
 ## fix names
 names(data) <- sub("\\.$",  "", names(data))
@@ -395,7 +394,7 @@ if (file.exists(DATASET)) {
       vartype <- typeof(data[[varname]])
       cat("--", varname, ":", vartype, "--\n")
 
-      if (!is.character(varname)) stop()
+      if (!is.character(varname))               stop()
       if (is.null(vartype) | vartype == "NULL") stop()
 
       if (!any(names(DB) == varname)) {
