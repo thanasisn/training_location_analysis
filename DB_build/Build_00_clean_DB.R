@@ -187,6 +187,17 @@ md     <- stringdistmatrix(tolower(rowvec), tolower(colvec), method = "cosine")
 
 # agrep("Device", names(DB), ignore.case = T, value = T)
 
+DB |> select(file, Sport, SubSport) |>
+  distinct() |>
+  select(!file) |> collect() |> table()
+
+DB |> select(file, SubSport, Name) |>
+  distinct() |>
+  select(!file) |> collect() |> table()
+
+DB |> select(file, SubSport, dataset) |>
+  distinct() |>
+  select(!file) |> collect() |> table()
 
 
 cat("Size:", sum(file.size(list.files(DATASET, recursive = T, full.names = T))) / 2^20, "Mb\n")

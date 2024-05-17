@@ -256,12 +256,13 @@ for (af in files) {
               "position_lat",
               "position_long",
               "ALT")
-  act_ME[position_lat  >= 179.99, position_lat  := NA]
-  act_ME[position_long >= 179.99, position_long := NA]
 
-  temp <- act_ME[!is.na(position_lat) & !is.na(position_long)]
 
-  if (all(wewant %in% names(temp))) {
+  if (all(wewant %in% names(act_ME))) {
+    act_ME[position_lat  >= 179.99, position_lat  := NA]
+    act_ME[position_long >= 179.99, position_long := NA]
+
+    temp <- act_ME[!is.na(position_lat) & !is.na(position_long)]
 
     # temp <- st_as_sf(re,
     #                  coords = c("position_long", "position_lat","enhanced_altitude"))
@@ -293,12 +294,12 @@ for (af in files) {
     temp$Y <- unlist(trkcco[,2])
     temp   <- cbind(temp, latlon)
     temp[, geometry := NULL]
-  }
-  temp <- merge(act_ME, temp, all = T)
-  rm(act_ME)
-  cat(" .")
 
-  data <- plyr::rbind.fill(data, temp)
+    act_ME <- merge(act_ME, temp, all = T)
+    rm(temp)
+  }
+  cat(" .")
+  data <- plyr::rbind.fill(data, act_ME)
 }
 cat("\n")
 
