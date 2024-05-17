@@ -157,15 +157,19 @@ files <- list.files(path       = IMP_DIR,
                     recursive  = T,
                     full.names = T)
 
+
+ccc<-c()
 for (af in files) {
-
-  paste("atool -l ", af)
+  nnn <- system(paste("file ", af, "| cut -d',' -f2"), intern = TRUE)
+  ext <- gsub("\"" ,"", sub("^.*\\.", "", nnn))
+  cat(af, ext,"\n")
+  ccc<-c(ccc,ext)
 }
+table(ccc)
 
 
 
-
-
+exit()
 
 if (length(files) < 1) {
   stop("Nothing to do!")
