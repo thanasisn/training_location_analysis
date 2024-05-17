@@ -81,6 +81,7 @@ library(sf,         quietly = TRUE, warn.conflicts = FALSE)
 library(trip,       quietly = TRUE, warn.conflicts = FALSE)
 library(filelock,   quietly = TRUE, warn.conflicts = FALSE)
 library(rlang,      quietly = TRUE, warn.conflicts = FALSE)
+library(R.utils,    quietly = TRUE, warn.conflicts = FALSE)
 
 source("./DEFINITIONS.R")
 
@@ -157,9 +158,8 @@ files <- list.files(path       = IMP_DIR,
                     full.names = T)
 
 for (af in files) {
-  unzip(af, list = T)$Name
-  gzfile(af)
-  untar(af, )
+
+  paste("atool -l ", af)
 }
 
 
