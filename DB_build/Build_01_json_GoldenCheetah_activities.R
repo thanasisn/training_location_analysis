@@ -149,9 +149,11 @@ expect <- c("STARTTIME",
             "SAMPLES",
             "XDATA")
 
+cn   <- 1
 data <- data.table()
 for (af in files) {
-  cat("\n", basename(af), ".")
+  cat(sprintf("\n%3s %3s %s %s", cn, length(files), basename(af), "."))
+  cn <- cn + 1
 
   # readJSON(af)
 

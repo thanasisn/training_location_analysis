@@ -152,10 +152,11 @@ if (length(files) < 1) {
   stop("Nothing to do!")
 }
 
-
+cn   <- 1
 data <- data.table()
 for (af in files) {
-  cat("\n", basename(af), ".")
+  cat(sprintf("\n%3s %3s %s %s", cn, length(files), basename(af), "."))
+  cn <- cn + 1
 
   # samples <- read_sf( gunzip(af, remove = FALSE, temporary = TRUE, skip = TRUE ),
   #                  layer = "track_points")

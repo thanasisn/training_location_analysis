@@ -157,18 +157,24 @@ if (nrow(removefl) > 0){
 
 rowvec <- names(DB)[nchar(names(DB)) > 1]
 colvec <- names(DB)[nchar(names(DB)) > 1]
-md     <- stringdistmatrix(tolower(rowvec), tolower(colvec), method = "osa")
-md     <- stringdistmatrix(tolower(rowvec), tolower(colvec), method = "lv")
-md     <- stringdistmatrix(tolower(rowvec), tolower(colvec), method = "dl")
-md     <- stringdistmatrix(tolower(rowvec), tolower(colvec), method = "lcs")
-md     <- stringdistmatrix(tolower(rowvec), tolower(colvec), method = "hamming")
-md     <- stringdistmatrix(tolower(rowvec), tolower(colvec), method = "qgram")
-md     <- stringdistmatrix(tolower(rowvec), tolower(colvec), method = "jaccard")
-md     <- stringdistmatrix(tolower(rowvec), tolower(colvec), method = "jw")
-# md     <- stringdistmatrix(tolower(rowvec), tolower(colvec), method = "soundex")
-md     <- stringdistmatrix(tolower(rowvec), tolower(colvec), method = "cosine")
 
-{
+algo <- c(
+  # "osa"    ,
+  # "lv"     ,
+  # "dl"     ,
+  "lcs"    ,
+  # "hamming",
+  # "qgram"  ,
+  "jaccard",
+  "jw"     ,
+  # "soundex",
+  "cosine"
+)
+
+for (al in algo) {
+  cat("\n", toupper(al), "\n\n")
+  md     <- stringdistmatrix(tolower(rowvec), tolower(colvec), method = al)
+
   md[lower.tri(md, diag = T)] <- NA
   res <- data.frame()
   for (i in 1:nrow(md)) {
@@ -176,12 +182,16 @@ md     <- stringdistmatrix(tolower(rowvec), tolower(colvec), method = "cosine")
       if (!is.na(md[i,j])) {
         res <- rbind(
           res,
-          cbind(md[i,j], rowvec[i], colvec[j]) )
+          cbind(md[i,j], rowvec[i], colvec[j]))
       }
     }
   }
   res$V1 <- as.numeric(res$V1)
-  head((res <- res[order(res$V1), ]), 25)
+  res    <- res[order(res$V1), ]
+  row.names(res) <- NULL
+  res    <- res[, c("V2", "V3")]
+
+  print(head(res, 25))
 }
 
 

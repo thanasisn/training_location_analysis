@@ -145,10 +145,11 @@ if (length(files) < 1) {
   stop("Nothing to do!")
 }
 
-
+cn   <- 1
 data <- data.table()
 for (af in files) {
-  cat("\n", basename(af), ".")
+  cat(sprintf("\n%3s %3s %s %s", cn, length(files), basename(af), "."))
+  cn <- cn + 1
 
   ## check for fit file
   stopifnot(nrow(unzip(af, list = T)) == 1)
@@ -302,6 +303,7 @@ for (af in files) {
   }
   cat(" .")
   data <- plyr::rbind.fill(data, act_ME)
+  if (any(names(data) == "position_lat")) stop()
 }
 cat("\n")
 
@@ -319,14 +321,10 @@ class(data$HR)   <- "double"
 class(data$TEMP) <- "double"
 class(data$CAD)  <- "double"
 
-if (any(names(data) == "position_lat")) stop()
-
 ## Drop NA columns
 data <- remove_empty(data, which = "cols")
 
-## merge all rows
-DB <- DB |> full_join(data) |> compute()
-
+if (any(names(data) == "position_lat")) stop()
 
 ## check duplicate names
 which(names(data) == names(data)[(duplicated(names(data)))])
@@ -377,13 +375,11 @@ if (file.exists(DATASET)) {
     }
   }
 
-
   ##  Add new data to the DB  --------------------------------------------------
   DB <- DB |> full_join(data) |> compute()
 
-
-
   ## write only new months within data
+  # data[, .N, by = .(year, month) ]
   new <- unique(data[, year, month])
   setorder(new, year, month)
 
