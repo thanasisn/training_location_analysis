@@ -295,6 +295,8 @@ for (af in files) {
     temp   <- cbind(temp, latlon)
     temp[, geometry := NULL]
 
+    act_ME$position_lat  <- NULL
+    act_ME$position_long <- NULL
     act_ME <- merge(act_ME, temp, all = T)
     rm(temp)
   }
@@ -317,6 +319,7 @@ class(data$HR)   <- "double"
 class(data$TEMP) <- "double"
 class(data$CAD)  <- "double"
 
+if (any(names(data) == "position_lat")) stop()
 
 ## Drop NA columns
 data <- remove_empty(data, which = "cols")

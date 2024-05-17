@@ -199,6 +199,18 @@ DB |> select(file, SubSport, dataset) |>
   distinct() |>
   select(!file) |> collect() |> table()
 
+DB |> select(file, SubSport, dataset, Sport, Name) |>
+  distinct() |>
+  group_by(Name, SubSport) |>
+  tally() |> collect()
+
+
+# DB |> select(file, position_lat, dataset) |>
+#   filter(!is.na(position_lat)) |>
+#   select(!position_lat) |>
+#   group_by(file, dataset) |>
+#   tally() |> collect()
+
 
 cat("Size:", sum(file.size(list.files(DATASET, recursive = T, full.names = T))) / 2^20, "Mb\n")
 
