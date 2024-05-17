@@ -154,7 +154,8 @@ for (af in files) {
   ## check for fit file
   stopifnot(nrow(unzip(af, list = T)) == 1)
   if (!grepl(".fit$", unzip(af, list = T)$Name)) {
-    cat("SKIP not a fit file!!:", basename(af), "\n")
+    cat(" SKIP not a fit file!! ")
+    cat(last(last(strsplit(unzip(af, list = T)$Name, "\\."))))
     next()
   }
 
@@ -166,9 +167,10 @@ for (af in files) {
 
   ### Prepare meta data  -------------------------------------------------------
   act_ME <- data.table(
-    file       = af,
-    filemtime  = as.POSIXct(floor_date(file.mtime(af), unit = "seconds"), tz = "UTC"),
-    dataset    = "fit Garmin"
+    file      = af,
+    filemtime = as.POSIXct(floor_date(file.mtime(af), unit = "seconds"), tz = "UTC"),
+    parsed    = as.POSIXct(floor_date(Sys.time(),     unit = "seconds"), tz = "UTC"),
+    dataset   = "fit Garmin"
   )
 
   ##  Open file for read

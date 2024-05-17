@@ -172,9 +172,10 @@ for (af in files) {
 
   ### Prepare meta data  -------------------------------------------------------
   act_ME <- data.table(
-    file       = af,
-    filemtime  = as.POSIXct(floor_date(file.mtime(af), unit = "seconds"), tz = "UTC"),
-    dataset    = dataname
+    file      = af,
+    filemtime = as.POSIXct(floor_date(file.mtime(af), unit = "seconds"), tz = "UTC"),
+    parsed    = as.POSIXct(floor_date(Sys.time(),     unit = "seconds"), tz = "UTC"),
+    dataset   = dataname
   )
   cat(" .")
 

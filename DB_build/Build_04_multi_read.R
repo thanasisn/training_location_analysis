@@ -1,7 +1,7 @@
 #!/usr/bin/env Rscript
 # /* Copyright (C) 2022 Athanasios Natsis <natsisphysicist@gmail.com> */
 #' ---
-#' title:         "Golden Cheetah read activities summary directly from individual files"
+#' title:         "Read Garmin Fit files"
 #' author:
 #'   - Natsis Athanasios^[natsisphysicist@gmail.com]
 #'
@@ -39,7 +39,7 @@
 
 #+ echo=F, include=T
 
-#### Golden Cheetah read activities summary directly from individual files
+#### Read Garmin Fit files
 
 ## __ Document options  --------------------------------------------------------
 
@@ -55,12 +55,12 @@ knitr::opts_chunk$set(fig.pos    = '!h'     )
 # library(cycleRtools)
 # https://github.com/trackerproject/trackeR
 
-
 #+ echo=FALSE, include=TRUE
 ## __ Set environment  ---------------------------------------------------------
 Sys.setenv(TZ = "UTC")
 tic <- Sys.time()
-Script.Name <- "~/CODE/training_location_analysis/DB_build/Build_01_GoldenCheetah_activities_records_json.R"
+Script.Name <- "./parse_garmin_fit.R"
+
 
 if (!interactive()) {
   dir.create("../runtime/", showWarnings = F, recursive = T)
@@ -68,31 +68,44 @@ if (!interactive()) {
 }
 
 #+ echo=F, include=T
-library(arrow,      quietly = TRUE, warn.conflicts = FALSE)
+# remotes::install_github("grimbough/FITfileR")
+# https://msmith.de/FITfileR/articles/FITfileR.html
+library(FITfileR,   quietly = TRUE, warn.conflicts = FALSE)
 library(data.table, quietly = TRUE, warn.conflicts = FALSE)
-library(dplyr,      quietly = TRUE, warn.conflicts = FALSE)
-library(filelock,   quietly = TRUE, warn.conflicts = FALSE)
-library(janitor,    quietly = TRUE, warn.conflicts = FALSE)
-library(jsonlite,   quietly = TRUE, warn.conflicts = FALSE)
 library(lubridate,  quietly = TRUE, warn.conflicts = FALSE)
+library(arrow,      quietly = TRUE, warn.conflicts = FALSE)
+library(tibble,     quietly = TRUE, warn.conflicts = FALSE)
+library(janitor,    quietly = TRUE, warn.conflicts = FALSE)
+library(dplyr,      quietly = TRUE, warn.conflicts = FALSE)
 library(sf,         quietly = TRUE, warn.conflicts = FALSE)
 library(trip,       quietly = TRUE, warn.conflicts = FALSE)
+library(filelock,   quietly = TRUE, warn.conflicts = FALSE)
 library(rlang,      quietly = TRUE, warn.conflicts = FALSE)
-
-# devtools::install_github("trackerproject/trackeR")
-library(trackeR,    quietly = TRUE, warn.conflicts = FALSE)
-
-
 
 source("./DEFINITIONS.R")
 
 ## make sure only one parser is this working??
 lock(paste0(DATASET, ".lock"))
 
+
+## unzip in memory
+tempfl     <- "/dev/shm/tmp_fit/"
+
+
 ##  List files to parse  -------------------------------------------------------
-files <- list.files(path       = GC_DIR,
-                   pattern    = "*.json",
-                   full.names = TRUE)
+files <- list.files(path       = IMP_DIR,
+                    recursive  = T,
+                    full.names = T)
+
+print(table(sub("^.*\\.", "", basename(files))))
+
+files <- grep("\\.csv$", files, invert = T, value = T, ignore.case = T)
+files <- grep("\\.txt$", files, invert = T, value = T, ignore.case = T)
+
+## Ignore for now (may use my POLAr package) these are unique and original data.
+files <- grep("\\.hrm$", files, invert = T, value = T, ignore.case = T)
+
+print(table(sub("^.*\\.", "", basename(files))))
 
 files <- data.table(file      = files,
                     filemtime = floor_date(file.mtime(files), unit = "seconds"))
@@ -114,9 +127,8 @@ if (file.exists(DATASET)) {
   ##  Ignore files with the same name and mtime
   files <- files[ !(file %in% wehave$file & filemtime %in% wehave$filemtime) ]
 } else {
-  cat("WILL INIT DB!\n")
+  stop("NO DB, run #01 !\n")
 }
-
 
 
 
@@ -128,8 +140,30 @@ nts   <- 10
 files <- unique(c(head(  files$file, nts),
                   sample(files$file, nts*2, replace = T),
                   tail(  files$file, nts*3)))
+print(table(sub("^.*\\.", "", basename(files))))
+
 
 # files <- unique(c(tail(file$file, 50)))
+
+
+
+
+
+## test gz files
+
+files <- list.files(path       = IMP_DIR,
+                    pattern = "*.gz",
+                    recursive  = T,
+                    full.names = T)
+
+for (af in files) {
+  unzip(af, list = T)$Name
+  gzfile(af)
+  untar(af, )
+}
+
+
+
 
 
 
@@ -137,245 +171,185 @@ if (length(files) < 1) {
   stop("Nothing to do!")
 }
 
-
-## expected fields in GoldenCheeatah files
-expect <- c("STARTTIME",
-            "RECINTSECS",
-            "DEVICETYPE",
-            "OVERRIDES",
-            "IDENTIFIER",
-            "TAGS",
-            "INTERVALS",
-            "SAMPLES",
-            "XDATA")
-
+stop()
 cn   <- 1
 data <- data.table()
 for (af in files) {
   cat(sprintf("\n%3s %3s %s %s", cn, length(files), basename(af), "."))
   cn <- cn + 1
 
-  # readJSON(af)
+  ## check for fit file
+  stopifnot(nrow(unzip(af, list = T)) == 1)
+  if (!grepl(".fit$", unzip(af, list = T)))) {
+    cat(" SKIP not a fit file!! ")
+    cat(last(last(strsplit(unzip(af, list = T)$Name, "\\."))))
+    next()
+  }
 
-  jride <- fromJSON(af)$RIDE
-
-  ## check for new fields
-  stopifnot(all(names(jride) %in% expect))
-
-  # dfs <- names(jride)
-  # for (a in dfs) {
-  #   cat(a, length(jride[[a]]), "\n")
-  #   cat(a, class(jride[[a]]), "\n")
-  # }
+  ## create temporary file in memory
+  unzip(af, unzip(af, list = T)$Name, overwrite = T, exdir = tempfl)
+  from   <- paste0(tempfl, unzip(af, list = T)$Name)
+  target <- paste0(tempfl, "temp.fit")
+  file.rename(from, target)
 
   ### Prepare meta data  -------------------------------------------------------
   act_ME <- data.table(
-    file       = af,
-    filemtime  = as.POSIXct(floor_date(file.mtime(af), unit = "seconds"), tz = "UTC"),
-    parsed     = as.POSIXct(floor_date(Sys.time(),     unit = "seconds"), tz = "UTC"),
-    time       = as.POSIXct(strptime(jride$STARTTIME, "%Y/%m/%d %T", tz = "UTC")),
-    dataset    = "json GoldenCheetah",
-    RECINTSECS = jride$RECINTSECS,
-    DEVICETYPE = jride$DEVICETYPE,
-    IDENTIFIER = jride$IDENTIFIER,
-    ## get metrics
-    data.frame(jride$TAGS)
+    file      = af,
+    filemtime = as.POSIXct(floor_date(file.mtime(af), unit = "seconds"), tz = "UTC"),
+    parsed    = as.POSIXct(floor_date(Sys.time(),     unit = "seconds"), tz = "UTC"),
+    dataset   = "fit Garmin"
   )
+
+  ##  Open file for read
+  res <- readFitFile(target)
   cat(" .")
 
-  ## drop some data
-  act_ME$Month    <- NULL
-  act_ME$Weekday  <- NULL
-  act_ME$Year     <- NULL
-  act_ME$Filename <- NULL
+  ## gather all points
+  re <- records(res)   |>
+    bind_rows()        |>
+    arrange(timestamp) |>
+    data.table()
 
-  ## Assuming all data are from one person
-  act_ME$Athlete  <- NULL
+  stopifnot(nrow(re)>0)
+
+  # if (!is_tibble(re)) {
+  #   re <- rbindlist(re, fill = T)
+  # } else {
+  #   re <- data.table(re)
+  # }
+
+  ## details for the activity
+  # la <- laps(res)
+
+  ## events during the activity
+  # ev <- events(res)
+
+  ## device id
+  fi <- file_id(res)
+
+  ## unknown how to parse
+  ## Could create hrv stats directly
+  # dd <- hrv(res)
+  # if (!is.null(dd)) {
+  #   if (nrow(dd)>0) {
+  #     stop("ddd")
+  #   }
+  # }
+
+  # monitoring(res)
+
+  # listMessageTypes(res)
+  # getMessagesByType(res, "activity")
+  # getMessagesByType(res, "zones_target")
+  # getMessagesByType(res, "user_profile")
+  # getMessagesByType(res, "device_settings")
+  # getMessagesByType(res, "gps_metadata")
+  # getMessagesByType(res, "event")
+  sp <- getMessagesByType(res, "sport")
+
+  ## more details like laps
+  # se <- getMessagesByType(res, "session")
+
+  ## harware/soft version
+  ## getMessagesByType(res, "file_creator")
 
 
-  ## Read manual edited values  ------------------------------------------------
-  if (!is.null(jride$OVERRIDES)) {
-    ss        <- data.frame(t(diag(as.matrix(jride$OVERRIDES))))
-    names(ss) <- paste0("OVRD_", names(jride$OVERRIDES))
-    act_ME    <- cbind(act_ME, ss)
-    rm(ss)
-  }
-  cat(" .")
-
-  ## Prepare records  ----------------------------------------------------------
-  if (!is.null(jride$SAMPLES)) {
-    samples <- data.table(jride$SAMPLES)
-
-    ## create proper time
-    samples[, time := SECS + act_ME$time ]
-    samples[, SECS := NULL]
-
-    ## for available coordinates
-    wewant <- c("time", "LAT", "LON")
-    if (all(wewant %in% names(samples))) {
-
-      ## use 3d coordinates
-      # temp <- st_as_sf(re,
-      #                  coords = c("position_long", "position_lat","enhanced_altitude"))
-
-      ## use 2d coordinates
-      samples <- st_as_sf(samples,
-                          coords = c("LON", "LAT"),
-                          crs    = EPSG_WGS84)
-
-      ## keep initial coordinates
-      latlon <- st_coordinates(samples$geometry)
-      latlon <- data.table(latlon)
-      names(latlon)[names(latlon) == "X"] <- "X_LON"
-      names(latlon)[names(latlon) == "Y"] <- "Y_LAT"
-
-      ## 2d distance between points in meters
-      samples$dist_2D <- c(0, trackDistance(st_coordinates(samples$geometry), longlat = TRUE)) * 1000
-
-      ## add time between points
-      samples$timediff <- c(0, diff(samples$time))
-
-      ## create speed
-      samples <- samples |> mutate(kph_2D = (dist_2D/1000) / (timediff/3600)) |> collapse()
-
-      ## parse coordinates for process in meters
-      samples   <- st_transform(samples, crs = EPSG_PMERC)
-      trkcco    <- st_coordinates(samples)
-      samples   <- data.table(samples)
-      samples$X <- unlist(trkcco[,1])
-      samples$Y <- unlist(trkcco[,2])
-      samples   <- cbind(samples, latlon)
-
-      samples[, grep("^geometry$", colnames(samples)) := NULL]
-    }
-    cat(" .")
-  } else {
-    cat(" NO LOCATION .")
+  if (!is.null(re)) {
+    names(re)[names(re) == "timestamp"]          <- "time"
+    names(re)[names(re) == "heart_rate"]         <- "HR"
+    names(re)[names(re) == "temperature"]        <- "TEMP"
+    names(re)[names(re) == "cadence"]            <- "CAD"
+    names(re)[names(re) == "fractional_cadence"] <- "CADfract"
+    names(re)[names(re) == "enhanced_altitude"]  <- "ALT"
+    act_ME <- cbind(act_ME, re)
   }
 
+  if (!is.null(sp)) {
+    act_ME <- cbind(act_ME,
+                    Name     = sp$name,
+                    Sport    = sp$sport,
+                    SubSport = sp$sub_sport)
+    rm(sp)
+  }
 
-  ## Read extra data  ----------------------------------------------------------
-  if (!is.null(jride$XDATA)) {
-    xdata <- data.table(jride$XDATA)
-
-    ##  For single var table
-    if (all(c("VALUE", "UNIT")  %in% names(xdata))) {
-
-      vname   <- xdata$VALUE
-      vunit   <- xdata$UNIT
-
-      ii <- which(!is.na(vname))
-
-      da        <- xdata$SAMPLES[[ii]]
-      da$KM     <- NULL
-      da$time   <- da$SECS + act_ME$time
-      da$SECS   <- NULL
-      names(da) <- c(paste0(vname[ii], ".", vunit[ii]), "time")
-
-      samples <- merge(samples, da, all = T)
-    }
-    rm(da)
-    cat(" .")
-
-    ##  For multiple var table
-    if (all(c("VALUES", "UNITS")  %in% names(xdata))) {
-
-      values  <- xdata$VALUES
-      units   <- xdata$UNITS
-      xsampls <- xdata$SAMPLES
-
-      for (i in 1:length(values)) {
-
-        if (is.null(values[[i]])) { next }
-
-        ## there are cases of misalignment
-        nn <- paste0(values[[i]], ".", units[[i]][1:length(values[[i]])])
-        da <- xsampls[[i]]
-
-        dd        <- data.table(Reduce(rbind, da$VALUES))
-        names(dd) <- nn
-
-        res <- data.table(time = da$SECS + act_ME$time,
-                          dd)
-
-        samples <- merge(samples, res, all = T)
-      }
-      rm(res, dd, da, nn)
-    }
-    cat(" .")
-
-    # ##  For single var table
-    # if (all(c("VALUE", "UNIT")  %in% names(xdata))) {
-    #   stop("test more")
-    # }
-
-  } else {
-    cat(" NO XDATA")
+  if (!is.null(fi)) {
+    act_ME <- cbind(act_ME,
+                    Device = paste(fi$manufacturer, fi$product))
+    rm(fi)
   }
   cat(" .")
 
-  ## Combine metadata with records
-  if (exists("samples")) {
-    ## remove duplicate column
-    act_ME[, time := NULL]
-    act_ME <- cbind(act_ME, samples)
-  }
+  ## process location
+  wewant <- c("time",
+              "position_lat",
+              "position_long")
 
+  if (all(wewant %in% names(act_ME))) {
+    act_ME[position_lat  >= 179.99, position_lat  := NA]
+    act_ME[position_long >= 179.99, position_long := NA]
+
+    temp <- act_ME[!is.na(position_lat) & !is.na(position_long)]
+
+    # temp <- st_as_sf(re,
+    #                  coords = c("position_long", "position_lat","enhanced_altitude"))
+
+    temp <- st_as_sf(temp,
+                     coords = c("position_long", "position_lat"),
+                     crs = EPSG_WGS84)
+
+    ## keep initial coordinates
+    latlon <- st_coordinates(temp$geometry)
+    latlon <- data.table(latlon)
+    names(latlon)[names(latlon) == "X"] <- "X_LON"
+    names(latlon)[names(latlon) == "Y"] <- "Y_LAT"
+
+    ## add distance between points in meters
+    temp$dist_2D <- c(0, trackDistance(st_coordinates(temp$geometry), longlat = TRUE)) * 1000
+
+    ## add time between points
+    temp$timediff <- c(0, diff(temp$time))
+
+    ## create speed
+    temp <- temp |> mutate(kph_2D = (dist_2D/1000) / (timediff/3600)) |> collapse()
+
+    ## parse coordinates for process in meters
+    temp   <- st_transform(temp, crs = EPSG_PMERC)
+    trkcco <- st_coordinates(temp)
+    temp   <- data.table(temp)
+    temp$X <- unlist(trkcco[,1])
+    temp$Y <- unlist(trkcco[,2])
+    temp   <- cbind(temp, latlon)
+    temp[, geometry := NULL]
+
+    act_ME$position_lat  <- NULL
+    act_ME$position_long <- NULL
+    act_ME <- merge(act_ME, temp, all = T)
+    rm(temp)
+  }
+  cat(" .")
   data <- plyr::rbind.fill(data, act_ME)
-  rm(samples)
+  if (any(names(data) == "position_lat")) stop("loc")
 }
 cat("\n")
 
-## Convert to numbers  ---------------------------------------------------------
-for (avar in names(data)) {
-  if (is.character(data[[avar]])) {
-    ## find empty and replace
-    data[[avar]] <- sub("[ ]*$",        "", data[[avar]])
-    data[[avar]] <- sub("^[ ]*",        "", data[[avar]])
-    data[[avar]] <- sub("^[ ]*$",       NA, data[[avar]])
-    data[[avar]] <- sub("^[ ]*NA[ ]*$", NA, data[[avar]])
-    if (!all(is.na((as.numeric(data[[avar]]))))) {
-      data[[avar]] <- as.numeric(data[[avar]])
-    }
-  }
-}
+## remove tmp dir
+unlink(tempfl, recursive = T)
 
 ## Prepare for import to DB  ---------------------------------------------------
 data <- data.table(data)
-data[, year  := as.integer(year(time))  ]
-data[, month := as.integer(month(time)) ]
+attr(data$time, "tzone") <- "UTC"
+data[, year  := as.integer(year(time)) ]
+data[, month := as.integer(month(time))]
+
+## fix some data types
+class(data$HR)   <- "double"
+class(data$TEMP) <- "double"
+class(data$CAD)  <- "double"
 
 ## Drop NA columns
 data <- remove_empty(data, which = "cols")
 
-## fix names
-names(data) <- sub("\\.$",  "", names(data))
-names(data) <- sub("[ ]+$", "", names(data))
-names(data) <- sub("^[ ]+", "", names(data))
-
-## disambiguate names
-names(data)[names(data) == "Performance.Condition"] <- "Activity.Performance.Condition"
-
-## sanity check
-if (any(names(data) == "fill")) stop("This should not happened")
-
-## handle duplicate column
-if (!is.null(data$DEVICETYPE) | all(data$Device == data$DEVICETYPE)) {
-  data[, DEVICETYPE := NULL]
-} else {
-  stop("Fix device type\n")
-}
-
-## fix some data types
-class(data$HR)                   <- "double"
-class(data$FIELD_135)            <- "double"
-class(data$FIELD_136)            <- "double"
-class(data$CAD)                  <- "double"
-class(data$OVRD_total_kcalories) <- "double"
-class(data$Spike.Time)           <- "double"
-class(data$PERFORMANCECONDITION) <- "double"
-class(data$HR)                   <- "double"
-class(data$TEMP)                 <- "double"
+if (any(names(data) == "position_lat")) stop()
 
 ## check duplicate names
 which(names(data) == names(data)[(duplicated(names(data)))])
@@ -401,6 +375,7 @@ if (file.exists(DATASET)) {
 
       if (!any(names(DB) == varname)) {
         cat("--", varname, "-->", vartype, "\n")
+
         ## create template var
         a  <- NA; class(a) <- vartype
         DB <- DB |> mutate( !!varname := a) |> compute()
@@ -471,17 +446,6 @@ if (file.exists(DATASET)) {
   #     DB |> count() |> collect()
   # )
 
-} else {
-  ## Initialize database manually  ---------------------------------------------
-  cat("\nInitialize new data base\n")
-  write_dataset(data,
-                DATASET,
-                compression            = DBcodec,
-                compression_level      = DBlevel,
-                format                 = "parquet",
-                partitioning           = c("year", "month"),
-                existing_data_behavior = "overwrite",
-                hive_style             = F)
 }
 
 
