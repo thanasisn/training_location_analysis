@@ -132,7 +132,7 @@ if (file.exists(DATASET)) {
 ## Read a set of files each time  --------------------------------------------
 
 ## read some files for testing
-nts   <- 2
+nts   <- 3
 files <- unique(c(head(  files$file, nts),
                   sample(files$file, nts*2, replace = T),
                   tail(  files$file, nts*3)))
@@ -175,8 +175,8 @@ for (af in files) {
   cat(" .")
 
   ## gather all points
-  re <- records(res) |>
-    bind_rows() |>
+  re <- records(res)   |>
+    bind_rows()        |>
     arrange(timestamp) |>
     data.table()
 
@@ -256,16 +256,17 @@ for (af in files) {
               "position_lat",
               "position_long",
               "ALT")
-  temp <- act_ME
+  act_ME[position_lat  >= 179.99, position_lat  := NA]
+  act_ME[position_long >= 179.99, position_long := NA]
+
+  temp <- act_ME[!is.na(position_lat) & !is.na(position_long)]
 
   if (all(wewant %in% names(temp))) {
-    temp[position_lat  >= 179.99, position_lat  := NA]
-    temp[position_long >= 179.99, position_long := NA]
 
     # temp <- st_as_sf(re,
     #                  coords = c("position_long", "position_lat","enhanced_altitude"))
 
-    temp <- st_as_sf(re,
+    temp <- st_as_sf(temp,
                      coords = c("position_long", "position_lat"),
                      crs = EPSG_WGS84)
 
@@ -276,13 +277,13 @@ for (af in files) {
     names(latlon)[names(latlon) == "Y"] <- "Y_LAT"
 
     ## add distance between points in meters
-    temp$dist <- c(0, trackDistance(st_coordinates(temp$geometry), longlat = TRUE)) * 1000
+    temp$dist_2D <- c(0, trackDistance(st_coordinates(temp$geometry), longlat = TRUE)) * 1000
 
     ## add time between points
     temp$timediff <- c(0, diff(temp$time))
 
     ## create speed
-    temp <- temp |> mutate(kph = (dist/1000) / (timediff/3600)) |> collapse()
+    temp <- temp |> mutate(kph_2D = (dist_2D/1000) / (timediff/3600)) |> collapse()
 
     ## parse coordinates for process in meters
     temp   <- st_transform(temp, crs = EPSG_PMERC)
@@ -293,6 +294,7 @@ for (af in files) {
     temp   <- cbind(temp, latlon)
     temp[, geometry := NULL]
   }
+  temp <- merge(act_ME, temp, all = T)
   rm(act_ME)
   cat(" .")
 
@@ -320,7 +322,6 @@ data <- remove_empty(data, which = "cols")
 
 ## merge all rows
 DB <- DB |> full_join(data) |> compute()
-
 
 
 ## check duplicate names

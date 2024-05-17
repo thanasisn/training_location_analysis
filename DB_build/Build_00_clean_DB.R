@@ -110,6 +110,8 @@ removefl <- wehave[exists == F | currenct == F]
 if (nrow(removefl) > 0){
   cat("Removing", nrow(removefl), "files\n")
 
+  cat(removefl$file, sep = "\n")
+
   # DB |> filter(file %in% removefl$file) |> count() |> collect()
   # DB |> filter(!file %in% removefl$file & year %in% removefl$year & month %in% removefl$month) |> count() |> collect()
 
@@ -124,7 +126,6 @@ if (nrow(removefl) > 0){
                 partitioning           = c("year", "month"),
                 existing_data_behavior = "delete_matching",
                 hive_style             = F)
-
 
   DB <- open_dataset(DATASET,
                      partitioning  = c("year", "month"),
