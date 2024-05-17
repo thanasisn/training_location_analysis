@@ -425,17 +425,16 @@ if (file.exists(DATASET)) {
     }
   }
 
-
   ##  Add new data to the DB  --------------------------------------------------
   DB <- DB |> full_join(data) |> compute()
 
-
   ## write only new months within data
-  new <- unique(data[, year, month])
+  new <- unique(data[, .(year, month, file)])
+  new <- new[, .N, by = .(year, month)]
   setorder(new, year, month)
 
   cat("\nUpdate:", "\n")
-  cat(paste(" ", new$year, new$month),sep = "\n")
+  cat(paste(" ", new$year, new$month, new$N),sep = "\n")
 
   write_dataset(DB |> filter(year %in% new$year & month %in% new$month),
                 DATASET,

@@ -178,15 +178,11 @@ for (af in files) {
   )
   cat(" .")
 
-
-
-
   ## get geo data mainly
   spat <- remove_empty(
     read_sf(af,
             layer = "track_points"),
     which = "cols")
-
 
   suppressWarnings({
     spat$gpxtpx_TrackPointExtension <- NULL
@@ -275,8 +271,8 @@ cat("\n")
 
 ## Prepare for import to DB  ---------------------------------------------------
 data <- data.table(data)
-data[, year  := as.integer(year(time))  ]
-data[, month := as.integer(month(time)) ]
+data[, year  := as.integer(year(time)) ]
+data[, month := as.integer(month(time))]
 
 ## Drop NA columns
 data <- remove_empty(data, which = "cols")
@@ -299,6 +295,10 @@ names(data)[names(data) == "temperature"] <- "TEMP"
 ## fix some data types
 class(data$HR)   <- "double"
 class(data$TEMP) <- "double"
+class(data$CAD)  <- "double"
+
+## Drop NA columns
+data <- remove_empty(data, which = "cols")
 
 ## check duplicate names
 which(names(data) == names(data)[(duplicated(names(data)))])
@@ -353,14 +353,13 @@ if (file.exists(DATASET)) {
   ##  Add new data to the DB  --------------------------------------------------
   DB <- DB |> full_join(data) |> compute()
 
-
-
   ## write only new months within data
-  new <- unique(data[, year, month])
+  new <- unique(data[, .(year, month, file)])
+  new <- new[, .N, by = .(year, month)]
   setorder(new, year, month)
 
   cat("\nUpdate:", "\n")
-  cat(paste(" ", new$year, new$month),sep = "\n")
+  cat(paste(" ", new$year, new$month, new$N),sep = "\n")
 
   write_dataset(DB |> filter(year %in% new$year & month %in% new$month),
                 DATASET,

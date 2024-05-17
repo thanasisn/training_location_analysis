@@ -250,14 +250,10 @@ for (af in files) {
   }
   cat(" .")
 
-  ## get all the data?
-
   ## process location
   wewant <- c("time",
               "position_lat",
-              "position_long",
-              "ALT")
-
+              "position_long")
 
   if (all(wewant %in% names(act_ME))) {
     act_ME[position_lat  >= 179.99, position_lat  := NA]
@@ -303,7 +299,7 @@ for (af in files) {
   }
   cat(" .")
   data <- plyr::rbind.fill(data, act_ME)
-  if (any(names(data) == "position_lat")) stop()
+  if (any(names(data) == "position_lat")) stop("loc")
 }
 cat("\n")
 
@@ -379,12 +375,12 @@ if (file.exists(DATASET)) {
   DB <- DB |> full_join(data) |> compute()
 
   ## write only new months within data
-  # data[, .N, by = .(year, month) ]
-  new <- unique(data[, year, month])
+  new <- unique(data[, .(year, month, file)])
+  new <- new[, .N, by = .(year, month)]
   setorder(new, year, month)
 
   cat("\nUpdate:", "\n")
-  cat(paste(" ", new$year, new$month),sep = "\n")
+  cat(paste(" ", new$year, new$month, new$N),sep = "\n")
 
   write_dataset(DB |> filter(year %in% new$year & month %in% new$month),
                 DATASET,
