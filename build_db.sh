@@ -9,6 +9,7 @@
 "./DB_build/Build_03_fit_garmin.R"
 
 
+"./DB_build/Build_00_clean_DB.R"
 
 ##  END  ##
 exit 0 

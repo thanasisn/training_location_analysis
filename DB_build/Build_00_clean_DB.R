@@ -152,6 +152,11 @@ if (nrow(removefl) > 0){
 }
 
 
+## TODO check empty variables
+
+
+
+
 # DB |> filter(Device!=DEVICETYPE) |> count() |> collect()
 
 

@@ -139,7 +139,7 @@ if (file.exists(DATASET)) {
 ## Read a set of files each time  --------------------------------------------
 
 ## read some files for testing
-nts   <- 6
+nts   <- 10
 files <- unique(c(head(  files$file, nts),
                   sample(files$file, nts*2, replace = T),
                   tail(  files$file, nts*3)))
@@ -318,13 +318,12 @@ if (file.exists(DATASET)) {
 
     for (varname in newvars) {
       vartype <- typeof(data[[varname]])
-      cat("--", varname, ":", vartype, "--\n")
 
       if (!is.character(varname))               stop()
       if (is.null(vartype) | vartype == "NULL") stop()
 
       if (!any(names(DB) == varname)) {
-        cat("Create column: ", varname, "\n")
+        cat("--", varname, "-->", vartype, "\n")
         ## create template var
         a  <- NA; class(a) <- vartype
         DB <- DB |> mutate( !!varname := a) |> compute()
