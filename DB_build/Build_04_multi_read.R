@@ -146,28 +146,38 @@ if (file.exists(DATASET)) {
 }
 
 
-stop()
 
 ## Read a set of files each time  --------------------------------------------
 
 ## read some files for testing
-nts   <- 10
-files <- unique(sample(files, nts, replace = T))
+nts   <- 30
+files <- files[sample.int(nrow(files), size = nts, replace = T), ]
+if (nrow(files) < 1) { stop("Nothing to do!") }
+
+print(table(files$file_ext))
+
+
+cn   <- 0
+data <- data.table()
+for (i in 1:nrow(files)) {
+  af <- files[i, file]
+  ex <- files[i, file_ext]
+  cn <- cn + 1
+  cat(sprintf("\n%3s %3s %s %s", cn, nrow(files), basename(af), "."))
+
+  ## uncompress to temp
+
+  ## apply correct parser
+
+}
 
 
 
-# files <- unique(c(tail(file$file, 50)))
 
 
-
-
+stop()
 
 ## test gz files
-
-files <- list.files(path       = FIT_DIR,
-                    pattern = "*.zip",
-                    recursive  = T,
-                    full.names = T)
 
 
 ccc<-c()
@@ -181,11 +191,6 @@ table(ccc)
 
 
 
-exit()
-
-if (length(files) < 1) {
-  stop("Nothing to do!")
-}
 
 stop()
 cn   <- 1
