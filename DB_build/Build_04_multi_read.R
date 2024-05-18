@@ -118,6 +118,10 @@ files <- grep("\\.xls$",     files, invert = T, value = T, ignore.case = T)
 files <- grep("\\.sh$",      files, invert = T, value = T, ignore.case = T)
 files <- grep("\\.pdf$",     files, invert = T, value = T, ignore.case = T)
 
+## ignore some files
+files <- grep("\\/Points\\/", files, invert = T, value = T)
+files <- grep("\\/Plans\\/",  files, invert = T, value = T)
+
 ## Ignore for now (may use my POLAr package) these are unique and original data.
 files <- grep("\\.hrm$", files, invert = T, value = T, ignore.case = T)
 
@@ -158,7 +162,7 @@ if (file.exists(DATASET)) {
 ## Read a set of files each time  --------------------------------------------
 
 ## read some files for testing and to limit memory usage
-nts   <- 30
+nts   <- 100
 files <- files[sample.int(nrow(files), size = nts, replace = T), ]
 if (nrow(files) < 1) { stop("Nothing to do!") }
 
@@ -680,11 +684,34 @@ names(data) <- sub("\\.$",  "", names(data))
 names(data) <- sub("[ ]+$", "", names(data))
 names(data) <- sub("^[ ]+", "", names(data))
 
+## merge same data columns
+if (sum(c("heart_rate", "HR") %in% names(data)) == 2) {
+  ## sanity check
+  stopifnot(data[!is.na(heart_rate) & !is.na(HR), .N] == 0)
+  ## merge
+  data[!is.na(heart_rate), HR := heart_rate]
 
-stopifnot(sum(c("heart_rate", "HR") %in% names(data))<2)
+  # data[, sum(!is.na(heart_rate))]
+  # data[, sum(!is.na(HR))]
+  data[, heart_rate := NULL]
+}
+
+if (sum(c("temperature", "TEMP") %in% names(data)) == 2) {
+  ## sanity check
+  stopifnot(data[!is.na(temperature) & !is.na(TEMP), .N] == 0)
+  ## merge
+  data[!is.na(temperature), TEMP := temperature]
+
+  # data[, sum(!is.na(temperature))]
+  # data[, sum(!is.na(TEMP))]
+  data[, temperature := NULL]
+}
+
+stopifnot(sum(c("heart_rate", "HR")    %in% names(data))<2)
 stopifnot(sum(c("temperature", "TEMP") %in% names(data))<2)
 
-names(data)[names(data) == "heart_rate"]  <- "HR"
+## this will init columns keep bellow
+names(data)[names(data) == "heart_rate" ] <- "HR"
 names(data)[names(data) == "temperature"] <- "TEMP"
 
 ## disambiguate names
@@ -744,7 +771,7 @@ if (file.exists(DATASET)) {
       if (is.null(vartype) | vartype == "NULL") stop()
 
       if (!any(names(DB) == varname)) {
-        cat("--", varname, "-->", vartype, "\n")
+        cat(sprintf(" %-20s  -->  %s\n", varname, vartype))
         ## create template var
         a  <- NA; class(a) <- vartype
         DB <- DB |> mutate( !!varname := a) |> compute()

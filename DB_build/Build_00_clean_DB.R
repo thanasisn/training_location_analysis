@@ -219,6 +219,11 @@ DB |> select(file, SubSport, dataset, Sport, Name) |>
   group_by(Name, SubSport) |>
   tally() |> collect()
 
+DB |> select(file, dataset, filetype) |>
+  distinct() |>
+  select(!file) |> collect() |> table()
+
+
 
 # DB |> select(file, position_lat, dataset) |>
 #   filter(!is.na(position_lat)) |>
@@ -250,7 +255,6 @@ test <- DB |>
   distinct() |>
   collect()
 
-test |> select(file, dataset) |> tally()
 
 
 
