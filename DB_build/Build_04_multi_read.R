@@ -158,7 +158,7 @@ if (file.exists(DATASET)) {
 ## Read a set of files each time  --------------------------------------------
 
 ## read some files for testing and to limit memory usage
-nts   <- 70
+nts   <- 30
 files <- files[sample.int(nrow(files), size = nts, replace = T), ]
 if (nrow(files) < 1) { stop("Nothing to do!") }
 
@@ -643,10 +643,20 @@ for (i in 1:nrow(files)) {
 
   ## Gather data  --------------------------------------------------------------
   if (exists("store")) {
+
+    # if (!exists("data") | nrow(data) == 0) {
+    #   data <- store
+    # } else {
+    #   data <- full_join(data, store, keep = T)
+    # }
+
     data <- plyr::rbind.fill(data, store)
     rm(store)
     if (any(names(data) == "position_lat")) stop("loc")
+
+    stopifnot(length(grep("^HR", names(data), value = T))<2)
   }
+
 
   ## remove temporary file from memory
   if (exists("from")) {
@@ -669,6 +679,11 @@ data[, month := as.integer(month(time))]
 names(data) <- sub("\\.$",  "", names(data))
 names(data) <- sub("[ ]+$", "", names(data))
 names(data) <- sub("^[ ]+", "", names(data))
+
+
+stopifnot(sum(c("heart_rate", "HR") %in% names(data))<2)
+stopifnot(sum(c("temperature", "TEMP") %in% names(data))<2)
+
 names(data)[names(data) == "heart_rate"]  <- "HR"
 names(data)[names(data) == "temperature"] <- "TEMP"
 
@@ -706,6 +721,8 @@ if (!is.null(data$DEVICETYPE) | all(data$Device == data$DEVICETYPE)) {
 ## check duplicate names
 which(names(data) == names(data)[(duplicated(names(data)))])
 stopifnot(!any(duplicated(names(data))))
+
+
 
 
 ## Add data to DB  -------------------------------------------------------------
