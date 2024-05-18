@@ -82,34 +82,48 @@ library(trip,       quietly = TRUE, warn.conflicts = FALSE)
 library(filelock,   quietly = TRUE, warn.conflicts = FALSE)
 library(rlang,      quietly = TRUE, warn.conflicts = FALSE)
 library(R.utils,    quietly = TRUE, warn.conflicts = FALSE)
+library(tools,      quietly = TRUE, warn.conflicts = FALSE)
 
 source("./DEFINITIONS.R")
 
 ## make sure only one parser is this working??
-lock(paste0(DATASET, ".lock"))
+# locked <- lock(paste0(DATASET, ".lock"))
 
 
 ## unzip in memory
-tempfl     <- "/dev/shm/tmp_fit/"
+tempfl     <- "/dev/shm/tmp_loc_db/"
 
 
-##  List files to parse  -------------------------------------------------------
-files <- list.files(path       = IMP_DIR,
-                    recursive  = T,
-                    full.names = T)
+##  List all files to parse  ---------------------------------------------------
+files <- list.files(path         = c(IMP_DIR,
+                                     GC_DIR,
+                                     GPX_DIR,
+                                     FIT_DIR),
+                    recursive    = T,
+                    include.dirs = F,
+                    no..         = T,
+                    full.names   = T)
 
-print(table(sub("^.*\\.", "", basename(files))))
 
-files <- grep("\\.csv$", files, invert = T, value = T, ignore.case = T)
-files <- grep("\\.txt$", files, invert = T, value = T, ignore.case = T)
+print(table(file_ext(files)))
+
+## non relevant files
+files <- grep("\\.csv$",     files, invert = T, value = T, ignore.case = T)
+files <- grep("\\.txt$",     files, invert = T, value = T, ignore.case = T)
+files <- grep("\\.geojson$", files, invert = T, value = T, ignore.case = T)
+files <- grep("\\.xls$",     files, invert = T, value = T, ignore.case = T)
+files <- grep("\\.sh$",      files, invert = T, value = T, ignore.case = T)
+files <- grep("\\.pdf$",     files, invert = T, value = T, ignore.case = T)
 
 ## Ignore for now (may use my POLAr package) these are unique and original data.
 files <- grep("\\.hrm$", files, invert = T, value = T, ignore.case = T)
 
-print(table(sub("^.*\\.", "", basename(files))))
+print(table(file_ext(files)))
 
 files <- data.table(file      = files,
-                    filemtime = floor_date(file.mtime(files), unit = "seconds"))
+                    filemtime = floor_date(file.mtime(files), unit = "seconds"),
+                    file_ext  = file_ext(files))
+
 
 
 ##  Open dataset  --------------------------------------------------------------
@@ -132,16 +146,14 @@ if (file.exists(DATASET)) {
 }
 
 
-
+stop()
 
 ## Read a set of files each time  --------------------------------------------
 
 ## read some files for testing
 nts   <- 10
-files <- unique(c(head(  files$file, nts),
-                  sample(files$file, nts*2, replace = T),
-                  tail(  files$file, nts*3)))
-print(table(sub("^.*\\.", "", basename(files))))
+files <- unique(sample(files, nts, replace = T))
+
 
 
 # files <- unique(c(tail(file$file, 50)))
@@ -152,8 +164,8 @@ print(table(sub("^.*\\.", "", basename(files))))
 
 ## test gz files
 
-files <- list.files(path       = IMP_DIR,
-                    pattern = "*.gz",
+files <- list.files(path       = FIT_DIR,
+                    pattern = "*.zip",
                     recursive  = T,
                     full.names = T)
 
