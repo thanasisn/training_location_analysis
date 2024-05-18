@@ -157,8 +157,8 @@ if (file.exists(DATASET)) {
 
 ## Read a set of files each time  --------------------------------------------
 
-## read some files for testing
-nts   <- 30
+## read some files for testing and to limit memory usage
+nts   <- 70
 files <- files[sample.int(nrow(files), size = nts, replace = T), ]
 if (nrow(files) < 1) { stop("Nothing to do!") }
 

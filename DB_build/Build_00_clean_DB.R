@@ -242,6 +242,16 @@ cat("Size:", sum(file.size(list.files(DATASET, recursive = T, full.names = T))) 
 #               hive_style             = F)
 
 
+grep("HR", names(DB), value = T)
+grep("TEMP", names(DB), value = T)
+
+test <- DB |>
+  select(file, dataset, starts_with("TEMP"), starts_with("HR")) |>
+  distinct() |>
+  collect()
+
+test |> select(file, dataset) |> tally()
+
 
 
 #' **END**
