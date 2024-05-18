@@ -18,3 +18,15 @@ FIT_DIR <- "~/TRAIN/Garmin_Exports/original/"
 EPSG_WGS84 <- 4326  ## Usual gps datum
 EPSG_PMERC <- 3857  ## Pseudo-Mercator, Spherical Mercator, Google Maps, OpenStreetMap
 
+
+## expected fields in GoldenCheeatah files
+expect <- c("STARTTIME",
+            "RECINTSECS",
+            "DEVICETYPE",
+            "OVERRIDES",
+            "IDENTIFIER",
+            "TAGS",
+            "INTERVALS",
+            "SAMPLES",
+            "XDATA")
+

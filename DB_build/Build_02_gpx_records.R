@@ -55,6 +55,7 @@ knitr::opts_chunk$set(fig.pos    = '!h'     )
 # library(cycleRtools)
 # https://github.com/trackerproject/trackeR
 
+stop("This is not used")
 
 #+ echo=FALSE, include=TRUE
 ## __ Set environment  ---------------------------------------------------------
