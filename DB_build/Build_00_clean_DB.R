@@ -112,6 +112,8 @@ if (nrow(removefl) > 0){
 
   cat(removefl$file, sep = "\n")
 
+  print(unique(removefl[, year, month]))
+
   # DB |> filter(file %in% removefl$file) |> count() |> collect()
   # DB |> filter(!file %in% removefl$file & year %in% removefl$year & month %in% removefl$month) |> count() |> collect()
 

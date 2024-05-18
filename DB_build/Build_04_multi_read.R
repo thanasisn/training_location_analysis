@@ -96,6 +96,7 @@ source("./DEFINITIONS.R")
 ## unzip in memory
 tempfl     <- "/dev/shm/tmp_loc_db/"
 unlink(tempfl, recursive = T)
+dir.create(tempfl, showWarnings = F, recursive = T)
 
 ##  List all files to parse  ---------------------------------------------------
 files <- list.files(path         = c(IMP_DIR,
@@ -165,7 +166,7 @@ print(table(files$file_ext))
 ## Read a set of files each time  --------------------------------------------
 
 ## read some files for testing and to limit memory usage
-nts   <- 12
+nts   <- 13
 files <- unique(rbind(
   tail(files[order(files$filemtime), ], 3*nts),
   files[sample.int(nrow(files), size = nts, replace = T), ]
