@@ -184,7 +184,7 @@ for (af in files) {
 
   ## check for fit file
   stopifnot(nrow(unzip(af, list = T)) == 1)
-  if (!grepl(".fit$", unzip(af, list = T)))) {
+  if (!grepl(".fit$", unzip(af, list = T))) {
     cat(" SKIP not a fit file!! ")
     cat(last(last(strsplit(unzip(af, list = T)$Name, "\\."))))
     next()
