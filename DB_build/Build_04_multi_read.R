@@ -95,7 +95,7 @@ source("./DEFINITIONS.R")
 
 ## unzip in memory
 tempfl     <- "/dev/shm/tmp_loc_db/"
-
+unlink(tempfl, recursive = T)
 
 ##  List all files to parse  ---------------------------------------------------
 files <- list.files(path         = c(IMP_DIR,
@@ -107,7 +107,7 @@ files <- list.files(path         = c(IMP_DIR,
                     no..         = T,
                     full.names   = T)
 
-
+cat("\nAll files ", length(files))
 print(table(file_ext(files)))
 
 ## non relevant files
@@ -125,6 +125,7 @@ files <- grep("\\/Plans\\/",  files, invert = T, value = T)
 ## Ignore for now (may use my POLAr package) these are unique and original data.
 files <- grep("\\.hrm$", files, invert = T, value = T, ignore.case = T)
 
+cat("\nData files ", length(files))
 print(table(file_ext(files)))
 
 files <- data.table(file      = files,
@@ -157,15 +158,22 @@ if (file.exists(DATASET)) {
   cat("WILL INIT DB!\n")
 }
 
+cat("\nData files to parse ", length(files$file_ext))
+print(table(files$file_ext))
 
 
 ## Read a set of files each time  --------------------------------------------
 
 ## read some files for testing and to limit memory usage
-nts   <- 100
-files <- files[sample.int(nrow(files), size = nts, replace = T), ]
+nts   <- 12
+files <- unique(rbind(
+  tail(files[order(files$filemtime), ], 3*nts),
+  files[sample.int(nrow(files), size = nts, replace = T), ]
+))
+
 if (nrow(files) < 1) { stop("Nothing to do!") }
 
+cat("\nWill parse ", length(files$file_ext))
 print(table(files$file_ext))
 
 
@@ -195,7 +203,11 @@ for (i in 1:nrow(files)) {
     nnn <- system(paste("file ", af, "| cut -d',' -f2"), intern = TRUE)
     nnn <- sub("\"" ,"", sub("^ was \"" ,"", nnn))
     ext <- file_ext(nnn)
-    stopifnot(ext != "" & nnn != "" & !is.na(ext) & !is.na(nnn))
+    # stopifnot(ext != "" & nnn != "" & !is.na(ext) & !is.na(nnn))
+    if (ext == "" | nnn == "" | is.na(ext) | is.na(nnn)) {
+      cat(" FILE PROBLEM ")
+      next()
+    }
 
     from <- paste0(tempfl, nnn)
     pf   <- from
@@ -204,7 +216,10 @@ for (i in 1:nrow(files)) {
   }
 
   ## file to parse
-  stopifnot(file.exists(pf))
+  if (!file.exists(pf)) {
+    cat(" MISSING FILE ")
+    next()
+  }
   cat("--", basename(pf))
 
   ## file info
@@ -304,12 +319,14 @@ for (i in 1:nrow(files)) {
       act_ME <- cbind(metadt, re)
     }
 
-    if (!is.null(sp)) {
-      act_ME <- cbind(act_ME,
-                      Name     = sp$name,
-                      Sport    = sp$sport,
-                      SubSport = sp$sub_sport)
-      rm(sp)
+    if (exists("sp")) {
+      if (!is.null(sp)) {
+        act_ME <- cbind(act_ME,
+                        Name     = sp$name,
+                        Sport    = sp$sport,
+                        SubSport = sp$sub_sport)
+        rm(sp)
+      }
     }
 
     if (!is.null(fi)) {
