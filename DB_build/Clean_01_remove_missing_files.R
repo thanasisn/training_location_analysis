@@ -158,7 +158,7 @@ if (nrow(removefl) > 0){
 
 
 
-
+unlock(lock)
 #' **END**
 #+ include=T, echo=F
 tac <- Sys.time()

@@ -12,10 +12,11 @@
 # "./DB_build/Build_03_fit_garmin.R"
 
 ## add data to database
-"./DB_build/Build_04_multi_read.R"
+"./DB_build/Build_04_multi_parse.R"
 
-
-"./DB_build/Build_00_clean_DB.R"
+## DB maintenance
+"./DB_build/Clean_01_remove_missing_files.R"
+"./DB_build/Clean_03_vars_checks.R"
 
 ##  END  ##
 exit 0

@@ -73,11 +73,11 @@ library(lubridate,  quietly = TRUE, warn.conflicts = FALSE)
 library(janitor,    quietly = TRUE, warn.conflicts = FALSE)
 library(stringdist, quietly = TRUE, warn.conflicts = FALSE)
 library(rlang,      quietly = TRUE, warn.conflicts = FALSE)
+library(gdata,      quietly = TRUE, warn.conflicts = FALSE)
+
 
 source("./DEFINITIONS.R")
 
-## make sure only one parser is this working??
-lock <- lock(paste0(DATASET, ".lock"))
 
 ##  Open dataset  --------------------------------------------------------------
 if (!file.exists(DATASET)) {
@@ -101,7 +101,7 @@ test <- DBtest |>
   data.table()
 
 cnt <- test[, .N, by = time]
-
+size <- 0
 for (ad in cnt[N==2, time]) {
   ccc <- DBtest |> filter(as.Date(time) == as.Date(ad)) |> collect() |> data.table()
   ccc <- remove_empty(ccc, which = "cols")
@@ -109,10 +109,12 @@ for (ad in cnt[N==2, time]) {
   fit <- ccc[filetype == "fit"]
   gpx <- ccc[filetype == "gpx"]
 
+  ## should have data
   if ( !(fit[,.N] > 1000 & gpx[,.N] > 1000)) {
     next()
   }
 
+  ## same time range
   if (all(fit[, range(time)] == gpx[, range(time)])) {
     gpxfile <- unique(gpx[,file])
     fitfile <- unique(fit[,file])
@@ -120,20 +122,42 @@ for (ad in cnt[N==2, time]) {
     gpxkey <- sub("_.*", "", sub("activity_", "", basename(gpxfile)))
     fitkey <- sub("_ACTIVITY.*", "", basename(fitfile))
 
+    ## same time stamp
     if (gpxkey == fitkey) {
-      cat("gpx", gpxfile, "\n")
+      ## only one file
+      ## cases of file reuse when missing data
+      if (test[file == gpxfile, .N ] == 1) {
+        ## make sure about file types inside archives
+        if (test[file == gpxfile, filetype] == "gpx" & test[file == fitfile, filetype] == "fit") {
 
-      file.size(gpxfile)
+          cat("gpx", gpxfile, "\n")
 
-      ## !!! remove files !!!
-      # file.remove(gpxfile)
+          size <- sum(size, file.size(gpxfile), na.rm = T)
+
+          ## !!! remove files !!!
+          # file.remove(gpxfile)
+        }
+      }
     }
   }
-
 }
+cat(humanReadable(size),"\n")
+
 
 ## check for same keys
+DBtest <- DB |> filter(dataset == "GoldenCheetah imports")
 
+test <- DBtest |>
+  select(file, filetype, time) |>
+  collect()
+
+## garmin files with the same key
+
+gpxkey <- sub("_.*", "", sub("activity_", "", basename(test$file)))
+fitkey <- sub("_ACTIVITY.*", "", basename(test$file))
+
+
+gdata::humanReadable(1111)
 
 
 #' **END**

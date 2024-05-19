@@ -86,11 +86,12 @@ library(tibble,     quietly = TRUE, warn.conflicts = FALSE)
 library(tools,      quietly = TRUE, warn.conflicts = FALSE)
 library(trackeR,    quietly = TRUE, warn.conflicts = FALSE)
 library(trip,       quietly = TRUE, warn.conflicts = FALSE)
+library(gdata,      quietly = TRUE, warn.conflicts = FALSE)
 
 source("./DEFINITIONS.R")
 
-## make sure only one parser is this working??
-# locked <- lock(paste0(DATASET, ".lock"))
+## make sure only one parser is this working
+locked <- lock(paste0(DATASET, ".lock"))
 
 
 ## unzip in memory
@@ -170,7 +171,7 @@ print(table(files$file_ext))
 ## read some files for testing and to limit memory usage
 nts   <- 10
 files <- unique(rbind(
-  tail(files[order(files$filemtime), ], 3*nts),
+  tail(files[order(files$filemtime), ], 4 * nts),
   files[sample.int(nrow(files), size = nts, replace = T), ]
 ))
 
@@ -231,6 +232,7 @@ for (i in 1:nrow(files)) {
     filemtime = as.POSIXct(floor_date(files[i, filemtime], unit = "seconds"), tz = "UTC"),
     parsed    = as.POSIXct(floor_date(Sys.time(),          unit = "seconds"), tz = "UTC"),
     filetype  = px,
+    filehash  = hash_file(pf),
     dataset   = files[i, dataset]
   )
 
@@ -678,7 +680,7 @@ for (i in 1:nrow(files)) {
     rm(store)
 
     if (any(names(data) == "position_lat")) stop("loc")
-    if (any(names(data) == "hrv_btb")) stop("DDFSf")
+    # if (any(names(data) == "hrv_btb")) stop("DDFSf")
     if (any(names(data) == "acc_X")) stop("DDFSf")
 
     stopifnot(length(grep("^HR", names(data), value = T))<2)
@@ -855,7 +857,9 @@ if (file.exists(DATASET)) {
   cat("Total files:", new_files, "\n")
   cat("Total days: ", new_days,  "\n")
   cat("Total vars: ", new_vars,  "\n")
-  cat("Size:       ", sum(file.size(list.files(DATASET, recursive = T, full.names = T))) / 2^20, "Mb\n")
+  cat("Size:       ", humanReadable(sum(file.size(list.files(DATASET, recursive = T, full.names = T)))), "\n")
+
+
 
   DB |> select(file, dataset) |> distinct() |> select(dataset) |> collect() |> table()
 
@@ -879,8 +883,7 @@ if (file.exists(DATASET)) {
 }
 
 
-
-
+unlock(lock)
 #' **END**
 #+ include=T, echo=F
 tac <- Sys.time()
