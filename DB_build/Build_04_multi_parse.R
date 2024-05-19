@@ -262,12 +262,50 @@ for (i in 1:nrow(files)) {
     cat(" .")
 
     ## gather all points
-    re <- records(res)   |>
-      bind_rows()        |>
-      arrange(timestamp) |>
-      data.table()
+    re <- tryCatch(
+      {
+        # Just to highlight: if you want to use more than one
+        # R expression in the "try" part then you'll have to
+        # use curly brackets.
+        # 'tryCatch()' will return the last evaluated expression
+        # in case the "try" part was completed successfully
+        records(res)   |>
+          bind_rows()        |>
+          arrange(timestamp) |>
+          data.table()
 
-    stopifnot(nrow(re) > 0)
+        # The return value of `readLines()` is the actual value
+        # that will be returned in case there is no condition
+        # (e.g. warning or error).
+      },
+      error = function(cond) {
+        cat("\n")
+        message(conditionMessage(cond))
+        cat("Error reading fit file\n")
+        # Choose a return value in case of error
+        NULL
+      }
+      # warning = function(cond) {
+      #   message(paste("URL caused a warning:", url))
+      #   message("Here's the original warning message:")
+      #   message(conditionMessage(cond))
+      #   # Choose a return value in case of warning
+      #   NULL
+      # },
+      # finally = {
+      #   # NOTE:
+      #   # Here goes everything that should be executed at the end,
+      #   # regardless of success or error.
+      #   # If you want more than one expression to be executed, then you
+      #   # need to wrap them in curly brackets ({...}); otherwise you could
+      #   # just have written 'finally = <expression>'
+      #   message("Some other message at the end")
+      # }
+    )
+
+
+
+    # stopifnot(nrow(re) > 0)
 
     # if (!is_tibble(re)) {
     #   re <- rbindlist(re, fill = T)
@@ -307,6 +345,7 @@ for (i in 1:nrow(files)) {
       sp <- getMessagesByType(res, "sport")
     }
 
+
     ## more details like laps
     # se <- getMessagesByType(res, "session")
 
@@ -322,6 +361,9 @@ for (i in 1:nrow(files)) {
       names(re)[names(re) == "fractional_cadence"] <- "CADfract"
       names(re)[names(re) == "enhanced_altitude"]  <- "ALT"
       act_ME <- cbind(metadt, re)
+      rm(re)
+    } else {
+      act_ME <- metadt
     }
 
     if (exists("sp")) {
@@ -683,8 +725,13 @@ for (i in 1:nrow(files)) {
     # if (any(names(data) == "hrv_btb")) stop("DDFSf")
     if (any(names(data) == "acc_X")) stop("DDFSf")
 
+    ## remove some colums
+    data[, hrv_btb := NULL]
+
+
     stopifnot(length(grep("^HR", names(data), value = T))<2)
   }
+
 
 
   ## remove temporary file from memory
