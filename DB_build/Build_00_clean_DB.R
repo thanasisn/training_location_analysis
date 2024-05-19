@@ -261,11 +261,11 @@ DB |> filter(!is.na(rE.runEco)) |>
   select_if(~sum(!is.na(.)) > 0) |> collect()
 
 
-test <- DB |> filter(dataset == "GoldenCheetah imports") |>
-  select(file, filetype, time) |>
-  mutate(time = as.Date(time)) |>
-  distinct() |>
-  collect()
+
+
+
+
+
 
 
 #' **END**

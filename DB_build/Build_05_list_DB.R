@@ -97,7 +97,8 @@ test <- DBtest |>
   select(file, filetype, time) |>
   mutate(time = as.Date(time)) |>
   distinct() |>
-  collect() |> data.table()
+  collect() |>
+  data.table()
 
 cnt <- test[, .N, by = time]
 
@@ -129,6 +130,11 @@ for (ad in cnt[N==2, time]) {
 
 }
 
+
+## variables only on one file
+
+
+## empty variable
 
 
 #' **END**

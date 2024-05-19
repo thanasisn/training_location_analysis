@@ -99,10 +99,12 @@ unlink(tempfl, recursive = T)
 dir.create(tempfl, showWarnings = F, recursive = T)
 
 ##  List all files to parse  ---------------------------------------------------
-files <- list.files(path         = c(IMP_DIR,
-                                     GC_DIR,
-                                     GPX_DIR,
-                                     FIT_DIR),
+files <- list.files(path         = c(
+  IMP_DIR
+                                     # GC_DIR,
+                                     # GPX_DIR,
+                                     # FIT_DIR
+                                     ),
                     recursive    = T,
                     include.dirs = F,
                     no..         = T,
