@@ -181,6 +181,10 @@ hdups <- test[filehash %in% hashes[N > 1, filehash], ]
 
 
 
+## check overlaping time/space ranges
+
+
+
 #' **END**
 #+ include=T, echo=F
 tac <- Sys.time()
