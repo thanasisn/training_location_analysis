@@ -149,13 +149,10 @@ if (nrow(removefl) > 0){
   cat("Total files:", new_files, "\n")
   cat("Total days: ",  new_days, "\n")
   cat("Total vars: ",  new_vars, "\n")
+  cat("Size:       ", humanReadable(sum(file.size(list.files(DATASET, recursive = T, full.names = T)))), "\n")
 } else {
   cat("No files to remove\n")
 }
-
-
-
-
 
 
 unlock(lock)
@@ -164,7 +161,3 @@ unlock(lock)
 tac <- Sys.time()
 cat(sprintf("%s %s@%s %s %f mins\n\n", Sys.time(), Sys.info()["login"],
             Sys.info()["nodename"], basename(Script.Name), difftime(tac,tic,units = "mins")))
-# if (difftime(tac,tic,units = "sec") > 30) {
-#   system("mplayer /usr/share/sounds/freedesktop/stereo/dialog-warning.oga", ignore.stdout = T, ignore.stderr = T)
-#   system(paste("notify-send -u normal -t 30000 ", Script.Name, " 'R script ended'"))
-# }

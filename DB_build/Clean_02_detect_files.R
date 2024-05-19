@@ -159,14 +159,25 @@ test <- test |>
 
 keys <- test[, .N, by = key]
 
-test[key %in% keys[N > 1, key], ]
+## suspect files
+dups <- test[key %in% keys[N > 1, key], ]
+setorder(dups, key)
+
+print(dups)
 
 
 
-## garmin files with the filehash
 
+## check duplicate files
 
+test <- DBtest |>
+  select(file, filetype, filehash) |>
+  distinct() |>
+  collect()
 
+hashes <- test[, .N, by = filehash]
+
+hdups <- test[filehash %in% hashes[N > 1, filehash], ]
 
 
 

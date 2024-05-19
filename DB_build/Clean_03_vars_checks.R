@@ -75,8 +75,6 @@ library(rlang,      quietly = TRUE, warn.conflicts = FALSE)
 
 source("./DEFINITIONS.R")
 
-## make sure only one parser is this working??
-lock <- lock(paste0(DATASET, ".lock"))
 
 ##  Open dataset  --------------------------------------------------------------
 if (!file.exists(DATASET)) {
@@ -197,8 +195,8 @@ test <- DB |>
   distinct() |>
   collect()
 
-DB |> filter(!is.na(rE.runEco)) |>
-  select_if(~sum(!is.na(.)) > 0) |> collect()
+# DB |> filter(!is.na(rE.runEco)) |>
+#   select_if(~sum(!is.na(.)) > 0) |> collect()
 
 
 
