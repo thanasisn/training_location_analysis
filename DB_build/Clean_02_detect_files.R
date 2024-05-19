@@ -1,57 +1,8 @@
 #!/usr/bin/env Rscript
 # /* Copyright (C) 2022 Athanasios Natsis <natsisphysicist@gmail.com> */
-#' ---
-#' title:         "Clean records"
-#' author:
-#'   - Natsis Athanasios^[natsisphysicist@gmail.com]
 #'
-#' documentclass:  article
-#' classoption:    a4paper,oneside
-#' fontsize:       10pt
-#' geometry:       "left=0.5in,right=0.5in,top=0.5in,bottom=0.5in"
-#' link-citations: yes
-#' colorlinks:     yes
+#'  Detect files needs to be removed
 #'
-#' header-includes:
-#' - \usepackage{caption}
-#' - \usepackage{placeins}
-#' - \captionsetup{font=small}
-#'
-#' output:
-#'   bookdown::pdf_document2:
-#'     number_sections: no
-#'     fig_caption:     no
-#'     keep_tex:        yes
-#'     latex_engine:    xelatex
-#'     toc:             yes
-#'     toc_depth:       4
-#'     fig_width:       7
-#'     fig_height:      4.5
-#'   html_document:
-#'     toc:             true
-#'     keep_md:         yes
-#'     fig_width:       7
-#'     fig_height:      4.5
-#'
-#' date: "`r format(Sys.time(), '%F')`"
-#'
-#' ---
-
-#+ echo=F, include=T
-
-#### Golden Cheetah read activities summary directly from individual files
-
-## __ Document options  --------------------------------------------------------
-
-#+ echo=FALSE, include=TRUE
-knitr::opts_chunk$set(comment   = ""       )
-knitr::opts_chunk$set(dev       = c("pdf")) ## expected option
-knitr::opts_chunk$set(out.width = "100%"   )
-knitr::opts_chunk$set(fig.align = "center" )
-knitr::opts_chunk$set(cache     =  FALSE   )  ## !! breaks calculations
-knitr::opts_chunk$set(fig.pos   = '!h'     )
-
-
 
 #+ echo=FALSE, include=TRUE
 ## __ Set environment  ---------------------------------------------------------
@@ -75,7 +26,6 @@ library(stringdist, quietly = TRUE, warn.conflicts = FALSE)
 library(rlang,      quietly = TRUE, warn.conflicts = FALSE)
 library(gdata,      quietly = TRUE, warn.conflicts = FALSE)
 
-
 source("./DEFINITIONS.R")
 
 
@@ -89,7 +39,7 @@ DB <- open_dataset(DATASET,
                    unify_schemas = T)
 
 
-## check for dups in GC imports
+## check for dups in GC imports  -----------------------------------------------
 
 DBtest <- DB |> filter(dataset == "GoldenCheetah imports")
 
@@ -144,7 +94,7 @@ for (ad in cnt[N==2, time]) {
 cat(humanReadable(size),"\n")
 
 
-## check for same keys
+## check for same keys  -------------------------------------------------------
 DBtest <- DB |> filter(dataset == "GoldenCheetah imports")
 
 test <- DBtest |>
@@ -163,17 +113,45 @@ keys <- test[, .N, by = key]
 dups <- test[key %in% keys[N > 1, key], ]
 setorder(dups, key)
 
-print(dups)
+# print(dups)
 
+
+# DBtest <- DBtest |> collect() |> data.table()
 for (ak in dups$key) {
-  DBtest |> filter(key == ak)
+  fnes  <- unlist(dups[key == ak, file])
+  tpoin <- DBtest |> filter(file %in% fnes) |> collect() |> data.table()
+  tpoin <- remove_empty(tpoin, which = "cols")
+
+  if (
+    range(tpoin[filetype == "fit", time])[1] == range(tpoin[filetype == "gpx", time])[1] |
+    range(tpoin[filetype == "fit", time])[2] == range(tpoin[filetype == "gpx", time])[2]
+  ) {
+    cat("same start or endtime \n")
+
+    fit <- tpoin[filetype == "fit"]
+    gpx <- tpoin[filetype == "gpx"]
+
+    if (nrow(fit) > 10 & nrow(fit) > nrow(gpx)) {
+      cat("fit is bigger \n")
+
+      gpxfile <- unique(gpx[,file])
+
+      cat("gpx", gpxfile, "\n")
+
+      size <- sum(size, file.size(gpxfile), na.rm = T)
+
+      ## !!! remove files !!!
+      # file.remove(gpxfile)
+    }
+  }
 }
+cat(humanReadable(size),"\n")
 
 
 
 
 
-## check duplicate files
+## check duplicate files by hash  ------------------------------
 
 test <- DBtest |>
   select(file, filetype, filehash) |>

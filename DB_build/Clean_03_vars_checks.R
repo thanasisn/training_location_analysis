@@ -1,59 +1,10 @@
 #!/usr/bin/env Rscript
 # /* Copyright (C) 2022 Athanasios Natsis <natsisphysicist@gmail.com> */
-#' ---
-#' title:         "Clean records"
-#' author:
-#'   - Natsis Athanasios^[natsisphysicist@gmail.com]
 #'
-#' documentclass:  article
-#' classoption:    a4paper,oneside
-#' fontsize:       10pt
-#' geometry:       "left=0.5in,right=0.5in,top=0.5in,bottom=0.5in"
-#' link-citations: yes
-#' colorlinks:     yes
+#' Check variable
 #'
-#' header-includes:
-#' - \usepackage{caption}
-#' - \usepackage{placeins}
-#' - \captionsetup{font=small}
-#'
-#' output:
-#'   bookdown::pdf_document2:
-#'     number_sections: no
-#'     fig_caption:     no
-#'     keep_tex:        yes
-#'     latex_engine:    xelatex
-#'     toc:             yes
-#'     toc_depth:       4
-#'     fig_width:       7
-#'     fig_height:      4.5
-#'   html_document:
-#'     toc:             true
-#'     keep_md:         yes
-#'     fig_width:       7
-#'     fig_height:      4.5
-#'
-#' date: "`r format(Sys.time(), '%F')`"
-#'
-#' ---
-
 #+ echo=F, include=T
 
-#### Golden Cheetah read activities summary directly from individual files
-
-## __ Document options  --------------------------------------------------------
-
-#+ echo=FALSE, include=TRUE
-knitr::opts_chunk$set(comment    = ""       )
-knitr::opts_chunk$set(dev        = c("pdf")) ## expected option
-knitr::opts_chunk$set(out.width  = "100%"   )
-knitr::opts_chunk$set(fig.align  = "center" )
-knitr::opts_chunk$set(cache      =  FALSE   )  ## !! breaks calculations
-knitr::opts_chunk$set(fig.pos    = '!h'     )
-
-
-
-#+ echo=FALSE, include=TRUE
 ## __ Set environment  ---------------------------------------------------------
 Sys.setenv(TZ = "UTC")
 tic <- Sys.time()
