@@ -91,7 +91,7 @@ library(gdata,      quietly = TRUE, warn.conflicts = FALSE)
 source("./DEFINITIONS.R")
 
 ## make sure only one parser is this working
-locked <- lock(paste0(DATASET, ".lock"))
+lock <- lock(paste0(DATASET, ".lock"))
 
 
 ## unzip in memory

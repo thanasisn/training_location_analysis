@@ -148,16 +148,26 @@ cat(humanReadable(size),"\n")
 DBtest <- DB |> filter(dataset == "GoldenCheetah imports")
 
 test <- DBtest |>
-  select(file, filetype, time) |>
+  select(file, filetype, filehash) |>
+  distinct() |>
   collect()
 
-## garmin files with the same key
+test <- test |>
+  filter(grepl("activity", file, ignore.case = T )) |>
+  mutate(key = stringr::str_extract(basename(file), "[0-9]{9,}")) |>
+  data.table()
 
-gpxkey <- sub("_.*", "", sub("activity_", "", basename(test$file)))
-fitkey <- sub("_ACTIVITY.*", "", basename(test$file))
+keys <- test[, .N, by = key]
+
+test[key %in% keys[N > 1, key], ]
 
 
-gdata::humanReadable(1111)
+
+## garmin files with the filehash
+
+
+
+
 
 
 #' **END**
