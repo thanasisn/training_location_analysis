@@ -121,9 +121,7 @@ for (ad in cnt[N==2, time]) {
     fitkey <- sub("_ACTIVITY.*", "", basename(fitfile))
 
     if (gpxkey == fitkey) {
-
       cat("gpx", gpxfile, "\n")
-
       # file.remove(gpxfile)
     }
   }
@@ -135,6 +133,13 @@ for (ad in cnt[N==2, time]) {
 
 
 ## empty variable
+DB |>
+  select(!c(time, parsed)) |>
+  group_by(file) |>
+  summarise(across( ~sum(!is.na(.)))) |> collect()
+
+
+DF |> select()
 
 
 #' **END**

@@ -168,7 +168,7 @@ print(table(files$file_ext))
 ## Read a set of files each time  --------------------------------------------
 
 ## read some files for testing and to limit memory usage
-nts   <- 13
+nts   <- 10
 files <- unique(rbind(
   tail(files[order(files$filemtime), ], 3*nts),
   files[sample.int(nrow(files), size = nts, replace = T), ]
@@ -676,7 +676,10 @@ for (i in 1:nrow(files)) {
 
     data <- plyr::rbind.fill(data, store)
     rm(store)
+
     if (any(names(data) == "position_lat")) stop("loc")
+    if (any(names(data) == "hrv_btb")) stop("DDFSf")
+    if (any(names(data) == "acc_X")) stop("DDFSf")
 
     stopifnot(length(grep("^HR", names(data), value = T))<2)
   }
