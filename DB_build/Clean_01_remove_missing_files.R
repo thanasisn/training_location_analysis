@@ -23,6 +23,7 @@ library(filelock,   quietly = TRUE, warn.conflicts = FALSE)
 library(lubridate,  quietly = TRUE, warn.conflicts = FALSE)
 library(stringdist, quietly = TRUE, warn.conflicts = FALSE)
 library(rlang,      quietly = TRUE, warn.conflicts = FALSE)
+library(gdata,      quietly = TRUE, warn.conflicts = FALSE)
 
 source("./DEFINITIONS.R")
 

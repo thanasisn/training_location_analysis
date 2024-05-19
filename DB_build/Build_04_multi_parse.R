@@ -56,16 +56,18 @@ unlink(tempfl, recursive = T)
 dir.create(tempfl, showWarnings = F, recursive = T)
 
 ##  List all files to parse  ---------------------------------------------------
-files <- list.files(path         = c(
-  IMP_DIR
-                                     # GC_DIR,
-                                     # GPX_DIR,
-                                     # FIT_DIR
-                                     ),
-                    recursive    = T,
-                    include.dirs = F,
-                    no..         = T,
-                    full.names   = T)
+files <- list.files(
+  path         = c(
+    IMP_DIR
+    # GC_DIR,
+    # GPX_DIR,
+    # FIT_DIR
+  ),
+  recursive    = T,
+  include.dirs = F,
+  no..         = T,
+  full.names   = T
+)
 
 cat("\nAll files ", length(files))
 print(table(file_ext(files)))
