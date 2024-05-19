@@ -39,7 +39,7 @@ DB <- open_dataset(DATASET,
                    unify_schemas = T)
 
 
-## check for dups in GC imports  -----------------------------------------------
+## check for dups in GC imports
 
 DBtest <- DB |> filter(dataset == "GoldenCheetah imports")
 
@@ -94,7 +94,7 @@ for (ad in cnt[N==2, time]) {
 cat(humanReadable(size),"\n")
 
 
-## check for same keys  -------------------------------------------------------
+## check for same keys
 DBtest <- DB |> filter(dataset == "GoldenCheetah imports")
 
 test <- DBtest |>
@@ -113,7 +113,7 @@ keys <- test[, .N, by = key]
 dups <- test[key %in% keys[N > 1, key], ]
 setorder(dups, key)
 
-# print(dups)
+print(dups)
 
 
 # DBtest <- DBtest |> collect() |> data.table()
@@ -127,31 +127,15 @@ for (ak in dups$key) {
     range(tpoin[filetype == "fit", time])[2] == range(tpoin[filetype == "gpx", time])[2]
   ) {
     cat("same start or endtime \n")
-
-    fit <- tpoin[filetype == "fit"]
-    gpx <- tpoin[filetype == "gpx"]
-
-    if (nrow(fit) > 10 & nrow(fit) > nrow(gpx)) {
-      cat("fit is bigger \n")
-
-      gpxfile <- unique(gpx[,file])
-
-      cat("gpx", gpxfile, "\n")
-
-      size <- sum(size, file.size(gpxfile), na.rm = T)
-
-      ## !!! remove files !!!
-      # file.remove(gpxfile)
-    }
   }
+
 }
-cat(humanReadable(size),"\n")
 
 
 
 
 
-## check duplicate files by hash  ------------------------------
+## check duplicate files
 
 test <- DBtest |>
   select(file, filetype, filehash) |>
