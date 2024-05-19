@@ -723,11 +723,13 @@ for (i in 1:nrow(files)) {
 
     if (any(names(data) == "position_lat")) stop("loc")
     # if (any(names(data) == "hrv_btb")) stop("DDFSf")
-    if (any(names(data) == "acc_X")) stop("DDFSf")
+    # if (any(names(data) == "acc_X")) stop("DDFSf")
 
-    ## remove some colums
-    data[, hrv_btb := NULL]
-
+    ## remove some list colums
+    data$hrv_btb <- NULL
+    data$acc_X   <- NULL
+    data$acc_Y   <- NULL
+    data$acc_Z   <- NULL
 
     stopifnot(length(grep("^HR", names(data), value = T))<2)
   }
@@ -904,7 +906,9 @@ if (file.exists(DATASET)) {
   cat("Total files:", new_files, "\n")
   cat("Total days: ", new_days,  "\n")
   cat("Total vars: ", new_vars,  "\n")
-  cat("Size:       ", humanReadable(sum(file.size(list.files(DATASET, recursive = T, full.names = T)))), "\n")
+  cat("Size:       ", humanReadable(sum(file.size(list.files(DATASET,
+                                                             recursive = T,
+                                                             full.names = T)))), "\n")
 
 
 

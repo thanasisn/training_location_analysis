@@ -165,6 +165,11 @@ setorder(dups, key)
 
 print(dups)
 
+for (ak in dups$key) {
+  DBtest |> filter(key == ak)
+}
+
+
 
 
 
