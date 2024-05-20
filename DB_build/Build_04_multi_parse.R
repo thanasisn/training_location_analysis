@@ -24,25 +24,27 @@ if (!interactive()) {
 }
 
 #+ echo=F, include=T
-# devtools::install_github("trackerproject/trackeR")
-# https://msmith.de/FITfileR/articles/FITfileR.html
-# remotes::install_github("grimbough/FITfileR")
-library(FITfileR,   quietly = TRUE, warn.conflicts = FALSE)
-library(R.utils,    quietly = TRUE, warn.conflicts = FALSE)
-library(arrow,      quietly = TRUE, warn.conflicts = FALSE)
-library(data.table, quietly = TRUE, warn.conflicts = FALSE)
-library(dplyr,      quietly = TRUE, warn.conflicts = FALSE)
-library(filelock,   quietly = TRUE, warn.conflicts = FALSE)
-library(janitor,    quietly = TRUE, warn.conflicts = FALSE)
-library(jsonlite,   quietly = TRUE, warn.conflicts = FALSE)
-library(lubridate,  quietly = TRUE, warn.conflicts = FALSE)
-library(rlang,      quietly = TRUE, warn.conflicts = FALSE)
-library(sf,         quietly = TRUE, warn.conflicts = FALSE)
-library(tibble,     quietly = TRUE, warn.conflicts = FALSE)
-library(tools,      quietly = TRUE, warn.conflicts = FALSE)
-library(trackeR,    quietly = TRUE, warn.conflicts = FALSE)
-library(trip,       quietly = TRUE, warn.conflicts = FALSE)
-library(gdata,      quietly = TRUE, warn.conflicts = FALSE)
+suppressPackageStartupMessages({
+  # devtools::install_github("trackerproject/trackeR")
+  # https://msmith.de/FITfileR/articles/FITfileR.html
+  # remotes::install_github("grimbough/FITfileR")
+  library(FITfileR,   quietly = TRUE, warn.conflicts = FALSE)
+  library(R.utils,    quietly = TRUE, warn.conflicts = FALSE)
+  library(arrow,      quietly = TRUE, warn.conflicts = FALSE)
+  library(data.table, quietly = TRUE, warn.conflicts = FALSE)
+  library(dplyr,      quietly = TRUE, warn.conflicts = FALSE)
+  library(filelock,   quietly = TRUE, warn.conflicts = FALSE)
+  library(janitor,    quietly = TRUE, warn.conflicts = FALSE)
+  library(jsonlite,   quietly = TRUE, warn.conflicts = FALSE)
+  library(lubridate,  quietly = TRUE, warn.conflicts = FALSE)
+  library(rlang,      quietly = TRUE, warn.conflicts = FALSE)
+  library(sf,         quietly = TRUE, warn.conflicts = FALSE)
+  library(tibble,     quietly = TRUE, warn.conflicts = FALSE)
+  library(tools,      quietly = TRUE, warn.conflicts = FALSE)
+  library(trackeR,    quietly = TRUE, warn.conflicts = FALSE)
+  library(trip,       quietly = TRUE, warn.conflicts = FALSE)
+  library(gdata,      quietly = TRUE, warn.conflicts = FALSE)
+})
 
 source("./DEFINITIONS.R")
 

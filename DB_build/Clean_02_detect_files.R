@@ -16,18 +16,19 @@ if (!interactive()) {
 }
 
 #+ echo=F, include=T
-library(data.table, quietly = TRUE, warn.conflicts = FALSE)
-library(arrow,      quietly = TRUE, warn.conflicts = FALSE)
-library(dplyr,      quietly = TRUE, warn.conflicts = FALSE)
-library(filelock,   quietly = TRUE, warn.conflicts = FALSE)
-library(lubridate,  quietly = TRUE, warn.conflicts = FALSE)
-library(janitor,    quietly = TRUE, warn.conflicts = FALSE)
-library(stringdist, quietly = TRUE, warn.conflicts = FALSE)
-library(rlang,      quietly = TRUE, warn.conflicts = FALSE)
-library(gdata,      quietly = TRUE, warn.conflicts = FALSE)
+suppressPackageStartupMessages({
+  library(data.table, quietly = TRUE, warn.conflicts = FALSE)
+  library(arrow,      quietly = TRUE, warn.conflicts = FALSE)
+  library(dplyr,      quietly = TRUE, warn.conflicts = FALSE)
+  library(filelock,   quietly = TRUE, warn.conflicts = FALSE)
+  library(lubridate,  quietly = TRUE, warn.conflicts = FALSE)
+  library(janitor,    quietly = TRUE, warn.conflicts = FALSE)
+  library(stringdist, quietly = TRUE, warn.conflicts = FALSE)
+  library(rlang,      quietly = TRUE, warn.conflicts = FALSE)
+  library(gdata,      quietly = TRUE, warn.conflicts = FALSE)
+})
 
 source("./DEFINITIONS.R")
-
 
 ##  Open dataset  --------------------------------------------------------------
 if (!file.exists(DATASET)) {
@@ -81,15 +82,22 @@ for (ad in cnt[N == 2, time]) {
       if (test[file == gpxfile, .N ] == 1) {
         ## make sure about file types inside archives
         if (test[file == gpxfile, filetype] == "gpx" & test[file == fitfile, filetype] == "fit") {
+          ## check the other file still exists
+          if (file.exists(fitfile)) {
+            cat("1 gpx", gpxfile, "\n")
+            size <- sum(size, file.size(gpxfile), na.rm = T)
 
-          cat("1 gpx", gpxfile, "\n")
-
-          size <- sum(size, file.size(gpxfile), na.rm = T)
-
-          ## !!! remove files !!!
-          # file.remove(gpxfile)
+            ## !!! remove files !!!
+            # file.remove(gpxfile)
+          } else {
+            cat("Other file don't exist\n")
+          }
+        } else {
+          cat("Not exptected file type match\n")
         }
       }
+    } else {
+      cat("not same garmin key\n")
     }
   }
 }
@@ -115,7 +123,7 @@ keys <- test[, .N, by = key]
 dups <- test[key %in% keys[N > 1, key], ]
 setorder(dups, key)
 
-# print(dups)
+print(dups)
 
 # DBtest <- DBtest |> collect() |> data.table()
 for (ak in dups$key) {
@@ -123,26 +131,38 @@ for (ak in dups$key) {
   tpoin <- DBtest |> filter(file %in% fnes) |> collect() |> data.table()
   tpoin <- remove_empty(tpoin, which = "cols")
 
+  fit <- tpoin[filetype == "fit"]
+  gpx <- tpoin[filetype == "gpx"]
+
+  gpxfile <- unique(gpx[,file])
+  fitfile <- unique(fit[,file])
+
+  stopifnot(length(gpxfile) == 1)
+  stopifnot(length(fitfile) == 1)
+
+  ## gpx inside fit
   if (
-    range(tpoin[filetype == "fit", time])[1] == range(tpoin[filetype == "gpx", time])[1] |
-    range(tpoin[filetype == "fit", time])[2] == range(tpoin[filetype == "gpx", time])[2]
+    range(fit[,time])[1] <= range(gpx[,time])[1] &
+    range(fit[,time])[2] >= range(gpx[,time])[2]
   ) {
     cat("same start or endtime \n")
-
-    fit <- tpoin[filetype == "fit"]
-    gpx <- tpoin[filetype == "gpx"]
 
     if (nrow(fit) > 10 & nrow(fit) >= nrow(gpx)) {
       cat("fit is bigger \n")
 
-      gpxfile <- unique(gpx[,file])
+      ## check the other file still exist
+      if (file.exists(fitfile)) {
+        cat("2 gpx", gpxfile, "\n")
 
-      cat("2 gpx", gpxfile, "\n")
-
-      size <- sum(size, file.size(gpxfile), na.rm = T)
-      ## !!! remove files !!!
-      # if (file.exists(gpxfile)) file.remove(gpxfile)
+        size <- sum(size, file.size(gpxfile), na.rm = T)
+        ## !!! remove files !!!
+        # if (file.exists(gpxfile)) file.remove(gpxfile)
+      }
+    } else {
+      cat("fit is smaller \n")
     }
+  } else {
+    cat("not matching range \n")
   }
 }
 cat(humanReadable(size),"\n")
@@ -164,7 +184,8 @@ hdups  <- test[filehash %in% hashes[N > 1, filehash], ]
 
 
 
-## check overlaping time/space ranges
+## check overlapping time/space ranges
+## see gpx aggregator project
 DBtest |>
   select(file, time) |>
   group_by(file)     |>
@@ -177,7 +198,7 @@ DBtest |>
 #
 # findOverlaps-methods {IRanges}
 
-
+# lubridate::interval()
 
 
 #' **END**

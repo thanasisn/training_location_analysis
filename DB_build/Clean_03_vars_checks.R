@@ -16,13 +16,15 @@ if (!interactive()) {
 }
 
 #+ echo=F, include=T
-library(data.table, quietly = TRUE, warn.conflicts = FALSE)
-library(arrow,      quietly = TRUE, warn.conflicts = FALSE)
-library(dplyr,      quietly = TRUE, warn.conflicts = FALSE)
-library(filelock,   quietly = TRUE, warn.conflicts = FALSE)
-library(lubridate,  quietly = TRUE, warn.conflicts = FALSE)
-library(stringdist, quietly = TRUE, warn.conflicts = FALSE)
-library(rlang,      quietly = TRUE, warn.conflicts = FALSE)
+suppressPackageStartupMessages({
+  library(data.table, quietly = TRUE, warn.conflicts = FALSE)
+  library(arrow,      quietly = TRUE, warn.conflicts = FALSE)
+  library(dplyr,      quietly = TRUE, warn.conflicts = FALSE)
+  library(filelock,   quietly = TRUE, warn.conflicts = FALSE)
+  library(lubridate,  quietly = TRUE, warn.conflicts = FALSE)
+  library(stringdist, quietly = TRUE, warn.conflicts = FALSE)
+  library(rlang,      quietly = TRUE, warn.conflicts = FALSE)
+})
 
 source("./DEFINITIONS.R")
 
