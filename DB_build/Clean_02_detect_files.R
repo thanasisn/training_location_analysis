@@ -139,7 +139,7 @@ for (ak in dups$key) {
 
       size <- sum(size, file.size(gpxfile), na.rm = T)
       ## !!! remove files !!!
-      if (file.exists(gpxfile)) file.remove(gpxfile)
+      # if (file.exists(gpxfile)) file.remove(gpxfile)
     }
   }
 }

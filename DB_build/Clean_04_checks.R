@@ -29,7 +29,7 @@ library(rlang,      quietly = TRUE, warn.conflicts = FALSE)
 source("./DEFINITIONS.R")
 
 ## make sure only one parser is this working??
-lock <- lock(paste0(DATASET, ".lock"))
+# lock <- lock(paste0(DATASET, ".lock"))
 
 ##  Open dataset  --------------------------------------------------------------
 if (!file.exists(DATASET)) {
@@ -77,17 +77,17 @@ if (any(empty == 0)) {
 #   summarise(across(all_of(cols), sum(is.na(.)), .names = "mean_{.col}"))
 
 DB |>
-  select(!c(time, parsed)) |>
+  select(!c(time, parsed, filemtime, filehash)) |>
   group_by(file) |>
   summarise(across(where(is.numeric), ~ mean(.x, na.rm = TRUE))) |> collect()
 
 DB |>
-  select(!c(time, parsed)) |>
+  select(!c(time, parsed, filemtime, filehash)) |>
   group_by(file) |>
   summarise(across(where(is.numeric), ~ sum(is.na(.x)))) |> collect()
 
 DB |>
-  select(!c(time, parsed)) |>
+  select(!c(time, parsed, filemtime, filehash)) |>
   group_by(file) |>
   summarise(across(where(is.numeric), ~ sum(!is.na(.x)))) |> collect()
 
@@ -102,9 +102,13 @@ DB |>
   group_by(file) |>
   summarise(across(everything(), ~ n() - sum(is.na(.x)))) |> collect()
 
-DB |>
+empty <- DB |>
   select(!c(time, parsed, filemtime, filehash)) |>
-  summarise(across(everything(), ~ n() - sum(is.na(.x)))) |> collect()
+  summarise(across(everything(), ~ n() - sum(is.na(.x)))) |>
+  collect() |> data.table()
+
+
+
 
 
 
