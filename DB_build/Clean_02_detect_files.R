@@ -52,7 +52,9 @@ test <- DBtest |>
 
 cnt <- test[, .N, by = time]
 size <- 0
-for (ad in cnt[N==2, time]) {
+
+
+for (ad in cnt[N == 2, time]) {
   ccc <- DBtest |> filter(as.Date(time) == as.Date(ad)) |> collect() |> data.table()
   ccc <- remove_empty(ccc, which = "cols")
 
@@ -151,18 +153,30 @@ cat(humanReadable(size),"\n")
 
 ## check duplicate files by hash  ------------------------------
 
-# test <- DBtest |>
-#   select(file, filetype, filehash) |>
-#   distinct() |>
-#   collect()
-#
-# hashes <- test[, .N, by = filehash]
-#
-# hdups <- test[filehash %in% hashes[N > 1, filehash], ]
+test <- DBtest |>
+  select(file, filetype, filehash) |>
+  distinct() |>
+  collect()  |>
+  data.table()
+
+hashes <- test[, .N, by = filehash]
+hdups  <- test[filehash %in% hashes[N > 1, filehash], ]
 
 
 
 ## check overlaping time/space ranges
+DBtest |>
+  select(file, time) |>
+  group_by(file)     |>
+  summarise(mintime = min(time),
+            maxtime = max(time)) |>
+  collect() |>
+  data.table()
+
+# foverlaps(rangesA, rangesB, type="within", nomatch=0L)
+#
+# findOverlaps-methods {IRanges}
+
 
 
 
