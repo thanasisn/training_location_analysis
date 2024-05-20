@@ -129,7 +129,7 @@ print(table(files$file_ext))
 ## read some files for testing and to limit memory usage
 nts   <- 5
 files <- unique(rbind(
-  # tail(files[order(files$filemtime), ], 4 * nts),
+  tail(files[order(files$filemtime), ], 4 * nts),
   files[sample.int(nrow(files), size = nts, replace = T), ]
 ))
 
@@ -441,6 +441,8 @@ for (i in 1:nrow(files)) {
     if (exists("samples")) {
       if (nrow(samples) > 0) {
         samples <- cbind(spat, samples, metadt)
+      } else {
+        samples <- cbind(spat, metadt)
       }
     } else {
       samples <- cbind(spat, metadt)
@@ -669,7 +671,6 @@ for (i in 1:nrow(files)) {
 
   ## Gather data  --------------------------------------------------------------
   if (exists("store")) {
-
     # if (!exists("data") | nrow(data) == 0) {
     #   data <- store
     # } else {
@@ -680,19 +681,15 @@ for (i in 1:nrow(files)) {
     rm(store)
 
     if (any(names(data) == "position_lat")) stop("loc")
-    # if (any(names(data) == "hrv_btb")) stop("DDFSf")
-    # if (any(names(data) == "acc_X")) stop("DDFSf")
 
-    ## remove some list colums
+    ## remove some list columns
     data$hrv_btb <- NULL
     data$acc_X   <- NULL
     data$acc_Y   <- NULL
     data$acc_Z   <- NULL
 
-    stopifnot(length(grep("^HR", names(data), value = T))<2)
+    stopifnot(length(grep("^HR", names(data), value = T)) < 2)
   }
-
-
 
   ## remove temporary file from memory
   if (exists("from")) {
