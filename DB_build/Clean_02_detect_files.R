@@ -85,7 +85,7 @@ for (ad in cnt[N==2, time]) {
           size <- sum(size, file.size(gpxfile), na.rm = T)
 
           ## !!! remove files !!!
-          # file.remove(gpxfile)
+          file.remove(gpxfile)
         }
       }
     }
