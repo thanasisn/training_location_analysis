@@ -54,7 +54,6 @@ test <- DBtest |>
 cnt <- test[, .N, by = time]
 size <- 0
 
-
 for (ad in cnt[N == 2, time]) {
   ccc <- DBtest |> filter(as.Date(time) == as.Date(ad)) |> collect() |> data.table()
   ccc <- remove_empty(ccc, which = "cols")
@@ -66,7 +65,7 @@ for (ad in cnt[N == 2, time]) {
   if ( !(fit[,.N] > 1000 & gpx[,.N] > 1000)) {
     next()
   }
-
+stop()
   ## same time range
   if (all(fit[, range(time)] == gpx[, range(time)])) {
     gpxfile <- unique(gpx[,file])
@@ -181,6 +180,9 @@ test <- DBtest |>
 
 hashes <- test[, .N, by = filehash]
 hdups  <- test[filehash %in% hashes[N > 1, filehash], ]
+
+
+
 
 
 
