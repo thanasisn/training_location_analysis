@@ -60,10 +60,11 @@ dir.create(tempfl, showWarnings = F, recursive = T)
 ##  List all files to parse  ---------------------------------------------------
 files <- list.files(
   path         = c(
-    IMP_DIR
+    IMP_DIR,
     # GC_DIR,
     # GPX_DIR,
-    # FIT_DIR
+    FIT_DIR,
+    NULL
   ),
   recursive    = T,
   include.dirs = F,
