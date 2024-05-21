@@ -41,3 +41,18 @@ expect <- c("STARTTIME",
             "SAMPLES",
             "XDATA")
 
+
+##  Active elements  -----------------------------------------------------------
+
+library(arrow,      quietly = TRUE, warn.conflicts = FALSE)
+
+opendata <- function() {
+  open_dataset(DATASET,
+               partitioning  = c("year", "month"),
+               hive_style    = FALSE,
+               unify_schemas = TRUE)
+}
+
+
+
+

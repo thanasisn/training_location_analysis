@@ -35,16 +35,13 @@ source("./DEFINITIONS.R")
 if (!file.exists(DATASET)) {
   stop("NO DB!\n")
 }
-
-DB <- open_dataset(DATASET,
-                   partitioning  = c("year", "month"),
-                   unify_schemas = T)
+DB <- opendata()
 
 
 
 ## TESTS --------
 
-## check variable consistency
+## TODO check variable consistency
 stats <- DB |>
   select(!c(time, parsed, filemtime, filehash)) |>
   group_by(file) |>
@@ -54,6 +51,42 @@ stats <- DB |>
                      Min    = ~ min(   .x, na.rm = TRUE),
                      Mean   = ~ mean(  .x, na.rm = TRUE),
                      Median = ~ median(.x, na.rm = TRUE)
+                   ))) |> collect() |> data.table()
+
+
+
+## TODO detect identical variables to merge
+
+
+
+
+## TODO check file categories for missing data/variable
+DB |>
+  select(!c(time, parsed, filemtime, filehash)) |>
+  group_by(file) |>
+  summarise(across(where(is.numeric), ~ sum(is.na(.x)))) |> collect()
+
+DB |>
+  select(!c(time, parsed, filemtime, filehash)) |>
+  group_by(file) |>
+  summarise(across(where(is.numeric), ~ sum(!is.na(.x)))) |> collect()
+
+DB |>
+  select(!c(time, parsed, filemtime, filehash)) |>
+  group_by(file) |>
+  summarise(across(everything(), ~ n() - sum(is.na(.x)))) |> collect()
+
+
+
+complet <- DB |>
+  select(!c(time, parsed, filemtime, filehash)) |>
+  group_by(file) |>
+  summarise(across(where(is.numeric),
+                   list(
+                     NAs      = ~ sum(is.na(.x)),
+                     data     = ~ sum(!is.na(.x)),
+                     fill     = ~ n() - sum(is.na(.x)),
+                     fillness = ~ (n() - sum(is.na(.x)))/n()
                    ))) |> collect() |> data.table()
 
 
@@ -77,22 +110,6 @@ stats <- DB |>
 
 
 
-
-DB |>
-  select(!c(time, parsed, filemtime, filehash)) |>
-  group_by(file) |>
-  summarise(across(where(is.numeric), ~ sum(is.na(.x)))) |> collect()
-
-DB |>
-  select(!c(time, parsed, filemtime, filehash)) |>
-  group_by(file) |>
-  summarise(across(where(is.numeric), ~ sum(!is.na(.x)))) |> collect()
-
-
-DB |>
-  select(!c(time, parsed, filemtime, filehash)) |>
-  group_by(file) |>
-  summarise(across(everything(), ~ sum(!is.na(.x)))) |> collect()
 
 DB |>
   select(!c(time, parsed, filemtime, filehash)) |>
