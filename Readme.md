@@ -34,3 +34,21 @@ applications.
 - [ ] [Training analysis code](https://github.com/thanasisn/IStillBreakStuff/tree/main/training_analysis)
 - [ ] [Location analysis code](https://github.com/thanasisn/IStillBreakStuff/tree/main/gpx_tools/gpx_db)
 
+## Description
+
+The main database collects all available data from the source files. The intent is to
+first aggregate as much data as possible, then to analyze the raw data, in order to
+find source files that we can delete or exclude from the main database. Also, by
+reading all the files we can detect file and formatting problems. The source files
+have been produced by different devices and have been processed by different
+software. We want to collect all the information gathered over a period of more than
+10 years, so we expect more than 100 variables/columns and more than 20M
+records/rows. The processing scheme we try to implement should work with simple
+hardware specifications (8GB RAM or even less).
+
+With further analysis, we can merge some of the variables, and check the data
+quality.
+
+After we are confident about the data quality and the info in them, we can use the
+data to create other datasets we need.
+

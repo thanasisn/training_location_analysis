@@ -24,6 +24,7 @@ suppressPackageStartupMessages({
   library(lubridate,  quietly = TRUE, warn.conflicts = FALSE)
   library(stringdist, quietly = TRUE, warn.conflicts = FALSE)
   library(rlang,      quietly = TRUE, warn.conflicts = FALSE)
+  library(gdata,      quietly = TRUE, warn.conflicts = FALSE)
 })
 
 source("./DEFINITIONS.R")
@@ -104,7 +105,7 @@ for (al in algo) {
 # agrep("Device", names(DB), ignore.case = T, value = T)
 
 
-## Some stats ----
+##  Some stats  ----------------------------------------------------------------
 
 
 DB |> select(file, Sport, SubSport) |>
@@ -137,8 +138,14 @@ DB |> select(file, dataset, filetype) |>
 #   tally() |> collect()
 
 
-cat("Size:", sum(file.size(list.files(DATASET, recursive = T, full.names = T))) / 2^20, "Mb\n")
+cat(
+  "DB Size:    ",
+  humanReadable(sum(file.size(list.files(DATASET, recursive = T, full.names = T)))), "\n")
 
+filelist <- DB |> select(file) |> distinct() |> collect()
+cat(
+  "Source Size:",
+  humanReadable(sum(file.size(filelist$file))), "\n")
 
 ##  Remove a var
 # stop("")
