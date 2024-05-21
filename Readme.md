@@ -11,8 +11,11 @@ applications.
 ## Create a database
 
 - [x] Include .json files from GoldenCheetah.
-- [x] Include .fit files from Garmin.
-- [x] Include .gpx files from other sources.
+- [x] Include .fit  files from Garmin.
+- [ ] Include .json files from Garmin.
+- [ ] Include .tcx  files from Polar
+- [ ] Include .hrv  files from Polar
+- [x] Include .gpx  files from other sources.
 - [ ] Include data from Google location service.
 - Database maintenance.
    - [x] Remove data from deleted files.

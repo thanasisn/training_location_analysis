@@ -45,13 +45,21 @@ db_days  <- unlist(DB |> select(time) |> mutate(time = as.Date(time)) |> distinc
 db_vars  <- length(names(DB))
 
 
-## TODO check empty variables
+##  Check empty variables  -----------------------------------------------------
+
+empty <- DB |>
+  select(!c(time, parsed, filemtime, filehash)) |>
+  summarise(across(everything(), ~ n() - sum(is.na(.x)))) |> collect() |> data.table()
+
+if (any(empty == 0)) {
+  cat("Empty vars:\n")
+  cat(names(empty)[empty == 0], sep = "\n")
+  warning("Fix empty or rebuild")
+}
 
 
 
-
-# DB |> filter(Device!=DEVICETYPE) |> count() |> collect()
-
+##  Check variable names similarity  -------------------------------------------
 
 rowvec <- names(DB)[nchar(names(DB)) > 1]
 colvec <- names(DB)[nchar(names(DB)) > 1]
@@ -94,6 +102,10 @@ for (al in algo) {
 
 
 # agrep("Device", names(DB), ignore.case = T, value = T)
+
+
+## Some stats ----
+
 
 DB |> select(file, Sport, SubSport) |>
   distinct() |>

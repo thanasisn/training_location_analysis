@@ -54,9 +54,18 @@ test <- DBtest |>
 cnt <- test[, .N, by = time]
 size <- 0
 
+ssc <- cnt[N == 2, time]
+print(length(ssc))
+
 for (ad in cnt[N == 2, time]) {
-  ccc <- DBtest |> filter(as.Date(time) == as.Date(ad)) |> collect() |> data.table()
+  cat(as.Date(ad, origin = "1970-01-01"),"\n")
+  ccc <- DBtest |>
+    filter(as.Date(time) == as.Date(ad)) |>
+    collect() |>
+    data.table()
   ccc <- remove_empty(ccc, which = "cols")
+
+  print(ccc |> select(file, filetype) |> distinct())
 
   fit <- ccc[filetype == "fit"]
   gpx <- ccc[filetype == "gpx"]
@@ -65,7 +74,7 @@ for (ad in cnt[N == 2, time]) {
   if ( !(fit[,.N] > 1000 & gpx[,.N] > 1000)) {
     next()
   }
-stop()
+
   ## same time range
   if (all(fit[, range(time)] == gpx[, range(time)])) {
     gpxfile <- unique(gpx[,file])
@@ -180,14 +189,14 @@ test <- DBtest |>
 
 hashes <- test[, .N, by = filehash]
 hdups  <- test[filehash %in% hashes[N > 1, filehash], ]
-
+setorder(hdups, filehash)
 
 
 
 
 
 ## check overlapping time/space ranges
-## see gpx aggregator project
+## see gpx aggregation project
 DBtest |>
   select(file, time) |>
   group_by(file)     |>

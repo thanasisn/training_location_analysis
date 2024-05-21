@@ -4,12 +4,8 @@
 #### Run database build sequence
 
 
-## update file removals
+## update file and data removals
 "./DB_build/Clean_01_remove_missing_files.R"
-
-# "./DB_build/Build_01_json_GoldenCheetah_activities.R"
-# "./DB_build/Build_02_gpx_records.R"
-# "./DB_build/Build_03_fit_garmin.R"
 
 ## add data to database
 "./DB_build/Build_04_multi_parse.R"

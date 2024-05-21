@@ -9,11 +9,21 @@ DBlevel <- 5
 
 
 ##  Input paths  ---------------------------------------------------------------
-##  no slasl at end of path !!
-GC_DIR  <- "~/TRAIN/GoldenCheetah/Athan/activities"
+##  no slash at end of path !!
+
+## read this first, containing current active data
 IMP_DIR <- "~/TRAIN/GoldenCheetah/Athan/imports"
-GPX_DIR <- "~/GISdata/GPX"
+
+## read this and remove duplicate training activities
 FIT_DIR <- "~/TRAIN/Garmin_Exports/original"
+## sync this with download script
+GAR_RETAIN <- 300
+
+## this should also contain all activities form IMP_DIR
+GC_DIR  <- "~/TRAIN/GoldenCheetah/Athan/activities"
+
+## more data of location and activities
+GPX_DIR <- "~/GISdata/GPX"
 
 ##  Other variables  -----------------------------------------------------------
 EPSG_WGS84 <- 4326  ## Usual gps datum

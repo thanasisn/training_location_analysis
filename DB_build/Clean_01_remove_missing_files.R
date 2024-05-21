@@ -46,6 +46,11 @@ db_files <- unlist(DB |> select(file) |> distinct() |> count() |> collect())
 db_days  <- unlist(DB |> select(time) |> mutate(time = as.Date(time)) |> distinct() |> count() |> collect())
 db_vars  <- length(names(DB))
 
+
+
+
+##  Remove deleted files from the DB  ------------------------------------------
+
 ##  Get file list
 wehave <- DB |> select(file, filemtime, year, month) |> unique() |> collect() |> data.table()
 
@@ -57,8 +62,6 @@ wehave[, currenct := filemtime == floor_date(file.mtime(file), unit = "seconds")
 
 ##  List of offending files
 removefl <- wehave[exists == F | currenct == F]
-
-
 
 if (nrow(removefl) > 0){
   cat("Removing", nrow(removefl), "files\n")
@@ -104,8 +107,75 @@ if (nrow(removefl) > 0){
   cat("Total vars: ",  new_vars, "\n")
   cat("Size:       ", humanReadable(sum(file.size(list.files(DATASET, recursive = T, full.names = T)))), "\n")
 } else {
-  cat("No files to remove\n")
+  cat("No data to remove from DB\n")
 }
+
+
+
+
+##  Deduplicate Garmin exports  ------------------------------------------------
+
+##  Assuming we have first parse all imports form GoldenGheetah
+##  and the activity timestamp is a reliable key to use
+
+## get keys in golden cheetah
+ingolden <- DB |>
+  filter(dataset == "GoldenCheetah imports") |>
+  select(file) |>
+  distinct()   |>
+  collect()    |>
+  mutate(key = stringr::str_extract(basename(file), "[0-9]{9,}")) |>
+  filter(!is.na(key)) |>
+  data.table()
+
+## get file from garmin
+garfiles <- list.files(FIT_DIR,
+                       full.names = T,
+                       recursive  = T)
+garfiles <- data.table(file = garfiles)
+
+garfiles[, key := stringr::str_extract(basename(file), "[0-9]{9,}")]
+garfiles[, key := as.numeric(key)]
+
+setorder(garfiles, key)
+
+## ignore n most recent
+garfiles <- garfiles[1:(nrow(garfiles) - GAR_RETAIN), ]
+
+## find files to remove by key
+filesrm <- garfiles[key %in% ingolden$key, file]
+
+if (length(filesrm) > 0) {
+  ## make sure we see the right folder
+  filesrm <- filesrm[grepl("Garmin_Exports", filesrm)]
+  cat("Will remove", length(filesrm), "files", humanReadable(sum(file.size(filesrm))), "\n")
+
+  ## REMOVE FILES !!!
+  file.remove(filesrm)
+} else {
+  cat("No files to remove from", FIT_DIR, "\n")
+}
+
+
+
+##  Detect duplicate parsing of files  -----------------------------------------
+
+dupread <- DB |>
+  select(file, parsed) |>
+  distinct() |>
+  collect()  |>
+  data.table()
+
+dupread <- dupread[, .N, by = file]
+dupread <- dupread[N>1, ]
+
+stopifnot(nrow(dupread)==0)
+
+
+
+
+
+
 
 
 unlock(lock)

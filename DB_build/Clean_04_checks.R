@@ -43,15 +43,6 @@ DB <- open_dataset(DATASET,
                    unify_schemas = T)
 
 
-## empty varialbe
-empty <- DB |>
-  select(!c(time, parsed, filemtime, filehash)) |>
-  summarise(across(everything(), ~ n() - sum(is.na(.x)))) |> collect() |> data.table()
-
-if (any(empty == 0)) {
-  cat("Empty vars")
-  stop("emty")
-}
 
 
 # ## empty variable

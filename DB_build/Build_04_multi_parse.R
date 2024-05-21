@@ -63,7 +63,7 @@ files <- list.files(
     IMP_DIR,
     # GC_DIR,
     # GPX_DIR,
-    FIT_DIR,
+    FIT_DIR,     ## <- parse IMP_DIR first for efficiency
     NULL
   ),
   recursive    = T,
@@ -118,7 +118,8 @@ if (file.exists(DATASET)) {
   wehave <- DB |> select(file, filemtime) |> unique() |> collect() |> data.table()
 
   ##  Ignore files with the same name and mtime
-  files <- files[ !(file %in% wehave$file & filemtime %in% wehave$filemtime) ]
+  files <- files[ !(file %in% wehave$file & filemtime %in% wehave$filemtime)]
+  rm(wehave)
 } else {
   cat("WILL INIT DB!\n")
 }
@@ -127,10 +128,40 @@ cat("\nData files to parse ", length(files$file_ext))
 print(table(files$file_ext))
 
 
-## Read a set of files each time  --------------------------------------------
+
+##  Ignore duplicates files  ---------------------------------------------------
+
+## get keys in golden cheetah
+ingolden <- DB |>
+  filter(dataset == "GoldenCheetah imports") |>
+  select(file) |>
+  distinct()   |>
+  collect()    |>
+  mutate(key = stringr::str_extract(basename(file), "[0-9]{9,}")) |>
+  filter(!is.na(key)) |>
+  data.table()
+
+## get file from garmin
+garfiles <- list.files(FIT_DIR,
+                       full.names = T,
+                       recursive  = T)
+garfiles <- data.table(file = garfiles)
+
+garfiles[, key := stringr::str_extract(basename(file), "[0-9]{9,}")]
+garfiles[, key := as.numeric(key)]
+
+
+## find files to ignore from parsing by key
+filesrm <- garfiles[key %in% ingolden$key, file]
+files   <- files[!file %in% filesrm, ]
+
+
+
+
+## Read a set of files with each run  --------------------------------------------
 
 ## read some files for testing and to limit memory usage
-nts   <- 7
+nts   <- 5
 files <- unique(rbind(
   tail(files[order(files$filemtime), ], 4 * nts),
   files[sample.int(nrow(files), size = nts, replace = T), ]
@@ -869,6 +900,12 @@ if (file.exists(DATASET)) {
                                                              full.names = T)))), "\n")
 
 
+  ##  Detect not parsed files  -------------------------------------------------
+  wehave <- DB |> select(file) |> distinct() |> collect() |> data.table()
+  failed <- files[!file %in% wehave$file, .(file, dataset)]
+  write.csv2(failed, "~/CODE/training_location_analysis/runtime/Failed_to_parse.csv",
+             row.names = FALSE, quote = FALSE)
+
 
   DB |> select(file, dataset) |> distinct() |> select(dataset) |> collect() |> table()
 
@@ -890,6 +927,9 @@ if (file.exists(DATASET)) {
                 existing_data_behavior = "overwrite",
                 hive_style             = F)
 }
+
+
+
 
 
 unlock(lock)
