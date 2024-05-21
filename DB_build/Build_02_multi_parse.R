@@ -61,10 +61,10 @@ dir.create(tempfl, showWarnings = F, recursive = T)
 ##  List all files to parse  ---------------------------------------------------
 files <- list.files(
   path         = c(
-    IMP_DIR,    ## <- main data source
-    # GC_DIR,   ## <- main data, parse some of these first to init more variables
-    # GPX_DIR,  ## <- parse some of these first to init more variables
-    # FIT_DIR,  ## <- parse IMP_DIR first for efficiency
+    IMP_DIR,   ## <- main data source
+    # GC_DIR,    ## <- main data, parse some of these first to init more variables
+    # GPX_DIR,   ## <- parse some of these first to init more variables
+    # FIT_DIR,   ## <- parse IMP_DIR first for efficiency
     NULL
   ),
   recursive    = T,
@@ -88,7 +88,7 @@ files <- grep("\\.pdf$",     files, invert = T, value = T, ignore.case = T)
 files <- grep("\\/Points\\/", files, invert = T, value = T)
 files <- grep("\\/Plans\\/",  files, invert = T, value = T)
 
-## Ignore for now (may use my POLAr package) these are unique and original data.
+## Ignore for now (may use my POLAr package to read) these are unique and original data.
 files <- grep("\\.hrm$", files, invert = T, value = T, ignore.case = T)
 
 cat("\nData files ", length(files))

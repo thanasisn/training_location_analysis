@@ -47,21 +47,18 @@ db_vars  <- length(names(DB))
 
 
 ##  Check empty variables  -----------------------------------------------------
-
 empty <- DB |>
   select(!c(time, parsed, filemtime, filehash)) |>
   summarise(across(everything(), ~ n() - sum(is.na(.x)))) |> collect() |> data.table()
 
 if (any(empty == 0)) {
-  cat("Empty vars:\n")
-  cat(names(empty)[empty == 0], sep = "\n")
-  warning("Fix empty or rebuild")
+  cat(paste("Empty var:  ", names(empty)[empty == 0]), sep = "\n")
+  warning("Fix empty vars or rebuild")
 }
 
 
 
 ##  Check variable names similarity  -------------------------------------------
-
 rowvec <- names(DB)[nchar(names(DB)) > 1]
 colvec <- names(DB)[nchar(names(DB)) > 1]
 
@@ -100,9 +97,8 @@ for (al in algo) {
 
   print(head(res, 25))
 }
-
-
 # agrep("Device", names(DB), ignore.case = T, value = T)
+
 
 
 ##  Some stats  ----------------------------------------------------------------

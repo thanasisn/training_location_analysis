@@ -3,7 +3,6 @@
 #'
 #'
 
-
 #+ echo=FALSE, include=TRUE
 ## __ Set environment  ---------------------------------------------------------
 Sys.setenv(TZ = "UTC")
@@ -43,13 +42,21 @@ DB <- open_dataset(DATASET,
 
 
 
+## TESTS --------
 
-# ## empty variable
-# DB |>
-#   select(!c(time, parsed)) |>
-#   group_by(file) |>
-#   summarise(across( ~sum(!is.na(.)))) |> collect()
-#
+## check variable consistency
+stats <- DB |>
+  select(!c(time, parsed, filemtime, filehash)) |>
+  group_by(file) |>
+  summarise(across(where(is.numeric),
+                   list(
+                     Max    = ~ max(   .x, na.rm = TRUE),
+                     Min    = ~ min(   .x, na.rm = TRUE),
+                     Mean   = ~ mean(  .x, na.rm = TRUE),
+                     Median = ~ median(.x, na.rm = TRUE)
+                   ))) |> collect() |> data.table()
+
+
 # DB |>
 #   select(!c(time, parsed)) |>
 #   group_by(file) |>
@@ -68,10 +75,8 @@ DB <- open_dataset(DATASET,
 #   collect() |>
 #   summarise(across(all_of(cols), sum(is.na(.)), .names = "mean_{.col}"))
 
-DB |>
-  select(!c(time, parsed, filemtime, filehash)) |>
-  group_by(file) |>
-  summarise(across(where(is.numeric), ~ mean(.x, na.rm = TRUE))) |> collect()
+
+
 
 DB |>
   select(!c(time, parsed, filemtime, filehash)) |>
@@ -94,14 +99,8 @@ DB |>
   group_by(file) |>
   summarise(across(everything(), ~ n() - sum(is.na(.x)))) |> collect()
 
-empty <- DB |>
-  select(!c(time, parsed, filemtime, filehash)) |>
-  summarise(across(everything(), ~ n() - sum(is.na(.x)))) |>
-  collect() |> data.table()
 
-
-
-
+read.csv("./runtime/Failed_to_parse.csv")
 
 
 #' **END**

@@ -10,18 +10,20 @@ applications.
 
 ## Create a database
 
-- [x] Include .json files from GoldenCheetah.
-- [x] Include .fit  files from Garmin.
+- [ ] Include .csv  files from smartphone logs
+- [ ] Include .hrv  files from Polar
 - [ ] Include .json files from Garmin.
 - [ ] Include .tcx  files from Polar
-- [ ] Include .hrv  files from Polar
-- [x] Include .gpx  files from other sources.
 - [ ] Include data from Google location service.
+- [x] Include .fit  files from Garmin.
+- [x] Include .gpx  files from other sources.
+- [x] Include .json files from GoldenCheetah.
 - Database maintenance.
-   - [x] Remove data from deleted files.
-   - [x] Remove data from modified files.
    - [ ] Check for duplicated records.
    - [x] Check variables names similarity.
+   - [x] Create new vars automatically.
+   - [x] Remove db data from deleted files.
+   - [x] Remove db data from modified files.
 
 ## Quality check of location data
 
