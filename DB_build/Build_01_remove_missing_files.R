@@ -1,14 +1,16 @@
 #!/usr/bin/env Rscript
 # /* Copyright (C) 2022 Athanasios Natsis <natsisphysicist@gmail.com> */
 #'
+#' - Remove data from files that no longer exist
+#' - Delete duplicate files from Garmin direct download folder
+#' - Check for duplicate parsing of same file
 #'
 #+ echo=FALSE, include=TRUE
-
 
 ## __ Set environment  ---------------------------------------------------------
 Sys.setenv(TZ = "UTC")
 tic <- Sys.time()
-Script.Name <- "~/CODE/training_location_analysis/DB_build/Build_00_clean_DB.R"
+Script.Name <- "~/CODE/training_location_analysis/DB_build/Build_01_remove_missing_files.R"
 
 if (!interactive()) {
   dir.create("../runtime/", showWarnings = F, recursive = T)
@@ -17,18 +19,18 @@ if (!interactive()) {
 
 #+ echo=F, include=T
 suppressPackageStartupMessages({
-  library(data.table, quietly = TRUE, warn.conflicts = FALSE)
   library(arrow,      quietly = TRUE, warn.conflicts = FALSE)
+  library(data.table, quietly = TRUE, warn.conflicts = FALSE)
   library(dplyr,      quietly = TRUE, warn.conflicts = FALSE)
   library(filelock,   quietly = TRUE, warn.conflicts = FALSE)
-  library(lubridate,  quietly = TRUE, warn.conflicts = FALSE)
-  library(stringdist, quietly = TRUE, warn.conflicts = FALSE)
-  library(rlang,      quietly = TRUE, warn.conflicts = FALSE)
   library(gdata,      quietly = TRUE, warn.conflicts = FALSE)
+  library(lubridate,  quietly = TRUE, warn.conflicts = FALSE)
+  library(rlang,      quietly = TRUE, warn.conflicts = FALSE)
+  library(stringdist, quietly = TRUE, warn.conflicts = FALSE)
 })
 source("./DEFINITIONS.R")
 
-## make sure only one parser is this working??
+## make sure only one parser is this working
 lock <- lock(paste0(DATASET, ".lock"))
 
 ##  Open dataset  --------------------------------------------------------------
@@ -92,20 +94,23 @@ if (nrow(removefl) > 0){
   ##  Set some measurements
   new_rows  <- unlist(DB |> tally() |> collect())
   new_files <- unlist(DB |> select(file) |> distinct() |> count() |> collect())
-  new_days  <- unlist(DB |> select(time) |> mutate(time= as.Date(time)) |> distinct() |> count() |> collect())
+  new_days  <- unlist(DB |> select(time) |> mutate(time = as.Date(time)) |> distinct() |> count() |> collect())
   new_vars  <- length(names(DB))
 
   cat("\n")
-  cat("New rows:   ",  new_rows - db_rows , "\n")
+  cat("New rows:   ", new_rows  - db_rows , "\n")
   cat("New files:  ", new_files - db_files, "\n")
-  cat("New days:   ",  new_days - db_days , "\n")
-  cat("New vars:   ",  new_vars - db_vars , "\n")
+  cat("New days:   ", new_days  - db_days , "\n")
+  cat("New vars:   ", new_vars  - db_vars , "\n")
   cat("\n")
-  cat("Total rows: ",  new_rows, "\n")
+  cat("Total rows: ", new_rows,  "\n")
   cat("Total files:", new_files, "\n")
-  cat("Total days: ",  new_days, "\n")
-  cat("Total vars: ",  new_vars, "\n")
+  cat("Total days: ", new_days,  "\n")
+  cat("Total vars: ", new_vars,  "\n")
   cat("Size:       ", humanReadable(sum(file.size(list.files(DATASET, recursive = T, full.names = T)))), "\n")
+  filelist <- DB |> select(file) |> distinct() |> collect()
+  cat("Source Size:",
+    humanReadable(sum(file.size(filelist$file))), "\n")
 } else {
   cat("No data to remove from DB\n")
 }
@@ -150,7 +155,7 @@ if (length(filesrm) > 0) {
   filesrm <- filesrm[grepl("Garmin_Exports", filesrm)]
   cat("Will remove", length(filesrm), "files", humanReadable(sum(file.size(filesrm))), "\n")
 
-  ## REMOVE FILES !!!
+  ## DELETE SOURCE FILES !!!
   file.remove(filesrm)
 } else {
   cat("No files to remove from", FIT_DIR, "\n")

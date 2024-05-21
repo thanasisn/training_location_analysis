@@ -1,14 +1,14 @@
 #!/usr/bin/env Rscript
 # /* Copyright (C) 2022 Athanasios Natsis <natsisphysicist@gmail.com> */
 #'
-#'  Detect files needs to be removed
+#'  Detect files that may want to delete
 #'
 
 #+ echo=FALSE, include=TRUE
 ## __ Set environment  ---------------------------------------------------------
 Sys.setenv(TZ = "UTC")
 tic <- Sys.time()
-Script.Name <- "~/CODE/training_location_analysis/DB_build/Build_00_clean_DB.R"
+Script.Name <- "~/CODE/training_location_analysis/DB_build/Clean_02_detect_files.R"
 
 if (!interactive()) {
   dir.create("../runtime/", showWarnings = F, recursive = T)

@@ -1,10 +1,11 @@
 #!/usr/bin/env Rscript
 # /* Copyright (C) 2022 Athanasios Natsis <natsisphysicist@gmail.com> */
 #'
+#' - Parse source files and add data to the DB
+#' - Can read from .gz and .zip files
+#' - Can parse .fit .json .gpx
 #'
-
-
-#### Read Garmin Fit files
+#+ echo=FALSE, include=TRUE
 
 
 ## TODO explore this tools
@@ -15,7 +16,7 @@
 ## __ Set environment  ---------------------------------------------------------
 Sys.setenv(TZ = "UTC")
 tic <- Sys.time()
-Script.Name <- "~/CODE/training_location_analysis/DB_build/Build_04_multi_read.R"
+Script.Name <- "~/CODE/training_location_analysis/DB_build/Build_02_multi_parse.R"
 
 
 if (!interactive()) {
@@ -142,7 +143,6 @@ if (file.exists(DATASET)) {
   garfiles[, key := stringr::str_extract(basename(file), "[0-9]{9,}")]
   garfiles[, key := as.numeric(key)]
 
-
   ## find files to ignore from parsing by key
   filesrm <- garfiles[key %in% ingolden$key, file]
   files   <- files[!file %in% filesrm, ]
@@ -156,11 +156,7 @@ print(table(files$file_ext))
 
 
 
-
-
-
-
-## Read a set of files with each run  --------------------------------------------
+## Read a set of files with each run  ------------------------------------------
 
 ## read some files for testing and to limit memory usage
 nts   <- 5
@@ -184,7 +180,6 @@ for (i in 1:nrow(files)) {
   px <- ex
   cn <- cn + 1
   cat(sprintf("\n\n%3s %3s %s %s", cn, nrow(files), af, "\n"))
-
 
   ## create temporary file in memory  ------------------------------------------
   ## zip
@@ -427,7 +422,10 @@ for (i in 1:nrow(files)) {
     cat(" .")
     ## save output
     store <- act_ME
-  }
+  } ## -- FIT --
+
+
+
 
   ##  GPX  ---------------------------------------------------------------------
   if (px == "gpx") {
@@ -619,7 +617,7 @@ for (i in 1:nrow(files)) {
     }
 
 
-    ## Read extra data  ----------------------------------------------------------
+    ## Read extra data  --------------------------------------------------------
     if (!is.null(jride$XDATA)) {
       xdata <- data.table(jride$XDATA)
 
@@ -703,6 +701,7 @@ for (i in 1:nrow(files)) {
       }
     }
   } ## -- JSON --
+
 
 
   ## Gather data  --------------------------------------------------------------
@@ -900,6 +899,9 @@ if (file.exists(DATASET)) {
   cat("Size:       ", humanReadable(sum(file.size(list.files(DATASET,
                                                              recursive = T,
                                                              full.names = T)))), "\n")
+  filelist <- DB |> select(file) |> distinct() |> collect()
+  cat("Source Size:",
+      humanReadable(sum(file.size(filelist$file))), "\n")
 
 
   ##  Detect not parsed files  -------------------------------------------------
@@ -928,9 +930,14 @@ if (file.exists(DATASET)) {
                 partitioning           = c("year", "month"),
                 existing_data_behavior = "overwrite",
                 hive_style             = F)
+
+  cat("Size:       ", humanReadable(sum(file.size(list.files(DATASET,
+                                                             recursive = T,
+                                                             full.names = T)))), "\n")
+  filelist <- DB |> select(file) |> distinct() |> collect()
+  cat("Source Size:",
+      humanReadable(sum(file.size(filelist$file))), "\n")
 }
-
-
 
 
 
