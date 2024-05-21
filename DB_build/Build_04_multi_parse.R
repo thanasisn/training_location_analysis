@@ -120,6 +120,33 @@ if (file.exists(DATASET)) {
   ##  Ignore files with the same name and mtime
   files <- files[ !(file %in% wehave$file & filemtime %in% wehave$filemtime)]
   rm(wehave)
+
+  ##  Ignore duplicates files  -------------------------------------------------
+
+  ## get keys in golden cheetah
+  ingolden <- DB |>
+    filter(dataset == "GoldenCheetah imports") |>
+    select(file) |>
+    distinct()   |>
+    collect()    |>
+    mutate(key = stringr::str_extract(basename(file), "[0-9]{9,}")) |>
+    filter(!is.na(key)) |>
+    data.table()
+
+  ## get file from garmin
+  garfiles <- list.files(FIT_DIR,
+                         full.names = T,
+                         recursive  = T)
+  garfiles <- data.table(file = garfiles)
+
+  garfiles[, key := stringr::str_extract(basename(file), "[0-9]{9,}")]
+  garfiles[, key := as.numeric(key)]
+
+
+  ## find files to ignore from parsing by key
+  filesrm <- garfiles[key %in% ingolden$key, file]
+  files   <- files[!file %in% filesrm, ]
+
 } else {
   cat("WILL INIT DB!\n")
 }
@@ -129,31 +156,6 @@ print(table(files$file_ext))
 
 
 
-##  Ignore duplicates files  ---------------------------------------------------
-
-## get keys in golden cheetah
-ingolden <- DB |>
-  filter(dataset == "GoldenCheetah imports") |>
-  select(file) |>
-  distinct()   |>
-  collect()    |>
-  mutate(key = stringr::str_extract(basename(file), "[0-9]{9,}")) |>
-  filter(!is.na(key)) |>
-  data.table()
-
-## get file from garmin
-garfiles <- list.files(FIT_DIR,
-                       full.names = T,
-                       recursive  = T)
-garfiles <- data.table(file = garfiles)
-
-garfiles[, key := stringr::str_extract(basename(file), "[0-9]{9,}")]
-garfiles[, key := as.numeric(key)]
-
-
-## find files to ignore from parsing by key
-filesrm <- garfiles[key %in% ingolden$key, file]
-files   <- files[!file %in% filesrm, ]
 
 
 
