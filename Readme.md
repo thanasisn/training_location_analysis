@@ -8,6 +8,8 @@ Do some analysis of the training data, about the fitness aspect of the data.
 Do some analysis and aggregation on the location data, for presence statistics and GIS
 applications.
 
+This probably, will always be a **work in progress**.
+
 ## Create a database
 
 - [ ] Include .csv  files from smartphone logs
