@@ -38,9 +38,7 @@ if (!file.exists(DATASET)) {
   stop("NO DB!\n")
 }
 
-DB <- open_dataset(DATASET,
-                   partitioning  = c("year", "month"),
-                   unify_schemas = T)
+DB <- opendata()
 
 ##  Set some measurements
 db_rows  <- unlist(DB |> tally() |> collect())
@@ -109,8 +107,15 @@ if (nrow(removefl) > 0){
   cat("Total vars: ", new_vars,  "\n")
   cat("Size:       ", humanReadable(sum(file.size(list.files(DATASET, recursive = T, full.names = T)))), "\n")
   filelist <- DB |> select(file) |> distinct() |> collect()
+
+  cat("DB Size:    ", humanReadable(sum(file.size(list.files(DATASET,
+                                                             recursive = T,
+                                                             full.names = T)),
+                                        na.rm = T)), "\n")
+  filelist <- DB |> select(file) |> distinct() |> collect()
   cat("Source Size:",
-    humanReadable(sum(file.size(filelist$file))), "\n")
+      humanReadable( sum(file.size(filelist$file), na.rm = T)), "\n")
+
 } else {
   cat("No data to remove from DB\n")
 }

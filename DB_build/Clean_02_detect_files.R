@@ -35,9 +35,7 @@ if (!file.exists(DATASET)) {
   stop("NO DB!\n")
 }
 
-DB <- open_dataset(DATASET,
-                   partitioning  = c("year", "month"),
-                   unify_schemas = T)
+DB <- opendata()
 
 
 ## check for dups in GC imports  -----------------------------------------------
