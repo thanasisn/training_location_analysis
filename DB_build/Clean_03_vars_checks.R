@@ -134,14 +134,12 @@ DB |> select(file, dataset, filetype) |>
 #   tally() |> collect()
 
 
-cat(
-  "DB Size:    ",
-  humanReadable(sum(file.size(list.files(DATASET, recursive = T, full.names = T)))), "\n")
-
+cat("Size:       ", humanReadable(sum(file.size(list.files(DATASET,
+                                                           recursive = T,
+                                                           full.names = T)))), "\n")
 filelist <- DB |> select(file) |> distinct() |> collect()
-cat(
-  "Source Size:",
-  humanReadable(sum(file.size(filelist$file))), "\n")
+cat("Source Size:",
+    humanReadable( sum(file.size(filelist$file), na.rm = T)), "\n")
 
 ##  Remove a var
 # stop("")

@@ -896,12 +896,18 @@ if (file.exists(DATASET)) {
   cat("Total files:", new_files, "\n")
   cat("Total days: ", new_days,  "\n")
   cat("Total vars: ", new_vars,  "\n")
-  cat("Size:       ", humanReadable(sum(file.size(list.files(DATASET,
+  cat("DB Size:    ", humanReadable(sum(file.size(list.files(DATASET,
                                                              recursive = T,
                                                              full.names = T)))), "\n")
   filelist <- DB |> select(file) |> distinct() |> collect()
   cat("Source Size:",
-      humanReadable(sum(file.size(filelist$file))), "\n")
+      humanReadable(sum(file.size(filelist$file), na.rm = T)), "\n")
+
+  cat(print(DB |> select(file, filetype) |>
+              distinct() |>
+              select(filetype) |>
+              collect() |>
+              table(useNA = "always")))
 
 
   ##  Detect not parsed files  -------------------------------------------------
@@ -931,12 +937,12 @@ if (file.exists(DATASET)) {
                 existing_data_behavior = "overwrite",
                 hive_style             = F)
 
-  cat("Size:       ", humanReadable(sum(file.size(list.files(DATASET,
+  cat("DB Size:    ", humanReadable(sum(file.size(list.files(DATASET,
                                                              recursive = T,
                                                              full.names = T)))), "\n")
   filelist <- DB |> select(file) |> distinct() |> collect()
   cat("Source Size:",
-      humanReadable(sum(file.size(filelist$file))), "\n")
+      humanReadable(sum(file.size(filelist$file), na.rm = T)), "\n")
 }
 
 
