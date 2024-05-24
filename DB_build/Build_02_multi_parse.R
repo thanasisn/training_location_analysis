@@ -823,7 +823,6 @@ stopifnot(!any(duplicated(names(data))))
 
 
 
-
 ## Add data to DB  -------------------------------------------------------------
 if (nrow(data) < 10) {
   stop("You don't want to write")
