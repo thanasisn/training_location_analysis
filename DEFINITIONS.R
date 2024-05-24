@@ -51,6 +51,7 @@ opendata <- function() {
                partitioning  = c("year", "month"),
                hive_style    = FALSE,
                unify_schemas = TRUE)
+  cat("\n ~ DATA BASE LOADED ~ \n\n")
 }
 
 

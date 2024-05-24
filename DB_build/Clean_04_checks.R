@@ -97,6 +97,7 @@ complet <- DB |>
                    ))) |> collect() |> data.table()
 
 
+
 # DB |>
 #   select(!c(time, parsed)) |>
 #   group_by(file) |>

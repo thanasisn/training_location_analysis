@@ -18,7 +18,6 @@ Sys.setenv(TZ = "UTC")
 tic <- Sys.time()
 Script.Name <- "~/CODE/training_location_analysis/DB_build/Build_02_multi_parse.R"
 
-
 if (!interactive()) {
   dir.create("../runtime/", showWarnings = F, recursive = T)
   pdf( file = paste0("../runtime/", basename(sub("\\.R$",".pdf", Script.Name))))
@@ -107,9 +106,7 @@ files[grepl("GoldenCheetah/.*/activities", files$file), dataset := "GoldenCheeta
 
 ##  Open dataset  --------------------------------------------------------------
 if (file.exists(DATASET)) {
-  DB <- open_dataset(DATASET,
-                     partitioning  = c("year", "month"),
-                     unify_schemas = T)
+  DB       <- opendata()
   db_rows  <- unlist(DB |> tally() |> collect())
   db_files <- unlist(DB |> select(file) |> distinct() |> count() |> collect())
   db_days  <- unlist(DB |> select(time) |> mutate(time = as.Date(time)) |> distinct() |> count() |> collect())
@@ -159,7 +156,7 @@ print(table(files$file_ext))
 ## Read a set of files with each run  ------------------------------------------
 
 ## read some files for testing and to limit memory usage
-nts   <- 6
+nts   <- 7
 files <- unique(rbind(
   tail(files[order(files$filemtime), ], 4 * nts),
   files[sample.int(nrow(files), size = nts, replace = T), ]
@@ -755,8 +752,6 @@ if (sum(c("heart_rate", "HR") %in% names(data)) == 2) {
   ## merge
   data[!is.na(heart_rate), HR := heart_rate]
 
-  # data[, sum(!is.na(heart_rate))]
-  # data[, sum(!is.na(HR))]
   data[, heart_rate := NULL]
 }
 
@@ -766,10 +761,19 @@ if (sum(c("temperature", "TEMP") %in% names(data)) == 2) {
   ## merge
   data[!is.na(temperature), TEMP := temperature]
 
-  # data[, sum(!is.na(temperature))]
-  # data[, sum(!is.na(TEMP))]
   data[, temperature := NULL]
 }
+
+# if (sum(c("Distance", "distance") %in% names(data)) == 2) {
+#   ## sanity check
+#   stopifnot(data[!is.na(temperature) & !is.na(TEMP), .N] == 0)
+#   ## merge
+#   data[!is.na(temperature), TEMP := temperature]
+#
+#   data[, temperature := NULL]
+# }
+
+
 
 stopifnot(sum(c("heart_rate", "HR")    %in% names(data))<2)
 stopifnot(sum(c("temperature", "TEMP") %in% names(data))<2)

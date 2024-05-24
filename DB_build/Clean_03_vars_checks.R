@@ -35,9 +35,7 @@ if (!file.exists(DATASET)) {
   stop("NO DB!\n")
 }
 
-DB <- open_dataset(DATASET,
-                   partitioning  = c("year", "month"),
-                   unify_schemas = T)
+DB <- opendata()
 
 ##  Set some measurements
 db_rows  <- unlist(DB |> tally() |> collect())
@@ -98,6 +96,41 @@ for (al in algo) {
   print(head(res, 25))
 }
 # agrep("Device", names(DB), ignore.case = T, value = T)
+
+
+
+## count data overlaps
+DB |> filter(!is.na(Distance) & !is.na(distance)) |> count() |> collect()
+
+test <- DB |> filter(!is.na(Distance) | !is.na(distance)) |>
+  select(file, time, distance, Distance, filetype, dataset) |> collect()
+
+test |> filter(!is.na(Distance)) |> count()
+test |> filter(!is.na(distance)) |> count()
+
+test |> filter(!is.na(distance)) |> summary()
+test |> filter(!is.na(Distance)) |> summary()
+
+A <- test |> filter(!is.na(distance))
+B <- test |> filter(!is.na(Distance))
+
+  ## TODO count data and drop one of two
+
+
+DB |> filter(!is.na(Calories) & !is.na(calories)) |> count() |> collect()
+test <- DB |> filter(!is.na(Calories) | !is.na(distance)) |>
+  select(file, time, calories, Calories, filetype, dataset) |> collect()
+
+test |> filter(!is.na(Calories)) |> count()
+test |> filter(!is.na(calories)) |> count()
+
+test |> filter(!is.na(calories)) |> summary()
+test |> filter(!is.na(Calories)) |> summary()
+
+A <- test |> filter(!is.na(calories))
+B <- test |> filter(!is.na(Calories))
+
+
 
 
 
