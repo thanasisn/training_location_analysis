@@ -159,7 +159,7 @@ print(table(files$file_ext))
 ## Read a set of files with each run  ------------------------------------------
 
 ## read some files for testing and to limit memory usage
-nts   <- 5
+nts   <- 6
 files <- unique(rbind(
   tail(files[order(files$filemtime), ], 4 * nts),
   files[sample.int(nrow(files), size = nts, replace = T), ]
@@ -737,11 +737,6 @@ cat("\n")
 ## remove temporary directory
 unlink(tempfl, recursive = T)
 
-
-stop()
-
-data[is.na(time), .N]
-
 ## Prepare for import to DB  ---------------------------------------------------
 data <- data.table(data)
 attr(data$time, "tzone") <- "UTC"
@@ -802,6 +797,10 @@ suppressWarnings({
   data$track_seg_point_id <- NULL
   data$dgpsid             <- NULL
 })
+
+## drop files with any missing dates
+cat(paste("Drop missing dates:", data[is.na(time), file], "\n"))
+data <- data[!file %in% data[is.na(time), file], ]
 
 ## sanity check
 if (any(names(data) == "position_lat")) stop()
