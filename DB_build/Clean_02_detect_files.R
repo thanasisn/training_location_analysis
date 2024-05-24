@@ -49,13 +49,20 @@ test <- DBtest |>
   collect() |>
   data.table()
 
+
+
+## count diferent file types in same day
+cnt2 <- test[, .(N = length(unique(filetype))), by = .(time)]
+
+
+## count files in date
 cnt <- test[, .N, by = time]
 size <- 0
 
-ssc <- cnt[N == 2, time]
+ssc <- cnt2[N == 2, time]
 print(length(ssc))
 
-for (ad in cnt[N == 2, time]) {
+for (ad in cnt2[N == 2, time]) {
   cat(as.Date(ad, origin = "1970-01-01"),"\n")
   ccc <- DBtest |>
     filter(as.Date(time) == as.Date(ad)) |>
@@ -179,7 +186,7 @@ cat(humanReadable(size),"\n")
 
 ## check duplicate files by hash  ------------------------------
 
-test <- DBtest |>
+test <- DB |>
   select(file, filetype, filehash) |>
   distinct() |>
   collect()  |>
@@ -189,13 +196,13 @@ hashes <- test[, .N, by = filehash]
 hdups  <- test[filehash %in% hashes[N > 1, filehash], ]
 setorder(hdups, filehash)
 
-
+print(hdups)
 
 
 
 ## check overlapping time/space ranges
 ## see gpx aggregation project
-DBtest |>
+overl <- DB |>
   select(file, time) |>
   group_by(file)     |>
   summarise(mintime = min(time),
@@ -203,10 +210,29 @@ DBtest |>
   collect() |>
   data.table()
 
-# foverlaps(rangesA, rangesB, type="within", nomatch=0L)
-#
-# findOverlaps-methods {IRanges}
+gather <- data.frame()
+for (rr in 1:(nrow(overl)-1)) {
+  ll   <- overl[rr, ]
+  test <- overl[(rr+1):nrow(overl), ]
 
+  cnt <- test[mintime <= ll$maxtime & mintime >= ll$maxtime, .N ] +
+    test[maxtime <= ll$maxtime & maxtime >= ll$maxtime, .N ]
+
+  matc <- c(test[mintime <= ll$maxtime & mintime >= ll$maxtime, file ],
+    test[maxtime <= ll$maxtime & maxtime >= ll$maxtime, file ])
+
+
+  if (length(matc)>0) {
+    gather <- rbind(gather,
+                    data.table(ll, mat = matc)
+    )
+  }
+}
+gather
+
+
+# foverlaps(rangesA, rangesB, type="within", nomatch=0L)
+# findOverlaps-methods {IRanges}
 # lubridate::interval()
 
 

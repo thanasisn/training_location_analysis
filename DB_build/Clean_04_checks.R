@@ -41,6 +41,13 @@ DB <- opendata()
 
 ## TESTS --------
 
+DB |>
+  filter(is.na(time)) |>
+  select(file) |>
+  distinct()   |>
+  collect()
+
+
 ## TODO check variable consistency
 stats <- DB |>
   select(!c(time, parsed, filemtime, filehash)) |>

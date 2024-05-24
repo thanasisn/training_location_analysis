@@ -737,6 +737,11 @@ cat("\n")
 ## remove temporary directory
 unlink(tempfl, recursive = T)
 
+
+stop()
+
+data[is.na(time), .N]
+
 ## Prepare for import to DB  ---------------------------------------------------
 data <- data.table(data)
 attr(data$time, "tzone") <- "UTC"
