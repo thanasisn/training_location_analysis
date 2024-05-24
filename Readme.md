@@ -58,3 +58,8 @@ quality.
 After we are confident about the data quality and the info in them, we can use the
 data to create other datasets we need.
 
+## Helpful and similar projects.
+
+- [garmin-connect-export]( https://github.com/pe-st/garmin-connect-export)
+- [GarminDB](https://github.com/tcgoetz/GarminDB)
+
