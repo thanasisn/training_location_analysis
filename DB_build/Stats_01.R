@@ -101,7 +101,7 @@ cat("\n\n")
 
 ## count number of NA/!na by variable by dataset by filetype
 
-DB |> select(filetype, dataset)
+DB |>
   group_by(filetype, dataset) |>
   summarise(
     across(

@@ -119,6 +119,25 @@ DB |>
 
 
 
+DB |>
+  select(filetype, dataset, starts_with("NN50")) |>
+  group_by(filetype, dataset) |>
+  summarise(
+    across(
+      where(is.numeric),
+      list(
+        NAs    = ~ sum( is.na(  .x), na.rm = TRUE),
+        NOTnas = ~ sum(!is.na(  .x), na.rm = TRUE),
+        Mean   = ~ mean(.x, na.rm = TRUE),
+        Median = ~ median(.x, na.rm = TRUE),
+        Min    = ~ min(.x, na.rm = TRUE),
+        Max    = ~ max(.x, na.rm = TRUE)
+      )
+    )
+  ) |> collect() |> data.table()
+
+
+
 
 
 ## count data overlaps
@@ -156,9 +175,23 @@ B <- test |> filter(!is.na(Calories))
 
 
 
-##  Some stats  ----------------------------------------------------------------
+##  Edit vars  ----------------------------------------------------------------
+# "NN50.#" -> "NN50"
 
+## count data overlaps
+DB |> filter(!is.na(`NN50.#`) & !is.na(NN50)) |> count() |> collect()
 
+test <- DB |> filter(!is.na(`NN50.#`) | !is.na(NN50)) |>
+  select(file, time, NN50, `NN50.#`, filetype, dataset) |> collect()
+
+test |> filter(!is.na(`NN50.#`)) |> count()
+test |> filter(!is.na(NN50)) |> count()
+
+test |> filter(!is.na(NN50)) |> summary()
+test |> filter(!is.na(`NN50.#`)) |> summary()
+
+A <- test |> filter(!is.na(NN50))
+B <- test |> filter(!is.na(`NN50.#`))
 
 
 

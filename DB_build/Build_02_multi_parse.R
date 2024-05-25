@@ -769,6 +769,17 @@ if (sum(c("temperature", "TEMP") %in% names(data)) == 2) {
   data[, temperature := NULL]
 }
 
+if (sum(c("NN50.#", "NN50") %in% names(data)) == 2) {
+  ## sanity check
+  stopifnot(data[!is.na(`NN50.#`) & !is.na(NN50), .N] == 0)
+  ## get data from other
+  data[!is.na(`NN50.#`), NN50 := `NN50.#`]
+  ## remove other
+  data[, `NN50.#` := NULL]
+}
+
+
+
 # if (sum(c("Distance", "distance") %in% names(data)) == 2) {
 #   ## sanity check
 #   stopifnot(data[!is.na(temperature) & !is.na(TEMP), .N] == 0)
