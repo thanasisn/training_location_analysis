@@ -59,21 +59,27 @@ cat("Source Size:",
     humanReadable(sum(file.size(filelist$file), na.rm = T)), "\n")
 
 
+
+##  Source file types  ---------------------------------------------------------
 cat(pander(DB |> select(file, filetype) |>
             distinct() |>
             select(filetype) |>
             collect() |>
             table(),
            caption = "File types"))
+cat("\n")
 
 
-DB |>
+##  Source file extensions  ----------------------------------------------------
+files <- DB |>
   select(file) |>
   distinct() |>
-  collect()
+  collect() |>
+  data.table()
 
-
-
+cat(pander(table(file_ext(files$file))),
+              caption = "Files extensions")
+cat("\n")
 
 
 

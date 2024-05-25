@@ -9,8 +9,8 @@
 ## add data to database
 "./DB_build/Build_02_multi_parse.R"
 
-## DB maintenance
-"./DB_build/Build_01_remove_missing_files.R"
+## DB stats
+"./DB_build/Stats_01.R"
 
 ##  END  ##
 exit 0

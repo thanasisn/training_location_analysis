@@ -394,7 +394,11 @@ for (i in 1:nrow(files)) {
       names(latlon)[names(latlon) == "Y"] <- "Y_LAT"
 
       ## add distance between points in meters
-      temp$dist_2D <- c(0, trackDistance(st_coordinates(temp$geometry), longlat = TRUE)) * 1000
+      if (nrow(temp) > 1) {
+        temp$dist_2D <- c(0, trackDistance(st_coordinates(temp$geometry), longlat = TRUE)) * 1000
+      } else {
+        temp$dist_2D <- NA
+      }
 
       ## add time between points
       temp$timediff <- c(0, diff(temp$time))
@@ -821,7 +825,7 @@ if (!is.null(data$DEVICETYPE) | all(data$Device == data$DEVICETYPE)) {
 which(names(data) == names(data)[(duplicated(names(data)))])
 stopifnot(!any(duplicated(names(data))))
 
-
+# stop("DDD")
 
 ## Add data to DB  -------------------------------------------------------------
 if (nrow(data) < 10) {
@@ -898,24 +902,6 @@ if (file.exists(DATASET)) {
   cat("New files:  ", new_files - db_files, "\n")
   cat("New days:   ", new_days  - db_days , "\n")
   cat("New vars:   ", new_vars  - db_vars , "\n")
-  cat("\n")
-  cat("Total rows: ", new_rows,  "\n")
-  cat("Total files:", new_files, "\n")
-  cat("Total days: ", new_days,  "\n")
-  cat("Total vars: ", new_vars,  "\n")
-  cat("DB Size:    ", humanReadable(sum(file.size(list.files(DATASET,
-                                                             recursive = T,
-                                                             full.names = T)))), "\n")
-  filelist <- DB |> select(file) |> distinct() |> collect()
-  cat("Source Size:",
-      humanReadable(sum(file.size(filelist$file), na.rm = T)), "\n")
-
-  cat(print(DB |> select(file, filetype) |>
-              distinct() |>
-              select(filetype) |>
-              collect() |>
-              table(useNA = "always")))
-
 
   ##  Detect not parsed files  -------------------------------------------------
   wehave <- DB |> select(file) |> distinct() |> collect() |> data.table()
