@@ -924,7 +924,7 @@ if (file.exists(DATASET)) {
              row.names = FALSE, quote = FALSE)
 
 
-  DB |> select(file, dataset) |> distinct() |> select(dataset) |> collect() |> table()
+  # DB |> select(file, dataset) |> distinct() |> select(dataset) |> collect() |> table()
 
   # ## check uniqueness?
   # stopifnot(
