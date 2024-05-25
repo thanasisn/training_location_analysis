@@ -44,10 +44,30 @@ DB <- opendata()
 # garmin time stamp
 
 
-DB |> select(file, time) |>
-  group_by(file) |>
-  summarise(across(where(is.numeric), ~ min(.x))) |> collect() |> data.table()
+gar <- DB |>
+  select(file, time, filetype) |>
+  group_by(file, filetype) |>
+  summarise(
+    across(
+      time,
+      list(
+        Min    = ~ min(.x, na.rm = TRUE),
+        Max    = ~ max(.x, na.rm = TRUE)
+      )
+    )
+  ) |> collect() |> data.table()
 
+gar <- gar[filetype == "fit", ]
+
+basename(gar$file)
+
+gar[, ll := as.numeric(stringr::str_extract(basename(file), "[0-9]{9,}")) ]
+
+gar <- gar[year(time_Min) > 2023 ]
+
+plot(gar[,  ll/10, as.numeric(time_Min)])
+
+lm( gar$ll/100 ~ gar$time_Min )
 
 stop()
 
