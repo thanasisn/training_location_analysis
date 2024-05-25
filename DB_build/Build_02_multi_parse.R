@@ -158,7 +158,7 @@ print(table(files$file_ext))
 ## read some files for testing and to limit memory usage
 nts   <- 12
 files <- unique(rbind(
-  tail(files[order(files$filemtime), ], 4 * nts),
+  tail(files[order(files$filemtime), ], 5 * nts),
   files[sample.int(nrow(files), size = nts, replace = T), ]
 ))
 
