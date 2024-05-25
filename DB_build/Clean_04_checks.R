@@ -41,8 +41,11 @@ DB <- opendata()
 
 ## TESTS --------
 
-# garmin time stamp
-#
+## TODO check max date
+
+
+
+## garmin time stamp ----
 #
 # gar <- DB |>
 #   select(file, time, filetype) |>

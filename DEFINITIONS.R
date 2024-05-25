@@ -25,6 +25,9 @@ GC_DIR  <- "~/TRAIN/GoldenCheetah/Athan/activities"
 ## more data of location and activities
 GPX_DIR <- "~/GISdata/GPX"
 
+## GarminDB root dir
+GDB_DIR <- "~/TRAIN/Volumes/HealthData/"
+
 ##  Other variables  -----------------------------------------------------------
 EPSG_WGS84 <- 4326  ## Usual gps datum
 EPSG_PMERC <- 3857  ## Pseudo-Mercator, Spherical Mercator, Google Maps, OpenStreetMap
@@ -47,7 +50,7 @@ expect <- c("STARTTIME",
 library(arrow,      quietly = TRUE, warn.conflicts = FALSE)
 
 opendata <- function() {
-  cat("\n ~ LOAD DATABASE ~ \n\n")
+  cat("\n ~ LOADING DATABASE ~ \n\n")
   open_dataset(DATASET,
                partitioning  = c("year", "month"),
                hive_style    = FALSE,

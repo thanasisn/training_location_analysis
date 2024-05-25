@@ -235,6 +235,13 @@ for (rr in 1:(nrow(overl)-1)) {
 gather
 
 
+
+
+## TODO find files in GarminDB no more needed
+
+
+
+
 # foverlaps(rangesA, rangesB, type="within", nomatch=0L)
 # findOverlaps-methods {IRanges}
 # lubridate::interval()
