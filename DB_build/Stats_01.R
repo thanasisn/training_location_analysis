@@ -99,6 +99,20 @@ cat(pander(DB |> select(file, dataset, filetype) |>
   select(!file) |> collect() |> table()))
 cat("\n\n")
 
+## count number of NA/!na by variable by dataset by filetype
+
+DB |> select(filetype, dataset)
+  group_by(filetype, dataset) |>
+  summarise(
+    across(
+      where(is.numeric),
+      list(
+        NAs    = ~ sum( is.na(  .x), na.rm = TRUE),
+        NOTnas = ~ sum(!is.na(  .x), na.rm = TRUE)
+      )
+    )
+  ) |> collect() |> data.table()
+
 
 
 

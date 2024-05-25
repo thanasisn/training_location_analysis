@@ -159,7 +159,8 @@ print(table(files$file_ext))
 nts   <- 12
 files <- unique(rbind(
   tail(files[order(files$filemtime), ], 5 * nts),
-  files[sample.int(nrow(files), size = nts, replace = T), ]
+  # files[sample.int(nrow(files), size = nts, replace = T), ],
+  NULL
 ))
 
 if (nrow(files) < 1) { stop("Nothing to do!") }

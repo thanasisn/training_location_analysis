@@ -41,6 +41,17 @@ DB <- opendata()
 
 ## TESTS --------
 
+# garmin time stamp
+
+
+DB |> select(file, time) |>
+  group_by(file) |>
+  summarise(across(where(is.numeric), ~ min(.x))) |> collect() |> data.table()
+
+
+stop()
+
+
 DB |>
   filter(is.na(time)) |>
   select(file) |>

@@ -99,6 +99,28 @@ for (al in algo) {
 
 
 
+
+DB |>
+  select(filetype, dataset, distance, Distance) |>
+  group_by(filetype, dataset) |>
+  summarise(
+    across(
+      where(is.numeric),
+      list(
+        NAs    = ~ sum( is.na(  .x), na.rm = TRUE),
+        NOTnas = ~ sum(!is.na(  .x), na.rm = TRUE),
+        Mean   = ~ mean(.x, na.rm = TRUE),
+        Median = ~ median(.x, na.rm = TRUE),
+        Min    = ~ min(.x, na.rm = TRUE),
+        Max    = ~ max(.x, na.rm = TRUE)
+      )
+    )
+  ) |> collect() |> data.table()
+
+
+
+
+
 ## count data overlaps
 DB |> filter(!is.na(Distance) & !is.na(distance)) |> count() |> collect()
 
@@ -147,12 +169,7 @@ B <- test |> filter(!is.na(Calories))
 #   tally() |> collect()
 
 
-cat("Size:       ", humanReadable(sum(file.size(list.files(DATASET,
-                                                           recursive = T,
-                                                           full.names = T)))), "\n")
-filelist <- DB |> select(file) |> distinct() |> collect()
-cat("Source Size:",
-    humanReadable( sum(file.size(filelist$file), na.rm = T)), "\n")
+
 
 ##  Remove a var
 # stop("")
