@@ -137,26 +137,6 @@ B <- test |> filter(!is.na(Calories))
 ##  Some stats  ----------------------------------------------------------------
 
 
-DB |> select(file, Sport, SubSport) |>
-  distinct() |>
-  select(!file) |> collect() |> table()
-
-DB |> select(file, SubSport, Name) |>
-  distinct() |>
-  select(!file) |> collect() |> table()
-
-DB |> select(file, SubSport, dataset) |>
-  distinct() |>
-  select(!file) |> collect() |> table()
-
-DB |> select(file, SubSport, dataset, Sport, Name) |>
-  distinct() |>
-  group_by(Name, SubSport) |>
-  tally() |> collect()
-
-DB |> select(file, dataset, filetype) |>
-  distinct() |>
-  select(!file) |> collect() |> table()
 
 
 

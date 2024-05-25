@@ -3,6 +3,7 @@
 #'
 #'
 
+
 #+ echo=FALSE, include=TRUE
 ## __ Set environment  ---------------------------------------------------------
 Sys.setenv(TZ = "UTC")
@@ -25,10 +26,13 @@ suppressPackageStartupMessages({
   library(stringdist, quietly = TRUE, warn.conflicts = FALSE)
   library(rlang,      quietly = TRUE, warn.conflicts = FALSE)
   library(tools,      quietly = TRUE, warn.conflicts = FALSE)
+  library(gdata,      quietly = TRUE, warn.conflicts = FALSE)
   library(pander,     quietly = TRUE, warn.conflicts = FALSE)
 })
 
-source("./DEFINITIONS.R")
+source("~/CODE/training_location_analysis//DEFINITIONS.R")
+panderOptions("table.split.table", 300)
+
 
 ## make sure only one parser is this working??
 # lock <- lock(paste0(DATASET, ".lock"))
@@ -40,34 +44,16 @@ if (!file.exists(DATASET)) {
 DB <- opendata()
 
 
-## report lines files and dates
-new_rows  <- unlist(DB |> tally() |> collect())
-new_files <- unlist(DB |> select(file) |> distinct() |> count() |> collect())
-new_days  <- unlist(DB |> select(time) |> mutate(time = as.Date(time)) |> distinct() |> count() |> collect())
-new_vars  <- length(names(DB))
 
-cat("\n")
-cat("Total rows: ", new_rows,  "\n")
-cat("Total files:", new_files, "\n")
-cat("Total days: ", new_days,  "\n")
-cat("Total vars: ", new_vars,  "\n")
-cat("DB Size:    ", humanReadable(sum(file.size(list.files(DATASET,
-                                                           recursive = T,
-                                                           full.names = T)))), "\n")
-filelist <- DB |> select(file) |> distinct() |> collect()
-cat("Source Size:",
-    humanReadable(sum(file.size(filelist$file), na.rm = T)), "\n")
-
-
-
+#+ include=T, echo=F, results='asis'
 ##  Source file types  ---------------------------------------------------------
 cat(pander(DB |> select(file, filetype) |>
-            distinct() |>
-            select(filetype) |>
-            collect() |>
-            table(),
+             distinct() |>
+             select(filetype) |>
+             collect() |>
+             table(),
            caption = "File types"))
-cat("\n")
+cat("\n\n")
 
 
 ##  Source file extensions  ----------------------------------------------------
@@ -78,8 +64,67 @@ files <- DB |>
   data.table()
 
 cat(pander(table(file_ext(files$file))),
-              caption = "Files extensions")
+    caption = "Files extensions")
+cat("\n\n")
+
+
+cat(pander(DB |> select(file, Sport, SubSport) |>
+  distinct() |>
+  select(!file) |> collect() |> table()))
+cat("\n\n")
+
+
+
+cat(pander(DB |> select(file, SubSport, Name) |>
+  distinct() |>
+  select(!file) |> collect() |> table()))
+cat("\n\n")
+
+
+cat(pander(DB |> select(file, SubSport, dataset) |>
+  distinct() |>
+  select(!file) |> collect() |> table()))
+cat("\n\n")
+
+
+cat(pander(DB |> select(file, SubSport, dataset, Sport, Name) |>
+  distinct() |>
+  group_by(Name, SubSport) |>
+  tally() |> collect()))
+cat("\n\n")
+
+
+cat(pander(DB |> select(file, dataset, filetype) |>
+  distinct() |>
+  select(!file) |> collect() |> table()))
+cat("\n\n")
+
+
+
+
+
+
+##  Report lines files and dates  ----------------------------------------------
+new_rows  <- unlist(DB |> tally() |> collect())
+new_files <- unlist(DB |> select(file) |> distinct() |> count() |> collect())
+new_days  <- unlist(DB |> select(time) |> mutate(time = as.Date(time)) |> distinct() |> count() |> collect())
+new_vars  <- length(names(DB))
+
 cat("\n")
+cat("Total rows: ", new_rows,  "\n\n")
+cat("Total files:", new_files, "\n\n")
+cat("Total days: ", new_days,  "\n\n")
+cat("Total vars: ", new_vars,  "\n\n")
+cat("DB Size:    ", humanReadable(sum(file.size(list.files(DATASET,
+                                                           recursive = T,
+                                                           full.names = T)))), "\n\n")
+filelist <- DB |> select(file) |> distinct() |> collect()
+cat("Source Size:",
+    humanReadable(sum(file.size(filelist$file), na.rm = T)), "\n\n")
+
+
+
+
 
 
 

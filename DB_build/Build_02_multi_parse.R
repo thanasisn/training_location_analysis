@@ -909,6 +909,9 @@ if (file.exists(DATASET)) {
   write.csv2(failed, "~/CODE/training_location_analysis/runtime/Failed_to_parse.csv",
              row.names = FALSE, quote = FALSE)
 
+  write.csv2(files, "~/CODE/training_location_analysis/runtime/Files_to_parse.csv",
+             row.names = FALSE, quote = FALSE)
+
 
   # DB |> select(file, dataset) |> distinct() |> select(dataset) |> collect() |> table()
 
