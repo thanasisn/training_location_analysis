@@ -63,14 +63,15 @@ files[, date := as.Date(stringr::str_extract(basename(files$file), "[0-9]{4}-[0-
 ## get files to delete
 files <- files[date < limitday, ]
 ## delete old json files
-cat(length(files$file), humanReadable(sum(file.size(files$file))))
+cat(length(files$file), humanReadable(sum(file.size(files$file))), "\n")
 if (DRY_RUN) {
   file.remove(files$file)
 }
 
 
 
-## files by time stamps
+##  files by time stamps --------------------------------------------------------
+## find garmin timestamp limit
 stamps <- DB |>
   select(file, time, filetype)  |>
   filter(filetype == "fit")    |>
@@ -83,9 +84,59 @@ stamps <- DB |>
 stamps <- stamps[grepl("activity", file, ignore.case = T), ]
 stamps <- stamps[, tst := as.numeric(stringr::str_extract(file, "[0-9]{9,}"))]
 
+st <- stamps[, .N, by = file]
+stamps <- stamps[file %in% st[N==1,file] ]
+
 setorder(stamps, tst)
 
+is.unsorted(stamps$time)
+
 plot(stamps[, tst, time])
+
+tstlimit <- stamps[time < limitday, max(tst) ]
+
+
+
+files <- list.files(paste0(GDB_DIR, "FitFiles"),
+                    all.files = T,
+                    full.names = T,
+                    recursive = T)
+
+files <- data.table(file = files,
+                    ext  = file_ext(files))
+
+files <- files[ext %in% c("fit", "tcx")]
+
+## there are multiple time stamps !!!!
+
+act <- files[grepl("activity", file, ignore.case = T)]
+
+table(act$ext)
+
+
+act[, tst := as.numeric(stringr::str_extract(file, "[0-9]{9,}"))]
+
+summary(act$tst)
+summary(stamps$tst)
+
+todelte <- act[tst < tstlimit, file]
+
+## delete old activities files
+cat(length(todelte), humanReadable(sum(file.size(todelte))), "\n")
+if (DRY_RUN) {
+  file.remove(todelte)
+}
+
+
+
+
+
+
+
+
+
+
+
 
 
 

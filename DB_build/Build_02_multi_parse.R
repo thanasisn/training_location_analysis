@@ -818,7 +818,7 @@ suppressWarnings({
   data$dgpsid             <- NULL
 })
 
-## drop files with any missing dates
+## drop whole files with any missing dates
 cat(paste("Drop missing dates:", data[is.na(time), file], "\n"))
 data <- data[!file %in% data[is.na(time), file], ]
 
@@ -834,7 +834,7 @@ if (!is.null(data$DEVICETYPE) | all(data$Device == data$DEVICETYPE)) {
 }
 
 ## check duplicate names
-which(names(data) == names(data)[(duplicated(names(data)))])
+# which(names(data) == names(data)[(duplicated(names(data)))])
 stopifnot(!any(duplicated(names(data))))
 
 # stop("DDD")
@@ -884,6 +884,7 @@ if (file.exists(DATASET)) {
   }
 
   ##  Add new data to the DB  --------------------------------------------------
+  cat("\nJoin data\n")
   DB <- DB |> full_join(data) |> compute()
 
   ## write only new months within data
@@ -891,9 +892,10 @@ if (file.exists(DATASET)) {
   new <- new[, .N, by = .(year, month)]
   setorder(new, year, month)
 
-  cat("\nUpdate:", "\n")
+  cat("\nWill update:", "\n")
   cat(paste(" ", new$year, new$month, new$N),sep = "\n")
 
+  cat("\nWriting DB\n")
   write_dataset(DB |> filter(year %in% new$year & month %in% new$month),
                 DATASET,
                 compression            = DBcodec,
