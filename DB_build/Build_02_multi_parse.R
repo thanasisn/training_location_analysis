@@ -810,6 +810,7 @@ class(data$OVRD_total_kcalories) <- "double"
 class(data$PERFORMANCECONDITION) <- "double"
 class(data$Spike.Time)           <- "double"
 class(data$TEMP)                 <- "double"
+class(data$ALT)                  <- "double"
 
 ## Drop data
 data <- remove_empty(data, which = "cols")

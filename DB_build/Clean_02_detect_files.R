@@ -51,7 +51,7 @@ test <- DBtest |>
 
 
 
-## count diferent file types in same day
+## count different file types in same day
 cnt2 <- test[, .(N = length(unique(filetype))), by = .(time)]
 
 
@@ -191,7 +191,7 @@ cat(humanReadable(size),"\n")
 ## check duplicate files by hash  ------------------------------
 
 test <- DB |>
-  select(file, filetype, filehash) |>
+  select(file, filetype, filehash, dataset) |>
   distinct() |>
   collect()  |>
   data.table()
@@ -200,7 +200,21 @@ hashes <- test[, .N, by = filehash]
 hdups  <- test[filehash %in% hashes[N > 1, filehash], ]
 setorder(hdups, filehash)
 
-print(hdups)
+for (ah in hdups$filehash) {
+  set <- hdups[filehash == ah]
+  if (nrow(set)>=2) {
+
+    ## remove dups in garmin export
+    set[dataset == ""]
+
+
+  }
+
+
+}
+
+
+
 
 
 
