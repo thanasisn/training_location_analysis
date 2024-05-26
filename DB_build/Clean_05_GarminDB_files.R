@@ -30,6 +30,8 @@ suppressPackageStartupMessages({
 
 source("./DEFINITIONS.R")
 
+DRY_RUN <- TRUE
+
 ##  Open dataset  --------------------------------------------------------------
 if (!file.exists(DATASET)) {
   stop("NO DB!\n")
@@ -47,7 +49,8 @@ dirlist <- list.dirs(GDB_DIR, recursive = F, full.names = T)
 dirlist <- grep("DBs", dirlist, value = T, invert = T)
 
 
-## delete all old json with date in file name
+
+##  Delete all old json with date in file name  --------------------------------
 files <- list.files(GDB_DIR,
                     pattern = "*.json",
                     all.files = T,
@@ -61,10 +64,28 @@ files[, date := as.Date(stringr::str_extract(basename(files$file), "[0-9]{4}-[0-
 files <- files[date < limitday, ]
 ## delete old json files
 cat(length(files$file), humanReadable(sum(file.size(files$file))))
-file.remove(files$file)
+if (DRY_RUN) {
+  file.remove(files$file)
+}
 
 
 
+## files by time stamps
+stamps <- DB |>
+  select(file, time, filetype)  |>
+  filter(filetype == "fit")    |>
+  mutate(time = as.Date(time)) |>
+  distinct() |>
+  collect() |>
+  mutate(file = basename(file)) |>
+  data.table()
+
+stamps <- stamps[grepl("activity", file, ignore.case = T), ]
+stamps <- stamps[, tst := as.numeric(stringr::str_extract(file, "[0-9]{9,}"))]
+
+setorder(stamps, tst)
+
+plot(stamps[, tst, time])
 
 
 
