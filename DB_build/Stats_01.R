@@ -101,17 +101,17 @@ cat("\n\n")
 
 ## count number of NA/!na by variable by dataset by filetype
 
-DB |>
-  group_by(filetype, dataset) |>
-  summarise(
-    across(
-      where(is.numeric),
-      list(
-        NAs    = ~ sum( is.na(  .x), na.rm = TRUE),
-        NOTnas = ~ sum(!is.na(  .x), na.rm = TRUE)
-      )
-    )
-  ) |> collect() |> data.table()
+# DB |>
+#   group_by(filetype, dataset) |>
+#   summarise(
+#     across(
+#       where(is.numeric),
+#       list(
+#         NAs    = ~ sum( is.na(  .x), na.rm = TRUE),
+#         NOTnas = ~ sum(!is.na(  .x), na.rm = TRUE)
+#       )
+#     )
+#   ) |> collect() |> data.table()
 
 
 

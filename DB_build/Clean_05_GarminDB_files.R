@@ -95,32 +95,22 @@ plot(stamps[, tst, time])
 
 tstlimit <- stamps[time < limitday, max(tst) ]
 
-
-
 files <- list.files(paste0(GDB_DIR, "FitFiles"),
                     all.files = T,
                     full.names = T,
                     recursive = T)
-
 files <- data.table(file = files,
                     ext  = file_ext(files))
-
 files <- files[ext %in% c("fit", "tcx")]
 
 ## there are multiple time stamps !!!!
 
 act <- files[grepl("activity", file, ignore.case = T)]
-
 table(act$ext)
-
-
 act[, tst := as.numeric(stringr::str_extract(file, "[0-9]{9,}"))]
-
 summary(act$tst)
 summary(stamps$tst)
-
 todelte <- act[tst < tstlimit, file]
-
 ## delete old activities files
 cat(length(todelte), humanReadable(sum(file.size(todelte))), "\n")
 if (DRY_RUN) {

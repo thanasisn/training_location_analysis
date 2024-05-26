@@ -336,7 +336,7 @@ for (i in 1:nrow(files)) {
     ## more details like laps
     # se <- getMessagesByType(res, "session")
 
-    ## harware/soft version
+    ## hardware/software version
     ## getMessagesByType(res, "file_creator")
 
 
@@ -884,7 +884,7 @@ if (file.exists(DATASET)) {
   }
 
   ##  Add new data to the DB  --------------------------------------------------
-  cat("\nJoin data\n")
+  cat("\nJoining data\n")
   DB <- DB |> full_join(data) |> compute()
 
   ## write only new months within data
