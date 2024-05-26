@@ -37,17 +37,13 @@ if (!file.exists(DATASET)) {
 
 DB <- opendata()
 
-##  Set some measurements
-db_rows  <- unlist(DB |> tally() |> collect())
-db_files <- unlist(DB |> select(file) |> distinct() |> count() |> collect())
-db_days  <- unlist(DB |> select(time) |> mutate(time = as.Date(time)) |> distinct() |> count() |> collect())
-db_vars  <- length(names(DB))
 
 
 ##  Check empty variables  -----------------------------------------------------
 empty <- DB |>
   select(!c(time, parsed, filemtime, filehash)) |>
-  summarise(across(everything(), ~ n() - sum(is.na(.x)))) |> collect() |> data.table()
+  summarise(across(everything(), ~ n() - sum(is.na(.x)))) |>
+  collect() |> data.table()
 
 if (any(empty == 0)) {
   cat(paste("Empty var:  ", names(empty)[empty == 0]), sep = "\n")
@@ -175,6 +171,9 @@ B <- test |> filter(!is.na(Calories))
 
 
 
+RMSSD_H.ms                   RMSSD_H
+
+
 ##  Edit vars  ----------------------------------------------------------------
 # "NN50.#" -> "NN50"
 
@@ -187,11 +186,66 @@ test <- DB |> filter(!is.na(`NN50.#`) | !is.na(NN50)) |>
 test |> filter(!is.na(`NN50.#`)) |> count()
 test |> filter(!is.na(NN50)) |> count()
 
-test |> filter(!is.na(NN50)) |> summary()
+## check data
+test |> filter(!is.na(NN50))     |> summary()
 test |> filter(!is.na(`NN50.#`)) |> summary()
 
-A <- test |> filter(!is.na(NN50))
-B <- test |> filter(!is.na(`NN50.#`))
+## merge@
+
+
+
+var_bad  <- "NN50.#"
+var_nice <- "NN50"
+
+
+
+## count data overlaps
+DB |> filter(!is.na(get(var_bad)) & !is.na(get(var_nice))) |> count() |> collect()
+
+
+test <- DB |> filter(!is.na(get(var_bad)) | !is.na(get(var_nice))) |>
+  select(file, time, var_nice, var_bad, filetype, dataset) |> collect()
+
+test |> filter(!is.na(get(var_bad))) |> count()
+test |> filter(!is.na(var_nice)) |> count()
+
+## check data
+test |> filter(!is.na(var_nice))     |> summary()
+test |> filter(!is.na(get(var_bad))) |> summary()
+
+
+
+
+
+
+
+
+
+# library(tidyverse)
+# if_flag <- function(quo, name) {
+#   rlang::quo_set_expr(
+#     quo,
+#     expr(if (.flag[1]) !!rlang::quo_get_expr(quo) else !!rlang::sym(name))
+#   )
+# }
+#
+# mutate_if_row <- function(.data, cond, ...) {
+#   cond <- rlang::enquo(cond)
+#   quos <- rlang::quos(...)
+#
+#   quos <- map2(quos, names(quos), if_flag)
+#
+#   .data %>%
+#     group_by(.flag = !!cond) %>%
+#     mutate(!!!quos) %>%
+#     ungroup() %>%
+#     select(-.flag)
+# }
+#
+# DB |>
+#   mutate_if_row(is.na(NN50), NN50 = `NN50.#`)
+
+
 
 
 

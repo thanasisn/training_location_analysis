@@ -204,15 +204,25 @@ for (ah in hdups$filehash) {
   set <- hdups[filehash == ah]
   if (nrow(set)>=2) {
 
-    ## remove dups in garmin export
-    set[dataset == ""]
+    ## remove dups from garmin export
+    if (set[dataset == "Garmin Original", .N] == 1 &
+        set[dataset != "Garmin Original", .N] >= 1) {
 
+      ## checking ratainig data?
+      set[dataset == "Garmin Original", file]
 
+    }
   }
-
-
 }
 
+
+hdups <- hdups[dataset != "Garmin Original",  ]
+for (ah in hdups$filehash) {
+  set <- hdups[filehash == ah]
+  if (nrow(set)>=2) {
+    cat("ddd")
+  }
+}
 
 
 
@@ -221,6 +231,7 @@ for (ah in hdups$filehash) {
 ## check overlapping time/space ranges
 ## see gpx aggregation project
 overl <- DB |>
+  filter(filetype != "json") |>
   select(file, time) |>
   group_by(file)     |>
   summarise(mintime = min(time),
