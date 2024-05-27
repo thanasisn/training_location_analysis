@@ -54,7 +54,7 @@ cat(pander(DB |> select(file, filetype) |>
              table(),
            caption = "File types",
            style   = "rmarkdown"))
-cat("\n\n")
+cat("\n")
 
 
 ##  Source file extensions  ----------------------------------------------------
@@ -67,14 +67,14 @@ files <- DB |>
 cat(pander(table(file_ext(files$file)),
     caption = "Files extensions",
     style   = "rmarkdown"))
-cat("\n\n")
+cat("\n")
 
 
 cat(pander(DB |> select(file, Sport, SubSport) |>
   distinct() |>
   select(!file) |> collect() |> table(),
   style   = "rmarkdown"))
-cat("\n\n")
+cat("\n")
 
 
 
@@ -82,14 +82,14 @@ cat(pander(DB |> select(file, SubSport, Name) |>
   distinct() |>
   select(!file) |> collect() |> table(),
   style   = "rmarkdown"))
-cat("\n\n")
+cat("\n")
 
 
 cat(pander(DB |> select(file, SubSport, dataset) |>
   distinct() |>
   select(!file) |> collect() |> table(),
   style   = "rmarkdown"))
-cat("\n\n")
+cat("\n")
 
 
 cat(pander(DB |> select(file, SubSport, dataset, Sport, Name) |>
@@ -97,14 +97,14 @@ cat(pander(DB |> select(file, SubSport, dataset, Sport, Name) |>
   group_by(Name, SubSport) |>
   tally() |> collect(),
   style   = "rmarkdown"))
-cat("\n\n")
+cat("\n")
 
 
 cat(pander(DB |> select(file, dataset, filetype) |>
   distinct() |>
   select(!file) |> collect() |> table(),
   style   = "rmarkdown"))
-cat("\n\n")
+cat("\n")
 
 ## count number of NA/!na by variable by dataset by filetype
 
