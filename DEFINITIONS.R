@@ -56,7 +56,7 @@ library(arrow,      quietly = TRUE, warn.conflicts = FALSE)
 opendata <- function() {
   cat("\n ~ LOADING DATABASE ~ \n\n")
   open_dataset(DATASET,
-               partitioning  = c("year", "month"),
+               partitioning  = c("year"),
                hive_style    = FALSE,
                unify_schemas = TRUE)
 }

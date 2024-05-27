@@ -156,7 +156,7 @@ print(table(files$file_ext))
 ## Read a set of files with each run  ------------------------------------------
 
 ## read some files for testing and to limit memory usage
-nts   <- 12
+nts   <- 1
 files <- unique(rbind(
   tail(files[order(files$filemtime), ], 1 * nts),
   files[sample.int(nrow(files), size =  5 * nts, replace = T), ],
@@ -743,7 +743,7 @@ unlink(tempfl, recursive = T)
 data <- data.table(data)
 attr(data$time, "tzone") <- "UTC"
 data[, year  := as.integer(year(time)) ]
-data[, month := as.integer(month(time))]
+# data[, month := as.integer(month(time))]
 
 ## fix names
 names(data) <- sub("\\.$",  "", names(data))
@@ -878,7 +878,7 @@ if (file.exists(DATASET)) {
                       compression            = DBcodec,
                       compression_level      = DBlevel,
                       format                 = "parquet",
-                      partitioning           = c("year", "month"),
+                      partitioning           = c("year"),
                       existing_data_behavior = "overwrite",
                       hive_style             = F)
       } else {
@@ -887,7 +887,7 @@ if (file.exists(DATASET)) {
       ## Reopen the dataset
       DB <- open_dataset(DATASET,
                          format            = "parquet",
-                         partitioning      = c("year", "month"),
+                         partitioning      = c("year"),
                          unify_schemas     = T)
     }
   }
@@ -897,15 +897,15 @@ if (file.exists(DATASET)) {
   DB <- DB |> full_join(data) |> compute()
 
   ## write only new months within data
-  new <- unique(data[, .(year, month, file)])
-  new <- new[, .N, by = .(year, month)]
-  setorder(new, year, month)
+  new <- unique(data[, .(year, file)])
+  new <- new[, .N, by = .(year)]
+  setorder(new, year)
 
   cat("\nWill update:", "\n")
-  cat(paste(" ", new$year, new$month, new$N),sep = "\n")
+  cat(paste(" ", new$year, new$N),sep = "\n")
 
   cat("\nWriting DB\n")
-  write_dataset(DB |> filter(year %in% new$year & month %in% new$month),
+  write_dataset(DB |> filter(year %in% new$year),
                 DATASET,
                 compression            = DBcodec,
                 compression_level      = DBlevel,
@@ -952,7 +952,7 @@ if (file.exists(DATASET)) {
                 compression            = DBcodec,
                 compression_level      = DBlevel,
                 format                 = "parquet",
-                partitioning           = c("year", "month"),
+                partitioning           = c("year"),
                 existing_data_behavior = "overwrite",
                 hive_style             = F)
 

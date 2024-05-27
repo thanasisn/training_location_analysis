@@ -14,7 +14,6 @@ Sys.setenv(TZ = "UTC")
 tic <- Sys.time()
 Script.Name <- "~/Test_compression.R"
 
-# stop("This is dissabled")
 
 library(arrow,      quietly = TRUE, warn.conflicts = FALSE)
 library(dplyr,      quietly = TRUE, warn.conflicts = FALSE)
@@ -52,6 +51,9 @@ currentsize <- sum(file.size(list.files(DATASET, recursive = T, full.names = T))
 gatherDB <- data.frame()
 codecs   <- c("gzip", "brotli", "zstd", "lz4", "lzo")
 levels   <- unique(c(1:11, 20, 50))
+
+codecs   <- c("brotli")
+levels   <- 5
 
 ##  Run all tests  -------------------------------------------------------------
 if (RUNTEST) {

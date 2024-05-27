@@ -52,7 +52,7 @@ DB <- opendata()
 ##  Remove deleted files from the DB  ------------------------------------------
 
 ##  Get file list
-wehave <- DB |> select(file, filemtime, year, month) |> unique() |> collect() |> data.table()
+wehave <- DB |> select(file, filemtime, year) |> unique() |> collect() |> data.table()
 
 ##  Check files exist
 wehave[, exists := file.exists(file)]
@@ -67,7 +67,7 @@ removefl <- wehave[exists == F | currenct == F]
 if (file.exists(REMOVEFL)) {
   exrarm   <- read.csv2(REMOVEFL)
   removefl <- unique(data.table(plyr::rbind.fill(removefl, exrarm)))
-  removefl <- removefl[!is.na(year) & !is.na(month), ]
+  removefl <- removefl[!is.na(year), ]
   file.remove(REMOVEFL)
 }
 
@@ -77,20 +77,19 @@ if (nrow(removefl) > 0){
 
   cat(removefl$file, sep = "\n")
 
-  print(unique(removefl[, year, month]))
+  print(unique(removefl[, year]))
 
   # DB |> filter(file %in% removefl$file) |> count() |> collect()
   # DB |> filter(!file %in% removefl$file & year %in% removefl$year & month %in% removefl$month) |> count() |> collect()
 
   ##  Rewrite changed only data without removed files
   write_dataset(DB |> filter(!file %in% removefl$file &
-                               year %in% removefl$year &
-                               month %in% removefl$month),
+                               year %in% removefl$year),
                 DATASET,
                 compression            = DBcodec,
                 compression_level      = DBlevel,
                 format                 = "parquet",
-                partitioning           = c("year", "month"),
+                partitioning           = c("year"),
                 existing_data_behavior = "delete_matching",
                 hive_style             = F)
 
