@@ -190,9 +190,10 @@ B <- test |> filter(!is.na(Calories))
 # NN50.#                       NN50
 # RMSSD_H.ms                   RMSSD_H
 # LnRMSSD.#                   LnRMSSD
+# Ectopic-R               Ectopic-R.
 
-var_bad  <- "LnRMSSD.#"
-var_nice <- "LnRMSSD"
+var_bad  <- "Ectopic-R.#"
+var_nice <- "Ectopic-R"
 
 ## count data overlaps
 DB |> filter(!is.na(get(var_bad)) & !is.na(get(var_nice))) |> count() |> collect()
