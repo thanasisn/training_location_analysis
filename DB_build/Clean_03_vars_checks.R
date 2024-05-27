@@ -51,6 +51,18 @@ if (any(empty == 0)) {
 }
 
 
+##  Remove a var
+# stop("")
+# write_dataset(DB |> select(!DEVICETYPE),
+#               DATASET,
+#               compression            = DBcodec,
+#               compression_level      = DBlevel,
+#               format                 = "parquet",
+#               partitioning           = c("year", "month"),
+#               existing_data_behavior = "delete_matching",
+#               hive_style             = F)
+
+
 
 ##  Check variable names similarity  -------------------------------------------
 rowvec <- names(DB)[nchar(names(DB)) > 1]
@@ -174,35 +186,16 @@ B <- test |> filter(!is.na(Calories))
 
 
 ##  Edit vars  ----------------------------------------------------------------
-# "NN50.#" -> "NN50"
 
-## count data overlaps
-DB |> filter(!is.na(`NN50.#`) & !is.na(NN50)) |> count() |> collect()
-
-test <- DB |> filter(!is.na(`NN50.#`) | !is.na(NN50)) |>
-  select(file, time, NN50, `NN50.#`, filetype, dataset) |> collect()
-
-test |> filter(!is.na(`NN50.#`)) |> count()
-test |> filter(!is.na(NN50)) |> count()
-
-## check data
-test |> filter(!is.na(NN50))     |> summary()
-test |> filter(!is.na(`NN50.#`)) |> summary()
-
-## merge@
-
-
+# NN50.#                       NN50
+# RMSSD_H.ms                   RMSSD_H
+# LnRMSSD.#                   LnRMSSD
 
 var_bad  <- "LnRMSSD.#"
 var_nice <- "LnRMSSD"
 
-
-# RMSSD_H.ms                   RMSSD_H
-# LnRMSSD.#                   LnRMSSD
-
 ## count data overlaps
 DB |> filter(!is.na(get(var_bad)) & !is.na(get(var_nice))) |> count() |> collect()
-
 
 test <- DB |> filter(!is.na(get(var_bad)) | !is.na(get(var_nice))) |>
    collect()
@@ -219,41 +212,19 @@ test |> filter(!is.na(get(var_bad)))  |>
 
 dropfiles <- DB |> filter(!is.na(get(var_bad))) |> select(file, year, month) |> distinct() |> collect() |> data.table()
 
-if (nrow(dropfiles)>0){
-  if (file.exists(REMOVEFL)) {
-    exrarm    <- read.csv2(REMOVEFL)
-    dropfiles <- unique(data.table(plyr::rbind.fill(dropfiles, exrarm)))
-    dropfiles <- removefl[!is.na(year) & !is.na(month), ]
-    write.csv2(dropfiles, file = REMOVEFL)
-  } else {
-    write.csv2(dropfiles, file = REMOVEFL)
-  }
-}
+# if (nrow(dropfiles)>0){
+#   if (file.exists(REMOVEFL)) {
+#     exrarm    <- read.csv2(REMOVEFL)
+#     dropfiles <- unique(data.table(plyr::rbind.fill(dropfiles, exrarm)))
+#     dropfiles <- removefl[!is.na(year) & !is.na(month), ]
+#     write.csv2(dropfiles, file = REMOVEFL)
+#   } else {
+#     write.csv2(dropfiles, file = REMOVEFL)
+#   }
+# }
 
 
-# library(tidyverse)
-# if_flag <- function(quo, name) {
-#   rlang::quo_set_expr(
-#     quo,
-#     expr(if (.flag[1]) !!rlang::quo_get_expr(quo) else !!rlang::sym(name))
-#   )
-# }
-#
-# mutate_if_row <- function(.data, cond, ...) {
-#   cond <- rlang::enquo(cond)
-#   quos <- rlang::quos(...)
-#
-#   quos <- map2(quos, names(quos), if_flag)
-#
-#   .data %>%
-#     group_by(.flag = !!cond) %>%
-#     mutate(!!!quos) %>%
-#     ungroup() %>%
-#     select(-.flag)
-# }
-#
-# DB |>
-#   mutate_if_row(is.na(NN50), NN50 = `NN50.#`)
+
 
 
 
