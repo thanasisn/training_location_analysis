@@ -63,3 +63,37 @@ data to create other datasets we need.
 - [garmin-connect-export]( https://github.com/pe-st/garmin-connect-export)
 - [GarminDB](https://github.com/tcgoetz/GarminDB)
 
+## My database stats
+
+------------------
+ fit   gpx   json 
+----- ----- ------
+ 835   571   2098 
+------------------
+
+Table: File types
+
+
+
+------------------------------
+ fit   gpx   gz    json   zip 
+----- ----- ----- ------ -----
+ 32    571   314   2098   489 
+------------------------------
+
+ Files extensions
+
+
+
+Total rows:  29902088 
+
+Total files: 3504 
+
+Total days:  2284 
+
+Total vars:  155 
+
+DB Size:     1.3 GiB 
+
+Source Size: 3.1 GiB
+
