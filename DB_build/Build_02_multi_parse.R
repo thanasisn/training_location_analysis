@@ -779,6 +779,14 @@ if (sum(c("NN50.#", "NN50") %in% names(data)) == 2) {
 }
 
 
+if (sum(c("RMSSD_H.ms", "RMSSD_H") %in% names(data)) == 2) {
+  stopifnot(data[!is.na(`RMSSD_H.ms`) & !is.na(RMSSD_H), .N] == 0)
+  data[!is.na(`RMSSD_H.ms`), RMSSD_H := `RMSSD_H.ms`]
+  data[,      `RMSSD_H.ms` := NULL]
+}
+
+
+
 
 # if (sum(c("Distance", "distance") %in% names(data)) == 2) {
 #   ## sanity check

@@ -63,6 +63,15 @@ wehave[, currenct := filemtime == floor_date(file.mtime(file), unit = "seconds")
 ##  List of offending files
 removefl <- wehave[exists == F | currenct == F]
 
+##  Read list of files to remove
+if (file.exists(REMOVEFL)) {
+  exrarm   <- read.csv2(REMOVEFL)
+  removefl <- unique(data.table(plyr::rbind.fill(removefl, exrarm)))
+  removefl <- removefl[!is.na(year) & !is.na(month), ]
+  file.remove(REMOVEFL)
+}
+
+
 if (nrow(removefl) > 0){
   cat("Removing", nrow(removefl), "files\n")
 
@@ -165,6 +174,18 @@ if (length(filesrm) > 0) {
 } else {
   cat("No files to remove from", FIT_DIR, "\n")
 }
+
+
+
+
+
+
+
+
+
+
+##  Detect empty variable  -----------------------------------------------------
+
 
 
 

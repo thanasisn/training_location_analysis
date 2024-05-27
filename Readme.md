@@ -65,23 +65,6 @@ data to create other datasets we need.
 
 ## My database stats
 
-------------------
- fit   gpx   json 
------ ----- ------
- 835   571   2098 
-------------------
-
-Table: File types
-
-
-
-------------------------------
- fit   gpx   gz    json   zip 
------ ----- ----- ------ -----
- 32    571   314   2098   489 
-------------------------------
-
- Files extensions
 
 
 

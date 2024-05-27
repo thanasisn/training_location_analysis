@@ -171,7 +171,6 @@ B <- test |> filter(!is.na(Calories))
 
 
 
-RMSSD_H.ms                   RMSSD_H
 
 
 ##  Edit vars  ----------------------------------------------------------------
@@ -194,31 +193,42 @@ test |> filter(!is.na(`NN50.#`)) |> summary()
 
 
 
-var_bad  <- "NN50.#"
-var_nice <- "NN50"
+var_bad  <- "LnRMSSD.#"
+var_nice <- "LnRMSSD"
 
 
+# RMSSD_H.ms                   RMSSD_H
+# LnRMSSD.#                   LnRMSSD
 
 ## count data overlaps
 DB |> filter(!is.na(get(var_bad)) & !is.na(get(var_nice))) |> count() |> collect()
 
 
 test <- DB |> filter(!is.na(get(var_bad)) | !is.na(get(var_nice))) |>
-  select(file, time, var_nice, var_bad, filetype, dataset) |> collect()
+   collect()
 
 test |> filter(!is.na(get(var_bad))) |> count()
-test |> filter(!is.na(var_nice)) |> count()
+test |> filter(!is.na(var_nice))     |> count()
 
 ## check data
-test |> filter(!is.na(var_nice))     |> summary()
-test |> filter(!is.na(get(var_bad))) |> summary()
+test |> filter(!is.na(get(var_nice))) |>
+  select(file, time, var_nice, var_bad, filetype, dataset) |> summary()
+test |> filter(!is.na(get(var_bad)))  |>
+  select(file, time, var_nice, var_bad, filetype, dataset) |> summary()
 
 
+dropfiles <- DB |> filter(!is.na(get(var_bad))) |> select(file, year, month) |> distinct() |> collect() |> data.table()
 
-
-
-
-
+if (nrow(dropfiles)>0){
+  if (file.exists(REMOVEFL)) {
+    exrarm    <- read.csv2(REMOVEFL)
+    dropfiles <- unique(data.table(plyr::rbind.fill(dropfiles, exrarm)))
+    dropfiles <- removefl[!is.na(year) & !is.na(month), ]
+    write.csv2(dropfiles, file = REMOVEFL)
+  } else {
+    write.csv2(dropfiles, file = REMOVEFL)
+  }
+}
 
 
 # library(tidyverse)

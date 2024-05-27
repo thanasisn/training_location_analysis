@@ -29,8 +29,12 @@ GPX_DIR <- "~/GISdata/GPX"
 GDB_DIR <- "~/TRAIN/Volumes/HealthData/"
 
 ##  Other variables  -----------------------------------------------------------
+## Datums used for locations
 EPSG_WGS84 <- 4326  ## Usual gps datum
 EPSG_PMERC <- 3857  ## Pseudo-Mercator, Spherical Mercator, Google Maps, OpenStreetMap
+
+## A list of files to remove from DB
+REMOVEFL <- "~/CODE/training_location_analysis/runtime/dropfiles.csv"
 
 
 ## expected fields in GoldenCheeatah files
