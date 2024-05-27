@@ -856,12 +856,16 @@ stop()
 
 con <- dbConnect(duckdb(), DATABASE, read_only = FALSE)
 
+tbl(con, "main") |> select(file) |> distinct()
+
 dbListTables(con)
+dbListFields(con, "main")
+db
 
-dbWriteTable(con, "main", data)
+dbWriteTable(con, "main", data, append = TRUE)
 
 
-
+dbDisconnect(con)
 # if (file.exists(DATASET)) {
 #
 #   ##  Check and create for new variables in the db  ----------------------------
