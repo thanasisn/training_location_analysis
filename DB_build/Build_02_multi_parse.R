@@ -107,7 +107,7 @@ files[grepl("GoldenCheetah/.*/activities", files$file), dataset := "GoldenCheeta
 ##  Open dataset  --------------------------------------------------------------
 if (file.exists(DATASET)) {
   DB       <- opendata()
-  db_rows  <- unlist(DB |> tally() |> collect())
+  db_rows  <- unlist(DB |> tally()      |> collect())
   db_files <- unlist(DB |> select(file) |> distinct() |> count() |> collect())
   db_days  <- unlist(DB |> select(time) |> mutate(time = as.Date(time)) |> distinct() |> count() |> collect())
   db_vars  <- length(names(DB))
@@ -156,10 +156,10 @@ print(table(files$file_ext))
 ## Read a set of files with each run  ------------------------------------------
 
 ## read some files for testing and to limit memory usage
-nts   <- 3
+nts   <- 5
 files <- unique(rbind(
-  tail(files[order(files$filemtime), ], 3 * nts),
-  files[sample.int(nrow(files), size =  3 * nts, replace = T), ],
+  tail(files[order(files$filemtime), ], 5 * nts),
+  files[sample.int(nrow(files), size =  1 * nts, replace = T), ],
   NULL
 ))
 
@@ -894,7 +894,12 @@ if (file.exists(DATASET)) {
 
   ##  Add new data to the DB  --------------------------------------------------
   cat("\nJoining data\n")
-  DB <- DB |> full_join(data) |> compute()
+  # DB <- DB |> full_join(data) |> compute()
+  DB <- DB |>
+    filter(year %in% new$year) |>
+    full_join(data) |>
+    compute()
+
 
   ## write only new months within data
   new <- unique(data[, .(year, file)])
@@ -905,17 +910,17 @@ if (file.exists(DATASET)) {
   cat(paste(" ", new$year, new$N),sep = "\n")
 
   cat("\nWriting DB\n")
-  write_dataset(DB |> filter(year %in% new$year),
+  write_dataset(DB,
                 DATASET,
                 compression            = DBcodec,
                 compression_level      = DBlevel,
                 format                 = "parquet",
-                partitioning           = c("year", "month"),
+                partitioning           = c("year"),
                 existing_data_behavior = "delete_matching",
                 hive_style             = F)
 
   ## report lines files and dates
-  new_rows  <- unlist(DB |> tally() |> collect())
+  new_rows  <- unlist(DB |> tally()      |> collect())
   new_files <- unlist(DB |> select(file) |> distinct() |> count() |> collect())
   new_days  <- unlist(DB |> select(time) |> mutate(time = as.Date(time)) |> distinct() |> count() |> collect())
   new_vars  <- length(names(DB))
@@ -955,6 +960,8 @@ if (file.exists(DATASET)) {
                 partitioning           = c("year"),
                 existing_data_behavior = "overwrite",
                 hive_style             = F)
+
+  DB <- opendata()
 
   cat("DB Size:    ", humanReadable(sum(file.size(list.files(DATASET,
                                                              recursive = T,
