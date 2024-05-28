@@ -113,6 +113,7 @@ todelte <- act[tst < tstlimit, file]
 cat(length(todelte), humanReadable(sum(file.size(todelte))), "\n")
 if (DRY_RUN) {
   file.remove(todelte)
+  cat("\nRemove original files with Garmin Export\n")
 }
 
 
@@ -120,10 +121,40 @@ if (DRY_RUN) {
 
 
 
+##  Remove files by time stamps from Garmin exports ----------------------------
+
+extfiles <- list.files("~/TRAIN/Garmin_Exports/",
+                       pattern    = "_samples.json|_zones.json",
+                       recursive  = FALSE,
+                       full.names = TRUE)
+extfiles <- extfiles[grepl("activity", extfiles, ignore.case = T)]
+extfiles <- data.table(file = extfiles)
+extfiles[, tst := as.numeric(stringr::str_extract(file, "[0-9]{9,}"))]
+
+todelte <- extfiles[tst < tstlimit, file]
+## delete old activities files
+cat(length(todelte), humanReadable(sum(file.size(todelte))), "\n")
+if (DRY_RUN) {
+  file.remove(todelte)
+  cat("\nRemove samples and zones files with Garmin Export\n")
+}
 
 
+extfiles <- list.files("~/TRAIN/Garmin_Exports/json/",
+                       pattern    = ".json",
+                       recursive  = TRUE,
+                       full.names = TRUE)
+extfiles <- extfiles[grepl("activity", extfiles, ignore.case = T)]
+extfiles <- data.table(file = extfiles)
+extfiles[, tst := as.numeric(stringr::str_extract(file, "[0-9]{9,}"))]
 
-
+todelte <- extfiles[tst < tstlimit, file]
+## delete old activities files
+cat(length(todelte), humanReadable(sum(file.size(todelte))), "\n")
+if (DRY_RUN) {
+  file.remove(todelte)
+  cat("\nRemove json files with Garmin Export\n")
+}
 
 
 
