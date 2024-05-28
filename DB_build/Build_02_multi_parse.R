@@ -894,11 +894,11 @@ if (file.exists(DATASET)) {
 
   ##  Add new data to the DB  --------------------------------------------------
   cat("\nJoining data\n")
-  # DB <- DB |> full_join(data) |> compute()
-  DB <- DB |>
-    filter(year %in% new$year) |>
-    full_join(data) |>
-    compute()
+  DB <- DB |> full_join(data) |> compute()
+  # DB <- DB |>
+  #   filter(year %in% new$year) |>
+  #   full_join(data) |>
+  #   compute()
 
 
   ## write only new months within data
@@ -910,7 +910,8 @@ if (file.exists(DATASET)) {
   cat(paste(" ", new$year, new$N),sep = "\n")
 
   cat("\nWriting DB\n")
-  write_dataset(DB,
+  # write_dataset(DB,
+  write_dataset(DB |> filter(year %in% new$year),
                 DATASET,
                 compression            = DBcodec,
                 compression_level      = DBlevel,

@@ -18,6 +18,7 @@ This probably, will always be a **work in progress**.
 - [ ] Include .tcx  files from Polar
 - [ ] Include sqlite from Gadgetbridge
 - [ ] Include sqlite from Amazfitbip
+- [ ] Include sqlite from GarminDB
 - [ ] Include data from Google location service.
 - [x] Include .fit  files from Garmin.
 - [x] Include .gpx  files from other sources.
