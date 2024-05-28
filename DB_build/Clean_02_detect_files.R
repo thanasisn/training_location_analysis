@@ -192,17 +192,11 @@ cat(humanReadable(size),"\n")
 
 test <- DB |>
   select(file, filetype, filehash, dataset, time) |>
-  distinct() |>
-  collect()  |>
-  data.table()
-
-DB |>
-  select(file, filetype, filehash, dataset, time) |>
-  group_by(file) |>
+  group_by(file, filetype, filehash, dataset) |>
   summarise(mintime = min(time),
             maxtime = max(time)) |>
-  collect()
-
+  collect() |>
+  data.table()
 
 
 hashes <- test[, .N, by = filehash]
