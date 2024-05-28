@@ -900,7 +900,16 @@ if (file.exists(DATASET)) {
   new <- new[, .N, by = .(year)]
   setorder(new, year)
   cat("\nWill update:", "\n")
+
   cat(paste(" ", new$year, new$N),sep = "\n")
+
+  if (nrow(new)<1) (
+    stop("not to do that")
+  )
+
+  if (any(is.na(new$year))) {
+    stop("not that either")
+  }
 
   cat("\nJoining data\n")
   # DB <- DB |> full_join(data) |> compute()
