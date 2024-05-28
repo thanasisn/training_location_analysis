@@ -191,10 +191,19 @@ cat(humanReadable(size),"\n")
 ## check duplicate files by hash  ------------------------------
 
 test <- DB |>
-  select(file, filetype, filehash, dataset) |>
+  select(file, filetype, filehash, dataset, time) |>
   distinct() |>
   collect()  |>
   data.table()
+
+DB |>
+  select(file, filetype, filehash, dataset, time) |>
+  group_by(file) |>
+  summarise(mintime = min(time),
+            maxtime = max(time)) |>
+  collect()
+
+
 
 hashes <- test[, .N, by = filehash]
 hdups  <- test[filehash %in% hashes[N > 1, filehash], ]
@@ -208,7 +217,7 @@ for (ah in hdups$filehash) {
     if (set[dataset == "Garmin Original", .N] == 1 &
         set[dataset != "Garmin Original", .N] >= 1) {
 
-      ## checking ratainig data?
+      ## checking retainig data?
       set[dataset == "Garmin Original", file]
 
     }

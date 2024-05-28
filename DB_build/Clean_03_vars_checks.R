@@ -163,21 +163,7 @@ test |> filter(!is.na(Distance)) |> summary()
 A <- test |> filter(!is.na(distance))
 B <- test |> filter(!is.na(Distance))
 
-  ## TODO count data and drop one of two
 
-
-DB |> filter(!is.na(Calories) & !is.na(calories)) |> count() |> collect()
-test <- DB |> filter(!is.na(Calories) | !is.na(distance)) |>
-  select(file, time, calories, Calories, filetype, dataset) |> collect()
-
-test |> filter(!is.na(Calories)) |> count()
-test |> filter(!is.na(calories)) |> count()
-
-test |> filter(!is.na(calories)) |> summary()
-test |> filter(!is.na(Calories)) |> summary()
-
-A <- test |> filter(!is.na(calories))
-B <- test |> filter(!is.na(Calories))
 
 
 
@@ -187,10 +173,10 @@ B <- test |> filter(!is.na(Calories))
 
 ##  Edit vars  ----------------------------------------------------------------
 
-# NN50.#                       NN50
-# RMSSD_H.ms                   RMSSD_H
-# LnRMSSD.#                   LnRMSSD
-# Ectopic-R               Ectopic-R.
+# NN50.#                  NN50
+# RMSSD_H.ms              RMSSD_H
+# LnRMSSD.#               LnRMSSD
+# Ectopic-R               Ectopic-R.#
 
 var_bad  <- "Ectopic-R.#"
 var_nice <- "Ectopic-R"
