@@ -42,20 +42,17 @@ DB <- opendata()
 ## find garmin time stamp limit form the data
 limitday <- Sys.Date() - GAR_RETAIN
 
-
-## TODO find files in GarminDB no more needed
-
-dirlist <- list.dirs(GDB_DIR, recursive = F, full.names = T)
-dirlist <- grep("DBs", dirlist, value = T, invert = T)
+# dirlist <- list.dirs(GDB_DIR, recursive = F, full.names = T)
+# dirlist <- grep("DBs", dirlist, value = T, invert = T)
 
 
 
 ##  Delete all old json with date in file name  --------------------------------
 files <- list.files(GDB_DIR,
-                    pattern = "*.json",
-                    all.files = T,
+                    pattern    = "*.json",
+                    all.files  = T,
                     full.names = T,
-                    recursive = T)
+                    recursive  = T)
 files <- grep("[0-9]{4}-[0-9]{2}-[0-9]{2}", files, value = T)
 files <- data.table(file = files)
 ## parse data from filename
@@ -65,12 +62,13 @@ files <- files[date < limitday, ]
 ## delete old json files
 cat(length(files$file), humanReadable(sum(file.size(files$file))), "\n")
 if (DRY_RUN) {
+  cat("\nRemove files with known date\n")
   file.remove(files$file)
 }
 
 
 
-##  files by time stamps --------------------------------------------------------
+##  Remove files by time stamps ------------------------------------------------
 ## find garmin timestamp limit
 stamps <- DB |>
   select(file, time, filetype)  |>
@@ -80,20 +78,19 @@ stamps <- DB |>
   collect() |>
   mutate(file = basename(file)) |>
   data.table()
-
+## get garmin time stamp
 stamps <- stamps[grepl("activity", file, ignore.case = T), ]
 stamps <- stamps[, tst := as.numeric(stringr::str_extract(file, "[0-9]{9,}"))]
 
-st <- stamps[, .N, by = file]
+st     <- stamps[, .N, by = file]
 stamps <- stamps[file %in% st[N==1,file] ]
 
+## test time stamps parsing
 setorder(stamps, tst)
-
-is.unsorted(stamps$time)
-
 plot(stamps[, tst, time])
+## get time stamp based on known calendar date
+tstlimit <- stamps[time < limitday, max(tst)]
 
-tstlimit <- stamps[time < limitday, max(tst) ]
 
 files <- list.files(paste0(GDB_DIR, "FitFiles"),
                     all.files = T,
@@ -103,13 +100,14 @@ files <- data.table(file = files,
                     ext  = file_ext(files))
 files <- files[ext %in% c("fit", "tcx")]
 
-## there are multiple time stamps !!!!
+## there are multiple time stamps format !!!!
 
 act <- files[grepl("activity", file, ignore.case = T)]
 table(act$ext)
 act[, tst := as.numeric(stringr::str_extract(file, "[0-9]{9,}"))]
 summary(act$tst)
 summary(stamps$tst)
+## select file to remove based on known relation of timestamp and date
 todelte <- act[tst < tstlimit, file]
 ## delete old activities files
 cat(length(todelte), humanReadable(sum(file.size(todelte))), "\n")
@@ -130,17 +128,16 @@ if (DRY_RUN) {
 
 
 
-stop()
-## check for dups in GC imports  -----------------------------------------------
-
-DBtest <- DB |> filter(dataset == "GoldenCheetah imports")
-
-test <- DBtest |>
-  select(file, filetype, time) |>
-  mutate(time = as.Date(time)) |>
-  distinct() |>
-  collect() |>
-  data.table()
+# ## check for dups in GC imports  -----------------------------------------------
+#
+# DBtest <- DB |> filter(dataset == "GoldenCheetah imports")
+#
+# test <- DBtest |>
+#   select(file, filetype, time) |>
+#   mutate(time = as.Date(time)) |>
+#   distinct() |>
+#   collect() |>
+#   data.table()
 
 
 

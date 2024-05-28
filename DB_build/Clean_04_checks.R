@@ -92,7 +92,9 @@ stats <- DB |>
                      Min    = ~ min(   .x, na.rm = TRUE),
                      Mean   = ~ mean(  .x, na.rm = TRUE),
                      Median = ~ median(.x, na.rm = TRUE)
-                   ))) |> collect() |> data.table()
+                   ))) |>
+  collect() |> data.table()
+
 
 
 
@@ -107,10 +109,6 @@ DB |>
   group_by(file) |>
   summarise(across(where(is.numeric), ~ sum(is.na(.x)))) |> collect()
 
-DB |>
-  select(!c(time, parsed, filemtime, filehash)) |>
-  group_by(file) |>
-  summarise(across(where(is.numeric), ~ sum(!is.na(.x)))) |> collect()
 
 DB |>
   select(!c(time, parsed, filemtime, filehash)) |>
@@ -125,10 +123,25 @@ complet <- DB |>
   summarise(across(where(is.numeric),
                    list(
                      NAs      = ~ sum(is.na(.x)),
-                     data     = ~ sum(!is.na(.x)),
-                     fill     = ~ n() - sum(is.na(.x)),
+                     Ndata    = ~ sum(!is.na(.x)),
+                     N        = ~  n(),
                      fillness = ~ (n() - sum(is.na(.x)))/n()
-                   ))) |> collect() |> data.table()
+                   ))) |>
+  collect() |> data.table()
+
+
+
+complet <- DB |>
+  select(!c(time, parsed, filemtime, filehash)) |>
+  group_by(dataset, filetype) |>
+  summarise(across(everything(),
+                   list(
+                     # NAs      = ~ sum(is.na(.x)),
+                     # Ndata    = ~ sum(!is.na(.x)),
+                     # N        = ~  n(),
+                     fillness = ~ (n() - sum(is.na(.x)))/n()
+                   ))) |>
+  collect() |> data.table()
 
 
 

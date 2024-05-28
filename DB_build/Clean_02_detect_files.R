@@ -38,7 +38,7 @@ if (!file.exists(DATASET)) {
 DB <- opendata()
 
 
-## check for dups in GC imports  -----------------------------------------------
+## Check for dups in GC imports  -----------------------------------------------
 
 DBtest <- DB |> filter(dataset == "GoldenCheetah imports")
 
@@ -49,11 +49,8 @@ test <- DBtest |>
   collect() |>
   data.table()
 
-
-
 ## count different file types in same day
 cnt2 <- test[, .(N = length(unique(filetype))), by = .(time)]
-
 
 ## count files in date
 cnt <- test[, .N, by = time]
@@ -119,9 +116,7 @@ cat(humanReadable(size),"\n")
 
 
 
-
-
-## check for same keys  -------------------------------------------------------
+##  Check for same keys  -------------------------------------------------------
 DBtest <- DB |> filter(dataset == "GoldenCheetah imports")
 
 test <- DBtest |>
@@ -188,7 +183,7 @@ cat(humanReadable(size),"\n")
 
 
 
-## check duplicate files by hash  ------------------------------
+##  Check duplicate files by hash  ---------------------------------------------
 
 test <- DB |>
   select(file, filetype, filehash, dataset, time) |>
@@ -234,7 +229,7 @@ for (ah in hdups$filehash) {
 
 
 
-## check overlapping time/space ranges
+##  Check overlapping time/space ranges  ---------------------------------------
 ## see gpx aggregation project
 overl <- DB |>
   filter(filetype != "json") |>
