@@ -92,19 +92,50 @@ cat(pander(DB |> select(file, SubSport, dataset) |>
 cat("\n")
 
 
-cat(pander(DB |> select(file, SubSport, dataset, Sport, Name) |>
-  distinct() |>
-  group_by(Name, SubSport) |>
-  tally() |> collect(),
+cat(pander(
+  DB |>
+    select(file, SubSport, dataset, Sport, Name) |>
+    distinct() |>
+    group_by(Name, SubSport) |>
+    tally() |>
+    collect(),
   style   = "rmarkdown"))
 cat("\n")
 
 
-cat(pander(DB |> select(file, dataset, filetype) |>
-  distinct() |>
-  select(!file) |> collect() |> table(),
+cat(pander(
+  DB |>
+    select(file, dataset, filetype) |>
+    distinct() |>
+    select(!file) |>
+    collect() |>
+    table(),
   style   = "rmarkdown"))
 cat("\n")
+
+cat(pander(
+  DB |>
+    select(file, dataset, filetype) |>
+    distinct() |>
+    select(!file) |>
+    collect() |>
+    table(),
+  style   = "rmarkdown"))
+cat("\n")
+
+
+cat(pander(
+  DB |>
+    select(file, year, filetype) |>
+    distinct()             |>
+    group_by(year, filetype)         |>
+    summarise(across(file, ~ n() )) |>
+    arrange(year) |>
+    collect(),
+  style   = "rmarkdown"))
+cat("\n")
+
+
 
 ## count number of NA/!na by variable by dataset by filetype
 

@@ -203,6 +203,9 @@ hashes <- test[, .N, by = filehash]
 hdups  <- test[filehash %in% hashes[N > 1, filehash], ]
 setorder(hdups, filehash)
 
+hdups[as.Date(mintime) < (Sys.Date() - GAR_RETAIN) |
+        as.Date(maxtime) < (Sys.Date() - GAR_RETAIN)  ]
+
 for (ah in hdups$filehash) {
   set <- hdups[filehash == ah]
   if (nrow(set)>=2) {
@@ -235,8 +238,8 @@ for (ah in hdups$filehash) {
 ## see gpx aggregation project
 overl <- DB |>
   filter(filetype != "json") |>
-  select(file, time) |>
-  group_by(file)     |>
+  select(file, time, filetype) |>
+  group_by(file, filetype)     |>
   summarise(mintime = min(time),
             maxtime = max(time)) |>
   collect() |>

@@ -415,6 +415,7 @@ for (i in 1:nrow(files)) {
       temp$Y <- unlist(trkcco[,2])
       temp   <- cbind(temp, latlon)
       temp[, geometry := NULL]
+      rm(trkcco)
 
       act_ME$position_lat  <- NULL
       act_ME$position_long <- NULL
@@ -893,25 +894,27 @@ if (file.exists(DATASET)) {
   }
 
   ##  Add new data to the DB  --------------------------------------------------
-  cat("\nJoining data\n")
-  DB <- DB |> full_join(data) |> compute()
-  # DB <- DB |>
-  #   filter(year %in% new$year) |>
-  #   full_join(data) |>
-  #   compute()
-
 
   ## write only new months within data
   new <- unique(data[, .(year, file)])
   new <- new[, .N, by = .(year)]
   setorder(new, year)
-
   cat("\nWill update:", "\n")
   cat(paste(" ", new$year, new$N),sep = "\n")
 
+  cat("\nJoining data\n")
+  # DB <- DB |> full_join(data) |> compute()
+  DB <- DB |>
+    filter(year %in% new$year) |>
+    full_join(data) |>
+    compute()
+
   cat("\nWriting DB\n")
   # write_dataset(DB,
-  write_dataset(DB |> filter(year %in% new$year),
+  write_dataset(DB |>
+                  filter(year %in% new$year)|>
+                  full_join(data) |>
+                  compute(),
                 DATASET,
                 compression            = DBcodec,
                 compression_level      = DBlevel,
@@ -921,6 +924,7 @@ if (file.exists(DATASET)) {
                 hive_style             = F)
 
   ## report lines files and dates
+  DB        <- opendata()
   new_rows  <- unlist(DB |> tally()      |> collect())
   new_files <- unlist(DB |> select(file) |> distinct() |> count() |> collect())
   new_days  <- unlist(DB |> select(time) |> mutate(time = as.Date(time)) |> distinct() |> count() |> collect())
