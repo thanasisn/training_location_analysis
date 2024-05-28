@@ -886,10 +886,7 @@ if (file.exists(DATASET)) {
         warning(paste0("Variable exist: ", varname, "\n", " !! IGNORING VARIABLE INIT !!"))
       }
       ## Reopen the dataset
-      DB <- open_dataset(DATASET,
-                         format            = "parquet",
-                         partitioning      = c("year"),
-                         unify_schemas     = T)
+      DB <- opendata()
     }
   }
 
@@ -913,10 +910,10 @@ if (file.exists(DATASET)) {
 
   cat("\nJoining data\n")
   # DB <- DB |> full_join(data) |> compute()
-  DB <- DB |>
-    filter(year %in% new$year) |>
-    full_join(data) |>
-    compute()
+  # DB <- DB |>
+  #   filter(year %in% new$year) |>
+  #   full_join(data) |>
+  #   compute()
 
   cat("\nWriting DB\n")
   # write_dataset(DB,
