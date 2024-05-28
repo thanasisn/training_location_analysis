@@ -130,7 +130,7 @@ cat(pander(
     distinct()             |>
     group_by(year, filetype)         |>
     summarise(across(file, ~ n() )) |>
-    arrange(year) |>
+    arrange(year, filetype) |>
     collect(),
   style   = "rmarkdown"))
 cat("\n")
