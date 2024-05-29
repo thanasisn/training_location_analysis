@@ -884,10 +884,10 @@ if (file.exists(DATASET)) {
         cat(sprintf(" %-20s  -->  %s\n", varname, vartype))
         ## create template var
         a  <- NA; class(a) <- vartype
-        DB <- DB |> mutate( !!varname := a) |> compute()
+        # DB <- DB |> mutate( !!varname := a) |> compute()
 
         ## Rewrite the whole dataset?
-        write_dataset(DB,
+        write_dataset(DB |> mutate( !!varname := a) |> compute(),
                       DATASET,
                       compression            = DBcodec,
                       compression_level      = DBlevel,
