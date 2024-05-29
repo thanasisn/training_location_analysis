@@ -178,8 +178,12 @@ B <- test |> filter(!is.na(Distance))
 # LnRMSSD.#               LnRMSSD
 # Ectopic-R               Ectopic-R.#
 
+
+
 var_bad  <- "Ectopic-R.#"
 var_nice <- "Ectopic-R"
+
+# hrv_rmssd30s           hrv_rmssd30s.ms
 
 ## count data overlaps
 DB |> filter(!is.na(get(var_bad)) & !is.na(get(var_nice))) |> count() |> collect()
@@ -197,7 +201,7 @@ test |> filter(!is.na(get(var_bad)))  |>
   select(file, time, var_nice, var_bad, filetype, dataset) |> summary()
 
 
-dropfiles <- DB |> filter(!is.na(get(var_bad))) |> select(file, year, month) |> distinct() |> collect() |> data.table()
+dropfiles <- DB |> filter(!is.na(get(var_bad))) |> select(file, year) |> distinct() |> collect() |> data.table()
 
 # if (nrow(dropfiles)>0){
 #   if (file.exists(REMOVEFL)) {

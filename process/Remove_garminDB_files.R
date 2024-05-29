@@ -1,14 +1,14 @@
 #!/usr/bin/env Rscript
 # /* Copyright (C) 2022 Athanasios Natsis <natsisphysicist@gmail.com> */
 #'
-#'  Detect files that may want to delete
+#' Delete files downloaded by garmindb
 #'
 
 #+ echo=FALSE, include=TRUE
 ## __ Set environment  ---------------------------------------------------------
 Sys.setenv(TZ = "UTC")
 tic <- Sys.time()
-Script.Name <- "~/CODE/training_location_analysis/DB_build/Clean_02_detect_files.R"
+Script.Name <- "~/CODE/training_location_analysis/process/Remove_garminDB_files.R"
 
 if (!interactive()) {
   dir.create("../runtime/", showWarnings = F, recursive = T)
@@ -26,6 +26,7 @@ suppressPackageStartupMessages({
   library(stringdist, quietly = TRUE, warn.conflicts = FALSE)
   library(rlang,      quietly = TRUE, warn.conflicts = FALSE)
   library(gdata,      quietly = TRUE, warn.conflicts = FALSE)
+  library(tools,      quietly = TRUE, warn.conflicts = FALSE)
 })
 
 source("./DEFINITIONS.R")
@@ -44,7 +45,6 @@ limitday <- Sys.Date() - GAR_RETAIN
 
 # dirlist <- list.dirs(GDB_DIR, recursive = F, full.names = T)
 # dirlist <- grep("DBs", dirlist, value = T, invert = T)
-
 
 
 ##  Delete all old json with date in file name  --------------------------------
@@ -90,6 +90,7 @@ setorder(stamps, tst)
 plot(stamps[, tst, time])
 ## get time stamp based on known calendar date
 tstlimit <- stamps[time < limitday, max(tst)]
+stopifnot(tstlimit > 11699424969)
 
 
 files <- list.files(paste0(GDB_DIR, "FitFiles"),
@@ -100,7 +101,7 @@ files <- data.table(file = files,
                     ext  = file_ext(files))
 files <- files[ext %in% c("fit", "tcx")]
 
-## there are multiple time stamps format !!!!
+## there are multiple garmin time stamps format !!!!
 
 act <- files[grepl("activity", file, ignore.case = T)]
 table(act$ext)
@@ -115,7 +116,6 @@ if (DRY_RUN) {
   file.remove(todelte)
   cat("\nRemove original files with Garmin Export\n")
 }
-
 
 
 
