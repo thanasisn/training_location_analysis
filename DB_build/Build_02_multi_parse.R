@@ -158,8 +158,8 @@ print(table(files$file_ext))
 ## read some files for testing and to limit memory usage
 nts   <- 5
 files <- unique(rbind(
-  tail(files[order(files$filemtime), ], 40),
-  files[sample.int(nrow(files), size =  3, replace = T), ],
+  tail(files[order(files$filemtime), ], 45),
+  files[sample.int(nrow(files), size = 3, replace = T), ],
   NULL
 ))
 
@@ -394,18 +394,14 @@ for (i in 1:nrow(files)) {
       names(latlon)[names(latlon) == "X"] <- "X_LON"
       names(latlon)[names(latlon) == "Y"] <- "Y_LAT"
 
-      ## add distance between points in meters
       if (nrow(temp) > 1) {
-        temp$dist_2D <- c(0, trackDistance(st_coordinates(temp$geometry), longlat = TRUE)) * 1000
-      } else {
-        temp$dist_2D <- NA
+        ## add distance between points in meters
+        temp$dist_2D  <- c(0, trackDistance(st_coordinates(temp$geometry), longlat = TRUE)) * 1000
+        ## add time between points
+        temp$timediff <- c(0, diff(temp$time))
+        ## create speed
+        temp <- temp |> mutate(kph_2D = (dist_2D/1000) / (timediff/3600)) |> collapse()
       }
-
-      ## add time between points
-      temp$timediff <- c(0, diff(temp$time))
-
-      ## create speed
-      temp <- temp |> mutate(kph_2D = (dist_2D/1000) / (timediff/3600)) |> collapse()
 
       ## parse coordinates for process in meters
       temp   <- st_transform(temp, crs = EPSG_PMERC)
