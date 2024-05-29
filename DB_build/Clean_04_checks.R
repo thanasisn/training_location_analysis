@@ -43,6 +43,10 @@ DB <- opendata()
 
 ## TODO check max date
 
+extdate <- DB |>
+  filter(as.Date(time) > Sys.Date() ) |>
+  collect() |> data.table()
+extdate <- remove_empty(extdate, which = "cols")
 
 
 ## garmin time stamp ----

@@ -775,13 +775,17 @@ if (sum(c("NN50.#", "NN50") %in% names(data)) == 2) {
   data[, `NN50.#` := NULL]
 }
 
-
 if (sum(c("RMSSD_H.ms", "RMSSD_H") %in% names(data)) == 2) {
   stopifnot(data[!is.na(`RMSSD_H.ms`) & !is.na(RMSSD_H), .N] == 0)
   data[!is.na(`RMSSD_H.ms`), RMSSD_H := `RMSSD_H.ms`]
   data[,      `RMSSD_H.ms` := NULL]
 }
 
+if (sum(c("Ectopic-R.#", "Ectopic-R") %in% names(data)) == 2) {
+  stopifnot(data[!is.na(`Ectopic-R.#`) & !is.na(`Ectopic-R`), .N] == 0)
+  data[!is.na(`Ectopic-R.#`), `Ectopic-R` := `Ectopic-R.#`]
+  data[,      `Ectopic-R.#` := NULL]
+}
 
 
 
