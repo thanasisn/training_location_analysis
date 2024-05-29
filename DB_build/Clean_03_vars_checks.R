@@ -50,6 +50,22 @@ if (any(empty == 0)) {
   warning("Fix empty vars or rebuild")
 }
 
+# ## rewrite all fileles in dataset without variables
+# pfils <- list.files(DATASET,
+#                     pattern    = ".parquet",
+#                     recursive  = T,
+#                     full.names = T)
+# var <- names(empty)[empty == 0]
+# for (af in pfils) {
+#   cat(af,"\n")
+#   # read_parquet(af) |> select(!(!!var)) |> names()
+#   write_parquet(read_parquet(af) |> select(!(!!var)),
+#                 sink = af,
+#                 compression       = DBcodec,
+#                 compression_level = DBlevel)
+# }
+# stop()
+
 
 ##  Remove a var
 # stop("")
