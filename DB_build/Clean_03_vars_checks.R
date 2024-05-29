@@ -181,10 +181,9 @@ B <- test |> filter(!is.na(Distance))
 # hrv_rmssd30s            hrv_rmssd30s.ms
 
 
-var_bad  <- "hrv_rmssd30s.ms"
-var_nice <- "hrv_rmssd30s"
-
-
+var_bad  <- "RMSSD.ms"
+var_nice <- "RMSSD"
+# RMSSD.ms                     RMSSD
 
 ## count data overlaps
 DB |> filter(!is.na(get(var_bad)) & !is.na(get(var_nice))) |> count() |> collect()

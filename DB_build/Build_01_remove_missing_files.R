@@ -68,9 +68,7 @@ if (file.exists(REMOVEFL)) {
   exrarm   <- read.csv2(REMOVEFL)
   removefl <- unique(data.table(plyr::rbind.fill(removefl, exrarm)))
   removefl <- removefl[!is.na(year), ]
-  file.remove(REMOVEFL)
 }
-
 
 if (nrow(removefl) > 0){
   cat("Removing", nrow(removefl), "files\n")
@@ -79,12 +77,10 @@ if (nrow(removefl) > 0){
 
   print(unique(removefl[, year]))
 
-  # DB |> filter(file %in% removefl$file) |> count() |> collect()
-  # DB |> filter(!file %in% removefl$file & year %in% removefl$year & month %in% removefl$month) |> count() |> collect()
-
   ##  Rewrite changed only data without removed files
-  write_dataset(DB |> filter(!file %in% removefl$file &
-                               year %in% removefl$year),
+  write_dataset(DB |>
+                  filter(!file %in% removefl$file) |>
+                  compute(),
                 DATASET,
                 compression            = DBcodec,
                 compression_level      = DBlevel,
@@ -92,7 +88,8 @@ if (nrow(removefl) > 0){
                 partitioning           = c("year"),
                 existing_data_behavior = "delete_matching",
                 hive_style             = F)
-
+  file.remove(REMOVEFL)
+  DB <- opendata()
   # DB <- open_dataset(DATASET,
   #                    partitioning  = c("year", "month"),
   #                    unify_schemas = T)

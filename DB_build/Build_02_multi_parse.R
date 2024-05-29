@@ -799,7 +799,11 @@ if (sum(c("hrv_rmssd30s.ms", "hrv_rmssd30s") %in% names(data)) == 2) {
   data[,      `hrv_rmssd30s.ms` := NULL]
 }
 
-
+if (sum(c("RMSSD.ms", "RMSSD") %in% names(data)) == 2) {
+  stopifnot(data[!is.na(`RMSSD.ms`) & !is.na(`RMSSD`), .N] == 0)
+  data[!is.na(`RMSSD.ms`), `RMSSD` := `RMSSD.ms`]
+  data[,      `RMSSD.ms` := NULL]
+}
 
 
 # if (sum(c("Distance", "distance") %in% names(data)) == 2) {
