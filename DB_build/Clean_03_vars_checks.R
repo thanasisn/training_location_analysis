@@ -58,7 +58,7 @@ if (any(empty == 0)) {
 #               compression            = DBcodec,
 #               compression_level      = DBlevel,
 #               format                 = "parquet",
-#               partitioning           = c("year", "month"),
+#               partitioning           = c("year"),
 #               existing_data_behavior = "delete_matching",
 #               hive_style             = F)
 
@@ -108,41 +108,41 @@ for (al in algo) {
 
 
 
-DB |>
-  select(filetype, dataset, distance, Distance) |>
-  group_by(filetype, dataset) |>
-  summarise(
-    across(
-      where(is.numeric),
-      list(
-        NAs    = ~ sum( is.na(  .x), na.rm = TRUE),
-        NOTnas = ~ sum(!is.na(  .x), na.rm = TRUE),
-        Mean   = ~ mean(.x, na.rm = TRUE),
-        Median = ~ median(.x, na.rm = TRUE),
-        Min    = ~ min(.x, na.rm = TRUE),
-        Max    = ~ max(.x, na.rm = TRUE)
-      )
-    )
-  ) |> collect() |> data.table()
+# DB |>
+#   select(filetype, dataset, distance, Distance) |>
+#   group_by(filetype, dataset) |>
+#   summarise(
+#     across(
+#       where(is.numeric),
+#       list(
+#         NAs    = ~ sum( is.na(  .x), na.rm = TRUE),
+#         NOTnas = ~ sum(!is.na(  .x), na.rm = TRUE),
+#         Mean   = ~ mean(.x, na.rm = TRUE),
+#         Median = ~ median(.x, na.rm = TRUE),
+#         Min    = ~ min(.x, na.rm = TRUE),
+#         Max    = ~ max(.x, na.rm = TRUE)
+#       )
+#     )
+#   ) |> collect() |> data.table()
 
 
 
-DB |>
-  select(filetype, dataset, starts_with("NN50")) |>
-  group_by(filetype, dataset) |>
-  summarise(
-    across(
-      where(is.numeric),
-      list(
-        NAs    = ~ sum( is.na(  .x), na.rm = TRUE),
-        NOTnas = ~ sum(!is.na(  .x), na.rm = TRUE),
-        Mean   = ~ mean(.x, na.rm = TRUE),
-        Median = ~ median(.x, na.rm = TRUE),
-        Min    = ~ min(.x, na.rm = TRUE),
-        Max    = ~ max(.x, na.rm = TRUE)
-      )
-    )
-  ) |> collect() |> data.table()
+# DB |>
+#   select(filetype, dataset, starts_with("NN50")) |>
+#   group_by(filetype, dataset) |>
+#   summarise(
+#     across(
+#       where(is.numeric),
+#       list(
+#         NAs    = ~ sum( is.na(  .x), na.rm = TRUE),
+#         NOTnas = ~ sum(!is.na(  .x), na.rm = TRUE),
+#         Mean   = ~ mean(.x, na.rm = TRUE),
+#         Median = ~ median(.x, na.rm = TRUE),
+#         Min    = ~ min(.x, na.rm = TRUE),
+#         Max    = ~ max(.x, na.rm = TRUE)
+#       )
+#     )
+#   ) |> collect() |> data.table()
 
 
 
@@ -177,13 +177,14 @@ B <- test |> filter(!is.na(Distance))
 # RMSSD_H.ms              RMSSD_H
 # LnRMSSD.#               LnRMSSD
 # Ectopic-R               Ectopic-R.#
+# pNN50.%                 pNN50
+# hrv_rmssd30s            hrv_rmssd30s.ms
 
 
+var_bad  <- "hrv_rmssd30s.ms"
+var_nice <- "hrv_rmssd30s"
 
-var_bad  <- "Ectopic-R.#"
-var_nice <- "Ectopic-R"
 
-# hrv_rmssd30s           hrv_rmssd30s.ms
 
 ## count data overlaps
 DB |> filter(!is.na(get(var_bad)) & !is.na(get(var_nice))) |> count() |> collect()
@@ -203,16 +204,16 @@ test |> filter(!is.na(get(var_bad)))  |>
 
 dropfiles <- DB |> filter(!is.na(get(var_bad))) |> select(file, year) |> distinct() |> collect() |> data.table()
 
-# if (nrow(dropfiles)>0){
-#   if (file.exists(REMOVEFL)) {
-#     exrarm    <- read.csv2(REMOVEFL)
-#     dropfiles <- unique(data.table(plyr::rbind.fill(dropfiles, exrarm)))
-#     dropfiles <- removefl[!is.na(year) & !is.na(month), ]
-#     write.csv2(dropfiles, file = REMOVEFL)
-#   } else {
-#     write.csv2(dropfiles, file = REMOVEFL)
-#   }
-# }
+if (nrow(dropfiles)>0){
+  if (file.exists(REMOVEFL)) {
+    exrarm    <- read.csv2(REMOVEFL)
+    dropfiles <- unique(data.table(plyr::rbind.fill(dropfiles, exrarm)))
+    dropfiles <- unique(dropfiles[!is.na(year), ])
+    write.csv2(dropfiles, file = REMOVEFL)
+  } else {
+    write.csv2(dropfiles, file = REMOVEFL)
+  }
+}
 
 
 

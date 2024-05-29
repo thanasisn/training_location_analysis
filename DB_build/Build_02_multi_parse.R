@@ -787,6 +787,19 @@ if (sum(c("Ectopic-R.#", "Ectopic-R") %in% names(data)) == 2) {
   data[,      `Ectopic-R.#` := NULL]
 }
 
+if (sum(c("pNN50.%", "pNN50") %in% names(data)) == 2) {
+  stopifnot(data[!is.na(`pNN50.%`) & !is.na(`pNN50`), .N] == 0)
+  data[!is.na(`pNN50.%`), `pNN50` := `pNN50.%`]
+  data[,      `pNN50.%` := NULL]
+}
+
+if (sum(c("hrv_rmssd30s.ms", "hrv_rmssd30s") %in% names(data)) == 2) {
+  stopifnot(data[!is.na(`hrv_rmssd30s.ms`) & !is.na(`hrv_rmssd30s`), .N] == 0)
+  data[!is.na(`hrv_rmssd30s.ms`), `hrv_rmssd30s` := `hrv_rmssd30s.ms`]
+  data[,      `hrv_rmssd30s.ms` := NULL]
+}
+
+
 
 
 # if (sum(c("Distance", "distance") %in% names(data)) == 2) {
