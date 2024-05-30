@@ -738,7 +738,9 @@ unlink(tempfl, recursive = T)
 
 ## Prepare for import to DB  ---------------------------------------------------
 data <- data.table(data)
-attr(data$time, "tzone") <- "UTC"
+attr(data$time,      "tzone") <- "UTC"
+attr(data$filemtime, "tzone") <- "UTC"
+attr(data$parsed,    "tzone") <- "UTC"
 data[, year  := as.integer(year(time)) ]
 # data[, month := as.integer(month(time))]
 
@@ -917,17 +919,7 @@ if (file.exists(DATASET)) {
                         compression       = DBcodec,
                         compression_level = DBlevel)
         }
-        ## remove list files
 
-        # ## Rewrite the whole dataset?
-        # write_dataset(DB |> mutate( !!varname := a) |> compute(),
-        #               DATASET,
-        #               compression            = DBcodec,
-        #               compression_level      = DBlevel,
-        #               format                 = "parquet",
-        #               partitioning           = c("year"),
-        #               existing_data_behavior = "overwrite",
-        #               hive_style             = F)
       } else {
         warning(paste0("Variable exist: ", varname, "\n", " !! IGNORING VARIABLE INIT !!"))
       }
@@ -954,15 +946,8 @@ if (file.exists(DATASET)) {
     stop("not that either")
   }
 
-  cat("\nJoining data\n")
-  # DB <- DB |> full_join(data) |> compute()
-  # DB <- DB |>
-  #   filter(year %in% new$year) |>
-  #   full_join(data) |>
-  #   compute()
+  cat("\nJoining data and write to DB\n")
 
-  cat("\nWriting DB\n")
-  # write_dataset(DB,
   write_dataset(DB |>
                   filter(year %in% new$year) |>
                   full_join(data) |>
@@ -997,8 +982,6 @@ if (file.exists(DATASET)) {
   write.csv2(files, "~/CODE/training_location_analysis/runtime/Files_to_parse.csv",
              row.names = FALSE, quote = FALSE)
 
-
-  # DB |> select(file, dataset) |> distinct() |> select(dataset) |> collect() |> table()
 
   # ## check uniqueness?
   # stopifnot(
