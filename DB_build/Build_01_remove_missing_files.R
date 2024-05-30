@@ -63,67 +63,89 @@ wehave[, currenct := filemtime == floor_date(file.mtime(file), unit = "seconds")
 ##  List of offending files
 removefl <- wehave[exists == F | currenct == F]
 
-##  Read list of files to remove
+##  Add more files to remove
 if (file.exists(REMOVEFL)) {
   exrarm   <- read.csv2(REMOVEFL)
   removefl <- unique(data.table(plyr::rbind.fill(removefl, exrarm)))
-  removefl <- removefl[!is.na(year), ]
+  removefl <- unique(removefl[!is.na(year), ])
 }
 
-if (nrow(removefl) > 0){
-  cat("Removing", nrow(removefl), "files\n")
+pfil <- list.files(DATASET,
+                   pattern = ".*.parquet",
+                   all.files  = T,
+                   full.names = T,
+                   recursive  = T)
 
-  cat(removefl$file, sep = "\n")
 
-  print(unique(removefl[, year]))
+for (ay in unique(removefl$year)) {
+  ## file to touch only
+  toedit <- grep(paste0(ay), pfil, value = T)[1]
 
-  ##  Rewrite changed only data without removed files
-  write_dataset(DB |>
+  cat("Removing files form", ay, "\n")
+
+  write_parquet(read_parquet(toedit) |>
                   filter(!file %in% removefl$file) |>
                   compute(),
-                DATASET,
-                compression            = DBcodec,
-                compression_level      = DBlevel,
-                format                 = "parquet",
-                partitioning           = c("year"),
-                existing_data_behavior = "delete_matching",
-                hive_style             = F)
+                sink = af,
+                compression       = DBcodec,
+                compression_level = DBlevel)
+  ## remove list files
   file.remove(REMOVEFL)
-  DB <- opendata()
-  # DB <- open_dataset(DATASET,
-  #                    partitioning  = c("year", "month"),
-  #                    unify_schemas = T)
-  #
-  # ##  Set some measurements
-  # new_rows  <- unlist(DB |> tally() |> collect())
-  # new_files <- unlist(DB |> select(file) |> distinct() |> count() |> collect())
-  # new_days  <- unlist(DB |> select(time) |> mutate(time = as.Date(time)) |> distinct() |> count() |> collect())
-  # new_vars  <- length(names(DB))
-  #
-  # cat("\n")
-  # cat("New rows:   ", new_rows  - db_rows , "\n")
-  # cat("New files:  ", new_files - db_files, "\n")
-  # cat("New days:   ", new_days  - db_days , "\n")
-  # cat("New vars:   ", new_vars  - db_vars , "\n")
-  # cat("\n")
-  # cat("Total rows: ", new_rows,  "\n")
-  # cat("Total files:", new_files, "\n")
-  # cat("Total days: ", new_days,  "\n")
-  # cat("Total vars: ", new_vars,  "\n")
-  # cat("Size:       ", humanReadable(sum(file.size(list.files(DATASET, recursive = T, full.names = T)))), "\n")
-  # filelist <- DB |> select(file) |> distinct() |> collect()
-  #
-  # cat("DB Size:    ", humanReadable(sum(file.size(list.files(DATASET,
-  #                                                            recursive = T,
-  #                                                            full.names = T)),
-  #                                       na.rm = T)), "\n")
-  # filelist <- DB |> select(file) |> distinct() |> collect()
-  # cat("Source Size:",
-  #     humanReadable( sum(file.size(filelist$file), na.rm = T)), "\n")
-
-} else {
-  cat("No data to remove from DB\n")
 }
+
+
+# if (nrow(removefl) > 0){
+#   cat("Removing", nrow(removefl), "files\n")
+#   cat(removefl$file, sep = "\n")
+#   print(unique(removefl[, year]))
+#
+#   ##  Rewrite changed only data without removed files
+#   write_dataset(DB |>
+#                   filter(!file %in% removefl$file) |>
+#                   compute(),
+#                 DATASET,
+#                 compression            = DBcodec,
+#                 compression_level      = DBlevel,
+#                 format                 = "parquet",
+#                 partitioning           = c("year"),
+#                 existing_data_behavior = "delete_matching",
+#                 hive_style             = F)
+#   file.remove(REMOVEFL)
+#   DB <- opendata()
+#   # DB <- open_dataset(DATASET,
+#   #                    partitioning  = c("year", "month"),
+#   #                    unify_schemas = T)
+#   #
+#   # ##  Set some measurements
+#   # new_rows  <- unlist(DB |> tally() |> collect())
+#   # new_files <- unlist(DB |> select(file) |> distinct() |> count() |> collect())
+#   # new_days  <- unlist(DB |> select(time) |> mutate(time = as.Date(time)) |> distinct() |> count() |> collect())
+#   # new_vars  <- length(names(DB))
+#   #
+#   # cat("\n")
+#   # cat("New rows:   ", new_rows  - db_rows , "\n")
+#   # cat("New files:  ", new_files - db_files, "\n")
+#   # cat("New days:   ", new_days  - db_days , "\n")
+#   # cat("New vars:   ", new_vars  - db_vars , "\n")
+#   # cat("\n")
+#   # cat("Total rows: ", new_rows,  "\n")
+#   # cat("Total files:", new_files, "\n")
+#   # cat("Total days: ", new_days,  "\n")
+#   # cat("Total vars: ", new_vars,  "\n")
+#   # cat("Size:       ", humanReadable(sum(file.size(list.files(DATASET, recursive = T, full.names = T)))), "\n")
+#   # filelist <- DB |> select(file) |> distinct() |> collect()
+#   #
+#   # cat("DB Size:    ", humanReadable(sum(file.size(list.files(DATASET,
+#   #                                                            recursive = T,
+#   #                                                            full.names = T)),
+#   #                                       na.rm = T)), "\n")
+#   # filelist <- DB |> select(file) |> distinct() |> collect()
+#   # cat("Source Size:",
+#   #     humanReadable( sum(file.size(filelist$file), na.rm = T)), "\n")
+#
+# } else {
+#   cat("No data to remove from DB\n")
+# }
 
 
 
