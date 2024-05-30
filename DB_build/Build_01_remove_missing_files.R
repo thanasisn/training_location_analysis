@@ -84,9 +84,8 @@ for (ay in unique(removefl$year)) {
   cat("Removing files form", ay, "\n")
 
   write_parquet(read_parquet(toedit) |>
-                  filter(!file %in% removefl$file) |>
-                  compute(),
-                sink = af,
+                  filter(!file %in% removefl$file),
+                sink              = toedit,
                 compression       = DBcodec,
                 compression_level = DBlevel)
   ## remove list files

@@ -60,8 +60,8 @@ cat("\n")
 ##  Source file extensions  ----------------------------------------------------
 files <- DB |>
   select(file) |>
-  distinct() |>
-  collect() |>
+  distinct()   |>
+  collect()    |>
   data.table()
 
 cat(pander(table(file_ext(files$file)),
@@ -70,24 +70,36 @@ cat(pander(table(file_ext(files$file)),
 cat("\n")
 
 
-cat(pander(DB |> select(file, Sport, SubSport) |>
-  distinct() |>
-  select(!file) |> collect() |> table(),
+cat(pander(
+  DB |>
+    select(file, Sport, SubSport) |>
+    distinct() |>
+    select(!file) |>
+    collect() |>
+    table(),
   style   = "rmarkdown"))
 cat("\n")
 
 
 
-cat(pander(DB |> select(file, SubSport, Name) |>
-  distinct() |>
-  select(!file) |> collect() |> table(),
+cat(pander(
+  DB |>
+    select(file, SubSport, Name) |>
+    distinct() |>
+    select(!file) |>
+    collect() |>
+    table(),
   style   = "rmarkdown"))
 cat("\n")
 
 
-cat(pander(DB |> select(file, SubSport, dataset) |>
-  distinct() |>
-  select(!file) |> collect() |> table(),
+cat(pander(
+  DB |>
+    select(file, SubSport, dataset) |>
+    distinct() |>
+    select(!file) |>
+    collect() |>
+    table(),
   style   = "rmarkdown"))
 cat("\n")
 

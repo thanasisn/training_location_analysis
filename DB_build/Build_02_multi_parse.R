@@ -885,10 +885,14 @@ if (file.exists(DATASET)) {
       if (is.null(vartype) | vartype == "NULL") stop()
 
       if (!any(names(DB) == varname)) {
+        stop("nevar")
         cat(sprintf(" %-20s  -->  %s\n", varname, vartype))
         ## create template var
         a  <- NA; class(a) <- vartype
         # DB <- DB |> mutate( !!varname := a) |> compute()
+
+
+
 
         ## Rewrite the whole dataset?
         write_dataset(DB |> mutate( !!varname := a) |> compute(),
