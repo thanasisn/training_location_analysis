@@ -793,6 +793,12 @@ if (sum(c("pNN50.%", "pNN50") %in% names(data)) == 2) {
   data[,      `pNN50.%` := NULL]
 }
 
+if (sum(c("pNN20.%", "pNN20") %in% names(data)) == 2) {
+  stopifnot(data[!is.na(`pNN20.%`) & !is.na(`pNN20`), .N] == 0)
+  data[!is.na(`pNN20.%`), `pNN20` := `pNN20.%`]
+  data[,      `pNN20.%` := NULL]
+}
+
 if (sum(c("hrv_rmssd30s.ms", "hrv_rmssd30s") %in% names(data)) == 2) {
   stopifnot(data[!is.na(`hrv_rmssd30s.ms`) & !is.na(`hrv_rmssd30s`), .N] == 0)
   data[!is.na(`hrv_rmssd30s.ms`), `hrv_rmssd30s` := `hrv_rmssd30s.ms`]
@@ -803,6 +809,12 @@ if (sum(c("RMSSD.ms", "RMSSD") %in% names(data)) == 2) {
   stopifnot(data[!is.na(`RMSSD.ms`) & !is.na(`RMSSD`), .N] == 0)
   data[!is.na(`RMSSD.ms`), `RMSSD` := `RMSSD.ms`]
   data[,      `RMSSD.ms` := NULL]
+}
+
+if (sum(c("SDSD.ms", "SDSD") %in% names(data)) == 2) {
+  stopifnot(data[!is.na(`SDSD.ms`) & !is.na(`SDSD`), .N] == 0)
+  data[!is.na(`SDSD.ms`), `SDSD` := `SDSD.ms`]
+  data[,      `SDSD.ms` := NULL]
 }
 
 
@@ -885,24 +897,37 @@ if (file.exists(DATASET)) {
       if (is.null(vartype) | vartype == "NULL") stop()
 
       if (!any(names(DB) == varname)) {
-        stop("nevar")
         cat(sprintf(" %-20s  -->  %s\n", varname, vartype))
         ## create template var
         a  <- NA; class(a) <- vartype
         # DB <- DB |> mutate( !!varname := a) |> compute()
 
+        ## write only one file at a time
+        pfil <- list.files(DATASET,
+                           pattern = ".*.parquet",
+                           all.files  = T,
+                           full.names = T,
+                           recursive  = T)
+        for (af in pfil) {
+          cat("Add var to", af, "\n")
 
+          write_parquet(read_parquet(af) |>
+                          mutate(!!varname := a),
+                        sink              = af,
+                        compression       = DBcodec,
+                        compression_level = DBlevel)
+        }
+        ## remove list files
 
-
-        ## Rewrite the whole dataset?
-        write_dataset(DB |> mutate( !!varname := a) |> compute(),
-                      DATASET,
-                      compression            = DBcodec,
-                      compression_level      = DBlevel,
-                      format                 = "parquet",
-                      partitioning           = c("year"),
-                      existing_data_behavior = "overwrite",
-                      hive_style             = F)
+        # ## Rewrite the whole dataset?
+        # write_dataset(DB |> mutate( !!varname := a) |> compute(),
+        #               DATASET,
+        #               compression            = DBcodec,
+        #               compression_level      = DBlevel,
+        #               format                 = "parquet",
+        #               partitioning           = c("year"),
+        #               existing_data_behavior = "overwrite",
+        #               hive_style             = F)
       } else {
         warning(paste0("Variable exist: ", varname, "\n", " !! IGNORING VARIABLE INIT !!"))
       }
@@ -939,7 +964,7 @@ if (file.exists(DATASET)) {
   cat("\nWriting DB\n")
   # write_dataset(DB,
   write_dataset(DB |>
-                  filter(year %in% new$year)|>
+                  filter(year %in% new$year) |>
                   full_join(data) |>
                   compute(),
                 DATASET,

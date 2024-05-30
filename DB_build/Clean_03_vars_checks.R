@@ -50,6 +50,7 @@ if (any(empty == 0)) {
   warning("Fix empty vars or rebuild")
 }
 
+## remove empty vars will rewrite the whole dataset
 if (Sys.info()["nodename"] == "sagan") {
   ## rewrite all files in dataset without variables
   pfils <- list.files(DATASET,
@@ -60,25 +61,15 @@ if (Sys.info()["nodename"] == "sagan") {
   for (af in pfils) {
     cat(af,"\n")
     # read_parquet(af) |> select(!(!!var)) |> names()
-    write_parquet(read_parquet(af) |>
+    write_parquet(read_parquet(af)   |>
                     select(!(!!var)) |>
-                    compute(),
+                    compute(),  # ? do we need compute here?
                   sink = af,
                   compression       = DBcodec,
                   compression_level = DBlevel)
   }
 }
 
-##  Remove a var
-# stop("")
-# write_dataset(DB |> select(!DEVICETYPE),
-#               DATASET,
-#               compression            = DBcodec,
-#               compression_level      = DBlevel,
-#               format                 = "parquet",
-#               partitioning           = c("year"),
-#               existing_data_behavior = "delete_matching",
-#               hive_style             = F)
 
 
 
@@ -191,48 +182,49 @@ B <- test |> filter(!is.na(Distance))
 
 ##  Edit vars  ----------------------------------------------------------------
 
-# NN50.#                  NN50
-# RMSSD_H.ms              RMSSD_H
-# LnRMSSD.#               LnRMSSD
-# Ectopic-R               Ectopic-R.#
-# pNN50.%                 pNN50
-# hrv_rmssd30s            hrv_rmssd30s.ms
-# RMSSD.ms                     RMSSD
+# NN50.#          NN50
+# RMSSD_H.ms      RMSSD_H
+# LnRMSSD.#       LnRMSSD
+# Ectopic-R       Ectopic-R.#
+# pNN50.%         pNN50
+# hrv_rmssd30s    hrv_rmssd30s.ms
+# RMSSD.ms        RMSSD
+# pNN20.%         pNN20
+# SDSD.ms         SDSD
 
+var_bad  <- "SDSD.ms"
+var_nice <- "SDSD"
 
-
-var_bad  <- "RMSSD.ms"
-var_nice <- "RMSSD"
 
 ## count data overlaps
-DB |> filter(!is.na(get(var_bad)) & !is.na(get(var_nice))) |> count() |> collect()
+(sound <- DB |> filter(!is.na(get(var_bad)) & !is.na(get(var_nice))) |> count() |> collect() |> unlist())
+if (sound == 0) {
 
-test <- DB |> filter(!is.na(get(var_bad)) | !is.na(get(var_nice))) |>
-   collect()
+  test <- DB |> filter(!is.na(get(var_bad)) | !is.na(get(var_nice))) |>
+    collect()
 
-test |> filter(!is.na(get(var_bad))) |> count()
-test |> filter(!is.na(var_nice))     |> count()
+  test |> filter(!is.na(get(var_bad))) |> count()
+  test |> filter(!is.na(var_nice))     |> count()
 
-## check data
-test |> filter(!is.na(get(var_nice))) |>
-  select(file, time, var_nice, var_bad, filetype, dataset) |> summary()
-test |> filter(!is.na(get(var_bad)))  |>
-  select(file, time, var_nice, var_bad, filetype, dataset) |> summary()
+  ## check data
+  test |> filter(!is.na(get(var_nice))) |>
+    select(file, time, var_nice, var_bad, filetype, dataset) |> summary()
+  test |> filter(!is.na(get(var_bad)))  |>
+    select(file, time, var_nice, var_bad, filetype, dataset) |> summary()
 
+  dropfiles <- DB |> filter(!is.na(get(var_bad))) |> select(file, year) |> distinct() |> collect() |> data.table()
 
-dropfiles <- DB |> filter(!is.na(get(var_bad))) |> select(file, year) |> distinct() |> collect() |> data.table()
-
-if (nrow(dropfiles)>0){
-  if (file.exists(REMOVEFL)) {
-    exrarm    <- read.csv2(REMOVEFL)
-    dropfiles <- unique(data.table(plyr::rbind.fill(dropfiles, exrarm)))
-    dropfiles <- unique(dropfiles[!is.na(year), ])
-    write.csv2(dropfiles, file = REMOVEFL)
-  } else {
-    write.csv2(dropfiles, file = REMOVEFL)
+  if (nrow(dropfiles)>0){
+    if (file.exists(REMOVEFL)) {
+      exrarm    <- read.csv2(REMOVEFL)
+      dropfiles <- unique(data.table(plyr::rbind.fill(dropfiles, exrarm)))
+      dropfiles <- unique(dropfiles[!is.na(year), ])
+      write.csv2(dropfiles, file = REMOVEFL)
+    } else {
+      write.csv2(dropfiles, file = REMOVEFL)
+    }
   }
 }
-
 
 
 
