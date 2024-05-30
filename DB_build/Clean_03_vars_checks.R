@@ -236,13 +236,10 @@ if (sound == 0) {
 #               hive_style             = F)
 
 
-grep("HR", names(DB), value = T)
-grep("TEMP", names(DB), value = T)
-
-test <- DB |>
-  select(file, dataset, starts_with("TEMP"), starts_with("HR")) |>
-  distinct() |>
-  collect()
+# test <- DB |>
+#   select(file, dataset, starts_with("TEMP"), starts_with("HR")) |>
+#   distinct() |>
+#   collect()
 
 # DB |> filter(!is.na(rE.runEco)) |>
 #   select_if(~sum(!is.na(.)) > 0) |> collect()
