@@ -81,7 +81,7 @@ for (ay in unique(removefl$year)) {
   ## file to touch only
   toedit <- grep(paste0(ay), pfil, value = T)[1]
 
-  cat("Removing files form", ay, "\n")
+  cat("Removing files from", ay, "\n")
 
   write_parquet(read_parquet(toedit) |>
                   filter(!file %in% removefl$file),

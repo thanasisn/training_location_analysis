@@ -98,7 +98,7 @@ for (ad in cnt2[N == 2, time]) {
             size <- sum(size, file.size(gpxfile), na.rm = T)
 
             ## !!! remove files !!!
-            # file.remove(gpxfile)
+            file.remove(gpxfile)
           } else {
             cat("Other file don't exist\n")
           }

@@ -29,7 +29,7 @@ source("./DEFINITIONS.R")
 lock <- lock(paste0(DATASET, ".lock"))
 
 RUNTEST <- TRUE
-RUNTEST <- FALSE
+# RUNTEST <- FALSE
 
 for (algo in c("gzip", "brotli", "zstd", "lz4", "lzo", "bz2")) {
     if (codec_is_available(algo)) {
@@ -52,8 +52,8 @@ gatherDB <- data.frame()
 codecs   <- c("gzip", "brotli", "zstd", "lz4", "lzo")
 levels   <- unique(c(1:11, 20, 50))
 
-codecs   <- c("brotli")
-levels   <- 5
+# codecs   <- c("brotli")
+# levels   <- 5
 
 ##  Run all tests  -------------------------------------------------------------
 if (RUNTEST) {
