@@ -50,25 +50,26 @@ if (any(empty == 0)) {
   warning("Fix empty vars or rebuild")
 }
 
-## remove empty vars will rewrite the whole dataset
-if (Sys.info()["nodename"] == "sagan") {
-  ## rewrite all files in dataset without variables
-  pfils <- list.files(DATASET,
-                      pattern    = ".parquet",
-                      recursive  = T,
-                      full.names = T)
-  var <- names(empty)[empty == 0]
-  for (af in pfils) {
-    cat(af,"\n")
-    # read_parquet(af) |> select(!(!!var)) |> names()
-    write_parquet(read_parquet(af)   |>
-                    select(!(!!var)) |>
-                    compute(),  # ? do we need compute here?
-                  sink = af,
-                  compression       = DBcodec,
-                  compression_level = DBlevel)
-  }
-}
+# ## remove empty vars will rewrite the whole dataset
+# if (Sys.info()["nodename"] == "sagan") {
+#   ## rewrite all files in dataset without variables
+#   pfils <- list.files(DATASET,
+#                       pattern    = ".parquet",
+#                       recursive  = T,
+#                       full.names = T)
+#   var <- names(empty)[empty == 0]
+#   cat(var, "\n")
+#   for (af in pfils) {
+#     cat(af, "\n")
+#     # read_parquet(af) |> select(!(!!var)) |> names()
+#     write_parquet(read_parquet(af)   |>
+#                     select(!(!!var)) |>
+#                     compute(),  # ? do we need compute here?
+#                   sink = af,
+#                   compression       = DBcodec,
+#                   compression_level = DBlevel)
+#   }
+# }
 
 
 
@@ -157,26 +158,6 @@ for (al in algo) {
 
 
 
-## count data overlaps
-DB |> filter(!is.na(Distance) & !is.na(distance)) |> count() |> collect()
-
-test <- DB |> filter(!is.na(Distance) | !is.na(distance)) |>
-  select(file, time, distance, Distance, filetype, dataset) |> collect()
-
-test |> filter(!is.na(Distance)) |> count()
-test |> filter(!is.na(distance)) |> count()
-
-test |> filter(!is.na(distance)) |> summary()
-test |> filter(!is.na(Distance)) |> summary()
-
-A <- test |> filter(!is.na(distance))
-B <- test |> filter(!is.na(Distance))
-
-
-
-
-
-
 
 
 
@@ -191,9 +172,11 @@ B <- test |> filter(!is.na(Distance))
 # RMSSD.ms        RMSSD
 # pNN20.%         pNN20
 # SDSD.ms         SDSD
+# RMSSD_H.ms      RMSSD_H
 
-var_bad  <- "SDSD.ms"
-var_nice <- "SDSD"
+
+var_bad  <- "RMSSD_H.ms"
+var_nice <- "RMSSD_H"
 
 
 ## count data overlaps
