@@ -889,6 +889,8 @@ stopifnot(!any(duplicated(names(data))))
 
 # stop("DDD")
 
+data <- remove_empty(data, which = "cols")
+
 ## Add data to DB  -------------------------------------------------------------
 if (nrow(data) < 10) {
   stop("You don't want to write")
