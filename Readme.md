@@ -66,18 +66,28 @@ data to create other datasets we need.
 
 ## My database stats
 
+| fit  | gpx  | json |
+|:----:|:----:|:----:|
+| 1180 | 1263 | 2277 |
+
+Table: File types
 
 
+| fit | gpx  | gz  | json | zip |
+|:---:|:----:|:---:|:----:|:---:|
+| 81  | 1259 | 456 | 2277 | 647 |
 
-Total rows:  29902088 
+Table: Files extensions
 
-Total files: 3504 
 
-Total days:  2284 
+Total rows:  34548721 
 
-Total vars:  155 
+Total files: 4720 
 
-DB Size:     1.3 GiB 
+Total days:  2845 
 
-Source Size: 3.1 GiB
+Total vars:  159 
 
+DB Size:     1.1 GiB 
+
+Source Size: 3.5 GiB 

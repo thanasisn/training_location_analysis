@@ -44,11 +44,16 @@ empty <- DB |>
   select(!c(time, parsed, filemtime, filehash)) |>
   summarise(across(everything(), ~ n() - sum(is.na(.x)))) |>
   collect() |> data.table()
+emptyvars <- names(empty)[empty == 0]
 
-if (any(empty == 0)) {
-  cat(paste("Empty var:  ", names(empty)[empty == 0]), sep = "\n")
+if (length(emptyvars)) {
+  cat(paste("Empty var:  ", emptyvars), sep = "\n")
   warning("Fix empty vars or rebuild")
 }
+
+# DB |> filter(!is.na(Route)) |> collect()
+
+
 
 # ## remove empty vars will rewrite the whole dataset
 # if (Sys.info()["nodename"] == "sagan") {
@@ -77,6 +82,9 @@ if (any(empty == 0)) {
 ##  Check variable names similarity  -------------------------------------------
 rowvec <- names(DB)[nchar(names(DB)) > 1]
 colvec <- names(DB)[nchar(names(DB)) > 1]
+rowvec <- rowvec[!rowvec %in% emptyvars]
+colvec <- colvec[!colvec %in% emptyvars]
+
 
 algo <- c(
   # "osa"    ,
@@ -197,16 +205,16 @@ if (sound == 0) {
 
   dropfiles <- DB |> filter(!is.na(get(var_bad))) |> select(file, year) |> distinct() |> collect() |> data.table()
 
-  if (nrow(dropfiles)>0){
-    if (file.exists(REMOVEFL)) {
-      exrarm    <- read.csv2(REMOVEFL)
-      dropfiles <- unique(data.table(plyr::rbind.fill(dropfiles, exrarm)))
-      dropfiles <- unique(dropfiles[!is.na(year), ])
-      write.csv2(dropfiles, file = REMOVEFL)
-    } else {
-      write.csv2(dropfiles, file = REMOVEFL)
-    }
-  }
+  # if (nrow(dropfiles)>0){
+  #   if (file.exists(REMOVEFL)) {
+  #     exrarm    <- read.csv2(REMOVEFL)
+  #     dropfiles <- unique(data.table(plyr::rbind.fill(dropfiles, exrarm)))
+  #     dropfiles <- unique(dropfiles[!is.na(year), ])
+  #     write.csv2(dropfiles, file = REMOVEFL)
+  #   } else {
+  #     write.csv2(dropfiles, file = REMOVEFL)
+  #   }
+  # }
 }
 
 

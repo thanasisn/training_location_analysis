@@ -156,10 +156,9 @@ print(table(files$file_ext))
 ## Read a set of files with each run  ------------------------------------------
 
 ## read some files for testing and to limit memory usage
-nts   <- 5
 files <- unique(rbind(
-  tail(files[order(files$filemtime), ], 45),
-  files[sample.int(nrow(files), size = 3, replace = T), ],
+  tail(files[order(files$filemtime), ], 30),
+  files[sample.int(nrow(files),  size = 30, replace = T), ],
   NULL
 ))
 
@@ -866,6 +865,7 @@ data <- remove_empty(data, which = "cols")
 suppressWarnings({
   data$track_seg_point_id <- NULL
   data$dgpsid             <- NULL
+  data$Route              <- NULL
 })
 
 ## drop whole files with any missing dates
