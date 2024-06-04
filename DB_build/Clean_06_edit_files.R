@@ -96,6 +96,8 @@ for (gf in gpxfiles$file) {
   gpxdata <- remove_empty(DB |> filter(file == ll$file) |> collect(), which = "cols")
   othdata <- remove_empty(DB |> filter(file == ll$mat)  |> collect(), which = "cols")
 
+  unique(gpxdata$filehash) == unique(othdata$filehash)
+
   gpxdata <- gpxdata[!is.na(X_LON) & !is.na(Y_LAT)]
   othdata <- othdata[!is.na(X_LON) & !is.na(Y_LAT)]
 
@@ -152,3 +154,6 @@ cat(sprintf("%s %s@%s %s %f mins\n\n", Sys.time(), Sys.info()["login"],
 #   system("mplayer /usr/share/sounds/freedesktop/stereo/dialog-warning.oga", ignore.stdout = T, ignore.stderr = T)
 #   system(paste("notify-send -u normal -t 30000 ", Script.Name, " 'R script ended'"))
 # }
+
+
+
