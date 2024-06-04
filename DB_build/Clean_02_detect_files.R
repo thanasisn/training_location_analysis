@@ -229,38 +229,6 @@ for (ah in hdups$filehash) {
 
 
 
-##  Check overlapping time/space ranges  ---------------------------------------
-## see gpx aggregation project
-overl <- DB |>
-  filter(filetype != "json") |>
-  select(file, time, filetype) |>
-  group_by(file, filetype)     |>
-  summarise(mintime = min(time),
-            maxtime = max(time)) |>
-  collect() |>
-  data.table()
-
-gather <- data.frame()
-for (rr in 1:(nrow(overl)-1)) {
-  ll   <- overl[rr, ]
-  test <- overl[(rr+1):nrow(overl), ]
-
-  cnt <- test[mintime <= ll$maxtime & mintime >= ll$maxtime, .N ] +
-    test[maxtime <= ll$maxtime & maxtime >= ll$maxtime, .N ]
-
-  matc <- c(test[mintime <= ll$maxtime & mintime >= ll$maxtime, file ],
-    test[maxtime <= ll$maxtime & maxtime >= ll$maxtime, file ])
-
-
-  if (length(matc)>0) {
-    gather <- rbind(gather,
-                    data.table(ll, mat = matc)
-    )
-  }
-}
-gather
-
-
 
 
 ## TODO find files in GarminDB no more needed

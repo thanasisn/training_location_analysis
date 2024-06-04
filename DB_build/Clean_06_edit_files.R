@@ -26,6 +26,8 @@ suppressPackageStartupMessages({
   library(stringdist, quietly = TRUE, warn.conflicts = FALSE)
   library(rlang,      quietly = TRUE, warn.conflicts = FALSE)
   library(gdata,      quietly = TRUE, warn.conflicts = FALSE)
+  library(leaflet,    quietly = TRUE, warn.conflicts = FALSE)
+  library(sf,         quietly = TRUE, warn.conflicts = FALSE)
 })
 
 source("./DEFINITIONS.R")
@@ -77,11 +79,18 @@ gather
 # Check gpx
 gpxfiles <- gather[filetype == "gpx"]
 
+gpxfiles <- gather[as.Date(maxtime) < (Sys.Date() - GAR_RETAIN) ]
+
+setorder(gpxfiles, -mintime)
+
 for (gf in gpxfiles$file) {
   ll <- gpxfiles[file == gf,]
 
   ## source files should be on the system
   if (!(file.exists(ll$file) & file.exists(ll$mat))) next()
+
+  cat("1. ", ll$mat, "\n")
+  cat("2. ", ll$file, "\n")
 
   ## get data to compare
   gpxdata <- remove_empty(DB |> filter(file == ll$file) |> collect(), which = "cols")
@@ -93,19 +102,32 @@ for (gf in gpxfiles$file) {
   setorder(gpxdata,time)
   setorder(othdata,time)
 
-  plot(  gpxdata$X, gpxdata$Y)
-  points(othdata$X, othdata$Y, col = "red")
+  gsf <- gpxdata |>
+    st_as_sf(coords = c("X_LON", "Y_LAT")) |>
+    st_sf(crs = EPSG_WGS84) |>
+    st_combine() |> st_cast(to = "LINESTRING")
+  osf <- othdata |>
+    st_as_sf(coords = c("X_LON", "Y_LAT")) |>
+    st_sf(crs = EPSG_WGS84) |>
+    st_combine() |> st_cast(to = "LINESTRING")
+
+  # plot(  gpxdata$X, gpxdata$Y)
+  # points(othdata$X, othdata$Y, col = "red")
+
+  leaflet() |> addTiles() |>
+    addPolylines(data = gsf, color = "blue", weight = 12) |>
+    addPolylines(data = osf, color = "red")
 
   ## 1-1 dups
   if (all(gpxdata$time  == othdata$time)  &
       all(gpxdata$X_LON == othdata$X_LON) &
       all(gpxdata$Y_LON == othdata$Y_LON) ) {
     cat("Identical points\n")
-    
+
+  stop("todo")
     # file.remove(ll$file)
   }
-  
-  stop("todo")
+
 }
 
 
