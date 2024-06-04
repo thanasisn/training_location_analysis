@@ -949,7 +949,7 @@ if (file.exists(DATASET)) {
 
   cat(paste(" ", new$year, new$N),sep = "\n")
 
-  if (nrow(new)<1) (
+  if (nrow(new) < 1) (
     stop("not to do that")
   )
 
@@ -958,6 +958,11 @@ if (file.exists(DATASET)) {
   }
 
   cat("\nJoining data and write to DB\n")
+
+  ## TODO write each file seperetly
+  #  list files to iterate
+  #  choose from DB and data
+  #  Write with join
 
   write_dataset(DB |>
                   filter(year %in% new$year) |>
