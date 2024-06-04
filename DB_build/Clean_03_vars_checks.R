@@ -183,9 +183,10 @@ for (al in algo) {
 # RMSSD_H.ms      RMSSD_H
 
 
-var_bad  <- "RMSSD_H.ms"
-var_nice <- "RMSSD_H"
+var_bad  <- "hrv_rmssd30s.ms"
+var_nice <- "hrv_rmssd30s"
 
+# hrv_rmssd30s           hrv_rmssd30s.ms
 
 ## count data overlaps
 (sound <- DB |> filter(!is.na(get(var_bad)) & !is.na(get(var_nice))) |> count() |> collect() |> unlist())
