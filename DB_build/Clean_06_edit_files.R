@@ -55,16 +55,19 @@ for (rr in 1:(nrow(overl)-1)) {
   ll   <- overl[rr, ]
   test <- overl[(rr+1):nrow(overl), ]
 
-  cnt <- test[mintime <= ll$maxtime & mintime >= ll$maxtime, .N ] +
-    test[maxtime <= ll$maxtime & maxtime >= ll$maxtime, .N ]
+  cnt  <- test[mintime <= ll$maxtime & mintime >= ll$maxtime, .N ] +
+          test[maxtime <= ll$maxtime & maxtime >= ll$maxtime, .N ]
 
   matc <- c(test[mintime <= ll$maxtime & mintime >= ll$maxtime, file ],
-    test[maxtime <= ll$maxtime & maxtime >= ll$maxtime, file ])
-
+            test[maxtime <= ll$maxtime & maxtime >= ll$maxtime, file ])
 
   if (length(matc)>0) {
     gather <- rbind(gather,
-                    data.table(ll, mat = matc)
+                    data.table(
+                      ll,
+                      mat = matc,
+                      cnt = cnt
+                      )
     )
   }
 }
@@ -72,6 +75,38 @@ gather
 
 
 # Check gpx
+gpxfiles <- gather[filetype == "gpx"]
+
+for (gf in gpxfiles$file) {
+  ll <- gpxfiles[file == gf,]
+
+  ## source files should be on the system
+  if (!(file.exists(ll$file) & file.exists(ll$mat))) next()
+
+  ## get data to compare
+  gpxdata <- remove_empty(DB |> filter(file == ll$file) |> collect(), which = "cols")
+  othdata <- remove_empty(DB |> filter(file == ll$mat)  |> collect(), which = "cols")
+
+  gpxdata <- gpxdata[!is.na(X_LON) & !is.na(Y_LAT)]
+  othdata <- othdata[!is.na(X_LON) & !is.na(Y_LAT)]
+
+  setorder(gpxdata,time)
+  setorder(othdata,time)
+
+  plot(  gpxdata$X, gpxdata$Y)
+  points(othdata$X, othdata$Y, col = "red")
+
+  ## 1-1 dups
+  if (all(gpxdata$time  == othdata$time)  &
+      all(gpxdata$X_LON == othdata$X_LON) &
+      all(gpxdata$Y_LON == othdata$Y_LON) ) {
+    cat("Identical points\n")
+    
+    # file.remove(ll$file)
+  }
+  
+  stop("todo")
+}
 
 
 

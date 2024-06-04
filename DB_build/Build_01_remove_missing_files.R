@@ -88,6 +88,7 @@ for (ay in unique(removefl$year)) {
                 sink              = toedit,
                 compression       = DBcodec,
                 compression_level = DBlevel)
+  DB <- opendata()
   ## remove list files
   file.remove(REMOVEFL)
 }
