@@ -183,8 +183,8 @@ for (al in algo) {
 # RMSSD_H.ms      RMSSD_H
 
 
-var_bad  <- "hrv_rmssd30s.ms"
-var_nice <- "hrv_rmssd30s"
+var_bad  <- "pNN50.%"
+var_nice <- "pNN50"
 
 # hrv_rmssd30s           hrv_rmssd30s.ms
 
@@ -218,6 +218,8 @@ if (sound == 0) {
   # }
 }
 
+
+# data <- DB |> filter(!is.na(get(var_bad)) | !is.na(get(var_nice))) |> collect() |> data.table()
 
 
 

@@ -76,12 +76,16 @@ pfil <- list.files(DATASET,
                    full.names = T,
                    recursive  = T)
 
-
 for (ay in unique(removefl$year)) {
   ## file to touch only
   toedit <- grep(paste0(ay), pfil, value = T)[1]
 
-  cat("Removing files from", ay, "\n")
+  cat("Removing files from", toedit, "\n")
+
+  ytoed <- c(DB |> filter(file %in% removefl$file) |> select(year) |> distinct() |> collect() |> unlist())
+
+  plist <- list.files(DATASET, pattern = "*.parquet", full.names = T, recursive = T)
+  plist <- grep(ytoed, plist, value = T)
 
   write_parquet(read_parquet(toedit) |>
                   filter(!file %in% removefl$file),
@@ -89,9 +93,9 @@ for (ay in unique(removefl$year)) {
                 compression       = DBcodec,
                 compression_level = DBlevel)
   DB <- opendata()
-  ## remove list files
-  file.remove(REMOVEFL)
 }
+## remove list of files tp remove
+file.remove(REMOVEFL)
 
 
 # if (nrow(removefl) > 0){
