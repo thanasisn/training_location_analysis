@@ -55,7 +55,7 @@ if (length(emptyvars)) {
 
 # ## remove empty vars will rewrite the whole dataset
 # if (Sys.info()["nodename"] == "sagan") {
-#   ## rewrite all files in dataset without variables
+#   ## rewrite all files in dataset without emtpy variables
 #   pfils <- list.files(DATASET,
 #                       pattern    = ".parquet",
 #                       recursive  = T,
@@ -224,8 +224,8 @@ subst <- data.frame(
     ncol = 2))
 
 for (al in 1:nrow(subst)) {
-  var_bad  <- subst[al, 1]
-  var_nice <- subst[al, 2]
+  (var_bad  <- subst[al, 1])
+  (var_nice <- subst[al, 2])
 
   if (!all(c(var_bad, var_nice) %in% names(DB))) next()
 
