@@ -168,22 +168,8 @@ for (al in algo) {
 
 ##  Edit vars  ----------------------------------------------------------------
 
-# NN50.#          NN50
-# RMSSD_H.ms      RMSSD_H
-# LnRMSSD.#       LnRMSSD
-# Ectopic-R.#     Ectopic-R
-# pNN50.%         pNN50
-# hrv_rmssd30s.ms hrv_rmssd30s
-# RMSSD.ms        RMSSD
-# pNN20.%         pNN20
-# SDSD.ms         SDSD
-# RMSSD_H.ms      RMSSD_H
-
-
 # var_bad  <- "pNN50.%"
 # var_nice <- "pNN50"
-#
-# # hrv_rmssd30s           hrv_rmssd30s.ms
 #
 # ## count data overlaps
 # (sound <- DB |> filter(!is.na(get(var_bad)) & !is.na(get(var_nice))) |> count() |> collect() |> unlist())
@@ -216,23 +202,22 @@ for (al in algo) {
 # }
 
 
-
-
 # SDNN.ms               -->  double
 
 subst <- data.frame(
   matrix(
     c(
-      "NN50.#"          , "NN50"        ,
-      "RMSSD_H.ms"      , "RMSSD_H"     ,
-      "LnRMSSD.#"       , "LnRMSSD"     ,
       "Ectopic-R.#"     , "Ectopic-R"   ,
-      "pNN50.%"         , "pNN50"       ,
+      "LnRMSSD.#"       , "LnRMSSD"     ,
+      "NN20.#"          , "NN20"        ,
+      "NN50.#"          , "NN50"        ,
+      "RMSSD.ms"        , "RMSSD"       ,
+      "RMSSD_H.ms"      , "RMSSD_H"     ,
+      "SDNN.ms"         , "SDNN"        ,
+      "SDSD.ms"         , "SDSD"        ,
       "hrv_rmssd30s.ms" , "hrv_rmssd30s",
       "pNN20.%"         , "pNN20"       ,
-      "SDSD.ms"         , "SDSD"        ,
-      "RMSSD_H.ms"      , "RMSSD_H"     ,
-      "RMSSD.ms"        , "RMSSD"       ,
+      "pNN50.%"         , "pNN50"       ,
       NULL),
     byrow = TRUE,
     ncol = 2))

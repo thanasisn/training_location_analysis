@@ -837,6 +837,7 @@ subst <- data.frame(
       "NN50.#"          , "NN50"        ,
       "RMSSD.ms"        , "RMSSD"       ,
       "RMSSD_H.ms"      , "RMSSD_H"     ,
+      "SDNN.ms"         , "SDNN"        ,
       "SDSD.ms"         , "SDSD"        ,
       "hrv_rmssd30s.ms" , "hrv_rmssd30s",
       "pNN20.%"         , "pNN20"       ,
@@ -893,7 +894,9 @@ class(data$PERFORMANCECONDITION) <- "double"
 class(data$Spike.Time)           <- "double"
 class(data$TEMP)                 <- "double"
 class(data$ALT)                  <- "double"
-class(data$NN50)                 <- "double"
+class(data$NN50)                 <- "integer"
+class(data$NN20)                 <- "integer"
+
 
 ## Drop data
 data <- remove_empty(data, which = "cols")
@@ -903,9 +906,9 @@ suppressWarnings({
   data$Route              <- NULL
 })
 
-# ## drop whole files with any missing dates
-# cat(paste("Drop missing dates:", data[is.na(time), file], "\n"))
-# data <- data[!file %in% data[is.na(time), file], ]
+## drop whole files with any missing dates
+cat(paste("Drop missing dates:", data[is.na(time), file], "\n"))
+data <- data[!file %in% data[is.na(time), file], ]
 
 ## sanity check
 if (any(names(data) == "position_lat")) stop()
