@@ -45,6 +45,7 @@ DB <- opendata()
 ## see gpx aggregation project
 overl <- DB |>
   filter(filetype != "json") |>
+  filter(filetype != "tcx")  |>
   select(file, time, filetype) |>
   group_by(file, filetype)     |>
   summarise(mintime = min(time),

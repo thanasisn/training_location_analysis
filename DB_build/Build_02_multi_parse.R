@@ -845,6 +845,8 @@ subst <- data.frame(
       "pNN20.%"         , "pNN20"       ,
       "pNN50.%"         , "pNN50"       ,
       "AvgPulse.bpm"    , "AvgPulse"    ,
+      "hrv_hr.bpm"      , "hrv_hr"      ,
+      "hrv_s.ms"        , "hrv_s"       ,
       NULL),
     byrow = TRUE,
     ncol = 2))
