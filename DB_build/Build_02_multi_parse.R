@@ -227,7 +227,7 @@ for (i in 1:nrow(files)) {
     cat(" == SKIP TYPE == ")
     metadt$parsed <- as.POSIXct(NA)
     if (exists("from")) {if (file.exists(from)) unlink(from)}
-    rm(px, pf)
+    rm(pf)
     ## store only file meta data
     store <- metadt
   }
@@ -237,7 +237,7 @@ for (i in 1:nrow(files)) {
     cat(" == SKIP TYPE == ")
     metadt$parsed <- as.POSIXct(NA)
     if (exists("from")) {if (file.exists(from)) unlink(from)}
-    rm(px, pf)
+    rm(pf)
     ## store only file meta data
     store <- metadt
   }
