@@ -174,9 +174,9 @@ for (al in algo) {
 # NN50.#          NN50
 # RMSSD_H.ms      RMSSD_H
 # LnRMSSD.#       LnRMSSD
-# Ectopic-R       Ectopic-R.#
+# Ectopic-R.#     Ectopic-R
 # pNN50.%         pNN50
-# hrv_rmssd30s    hrv_rmssd30s.ms
+# hrv_rmssd30s.ms hrv_rmssd30s
 # RMSSD.ms        RMSSD
 # pNN20.%         pNN20
 # SDSD.ms         SDSD
@@ -218,12 +218,74 @@ if (sound == 0) {
   # }
 }
 
+subst <- data.frame(
+  matrix(
+    c(
+      "NN50.#"          , "NN50"        ,
+      "RMSSD_H.ms"      , "RMSSD_H"     ,
+      "LnRMSSD.#"       , "LnRMSSD"     ,
+      "Ectopic-R.#"     , "Ectopic-R"   ,
+      "pNN50.%"         , "pNN50"       ,
+      "hrv_rmssd30s.ms" , "hrv_rmssd30s",
+      "pNN20.%"         , "pNN20"       ,
+      "SDSD.ms"         , "SDSD"        ,
+      "RMSSD_H.ms"      , "RMSSD_H"     ,
+      "RMSSD.ms"        , "RMSSD"       ,
+      NULL),
+    byrow = TRUE,
+    ncol = 2))
 
-# data <- DB |> filter(!is.na(get(var_bad)) | !is.na(get(var_nice))) |> collect() |> data.table()
+for (al in 1:nrow(subst)) {
+  var_bad  <- subst[al, 1]
+  var_nice <- subst[al, 2]
 
+  # data <- DB |> filter(!is.na(get(var_bad)) | !is.na(get(var_nice))) |> collect() |> data.table()
+  #
+  # data <- data |> select(c(var_bad, var_nice))
+  #
+  # summary(data)
+  #
+  # if (sum(c(var_bad, var_nice) %in% names(data)) == 2) {
+  #   cat("FIX:", var_bad, "->", var_nice ,"\n")
+  #   stopifnot(data[!is.na(get(var_bad)) & !is.na(get(var_nice)), .N] == 0)
+  #   data[!is.na(get(var_bad)), (var_nice) := get(var_bad)]
+  #   data[,      (var_bad) := NULL]
+  # }
 
+  (sound <- DB |> filter(!is.na(get(var_bad)) & !is.na(get(var_nice))) |> count() |> collect() |> unlist())
+  if (sound == 0) {
+    cat("FIX:", var_bad, "->", var_nice ,"\n")
 
+    test <- DB |> filter(!is.na(get(var_bad)) | !is.na(get(var_nice))) |>
+      collect()
 
+    print(test |> filter(!is.na(get(var_bad))) |> count())
+    print(test |> filter(!is.na(var_nice))     |> count())
+
+    ## check data
+    print(test |> filter(!is.na(get(var_nice))) |>
+      select(file, time, var_nice, var_bad, filetype, dataset) |> summary())
+
+    print(test |> filter(!is.na(get(var_bad)))  |>
+      select(file, time, var_nice, var_bad, filetype, dataset) |> summary())
+
+    dropfiles <- DB |> filter(!is.na(get(var_bad))) |> select(file, year) |> distinct() |> collect() |> data.table()
+
+    # ###################################
+    # if (nrow(dropfiles)>0){
+    #   if (file.exists(REMOVEFL)) {
+    #     exrarm    <- read.csv2(REMOVEFL)
+    #     dropfiles <- unique(data.table(plyr::rbind.fill(dropfiles, exrarm)))
+    #     dropfiles <- unique(dropfiles[!is.na(year), ])
+    #     write.csv2(dropfiles, file = REMOVEFL)
+    #   } else {
+    #     write.csv2(dropfiles, file = REMOVEFL)
+    #   }
+    # }
+    # ###################################
+  }
+
+}
 
 
 # DB |> select(file, position_lat, dataset) |>

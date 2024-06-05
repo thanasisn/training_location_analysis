@@ -225,17 +225,21 @@ for (i in 1:nrow(files)) {
   ##  TCX  ---------------------------------------------------------------------
   if (px == "tcx") {
     cat(" == SKIP TYPE == ")
-    if (file.exists(from)) unlink(from)
+    metadt$parsed <- as.POSIXct(NA)
+    if (exists("from")) {if (file.exists(from)) unlink(from)}
     rm(px, pf)
-    next()
+    ## store only file meta data
+    store <- metadt
   }
 
   ##  HRM  ---------------------------------------------------------------------
   if (px == "hrm") {
     cat(" == SKIP TYPE == ")
-    if (file.exists(from)) unlink(from)
+    metadt$parsed <- as.POSIXct(NA)
+    if (exists("from")) {if (file.exists(from)) unlink(from)}
     rm(px, pf)
-    next()
+    ## store only file meta data
+    store <- metadt
   }
 
 
@@ -765,74 +769,95 @@ if (sum(c("temperature", "TEMP") %in% names(data)) == 2) {
   data[, temperature := NULL]
 }
 
-if (sum(c("NN50.#", "NN50") %in% names(data)) == 2) {
-  cat("FIX:", "NN50.#", "NN50" ,"\n")
-  ## sanity check
-  stopifnot(data[!is.na(`NN50.#`) & !is.na(NN50), .N] == 0)
-  ## get data from other
-  data[!is.na(`NN50.#`), NN50 := `NN50.#`]
-  ## remove other
-  data[, `NN50.#` := NULL]
+# if (sum(c("NN50.#", "NN50") %in% names(data)) == 2) {
+#   cat("FIX:", "NN50.#", "NN50" ,"\n")
+#   ## sanity check
+#   stopifnot(data[!is.na(`NN50.#`) & !is.na(NN50), .N] == 0)
+#   ## get data from other
+#   data[!is.na(`NN50.#`), NN50 := `NN50.#`]
+#   ## remove other
+#   data[, `NN50.#` := NULL]
+# }
+# if (sum(c("RMSSD_H.ms", "RMSSD_H") %in% names(data)) == 2) {
+#   cat("FIX:", "RMSSD_H.ms", "RMSSD_H" ,"\n")
+#   stopifnot(data[!is.na(`RMSSD_H.ms`) & !is.na(RMSSD_H), .N] == 0)
+#   data[!is.na(`RMSSD_H.ms`), RMSSD_H := `RMSSD_H.ms`]
+#   data[,      `RMSSD_H.ms` := NULL]
+# }
+# if (sum(c("Ectopic-R.#", "Ectopic-R") %in% names(data)) == 2) {
+#   cat("FIX:", "Ectopic-R.#", "Ectopic-R" ,"\n")
+#   stopifnot(data[!is.na(`Ectopic-R.#`) & !is.na(`Ectopic-R`), .N] == 0)
+#   data[!is.na(`Ectopic-R.#`), `Ectopic-R` := `Ectopic-R.#`]
+#   data[,      `Ectopic-R.#` := NULL]
+# }
+# if (sum(c("pNN50.%", "pNN50") %in% names(data)) == 2) {
+#   cat("FIX:", "pNN50.%", "pNN50" ,"\n")
+#   stopifnot(data[!is.na(`pNN50.%`) & !is.na(`pNN50`), .N] == 0)
+#   data[!is.na(`pNN50.%`), `pNN50` := `pNN50.%`]
+#   data[,      `pNN50.%` := NULL]
+# }
+# if (sum(c("pNN20.%", "pNN20") %in% names(data)) == 2) {
+#   cat("FIX:", "pNN20.%", "pNN20" ,"\n")
+#   stopifnot(data[!is.na(`pNN20.%`) & !is.na(`pNN20`), .N] == 0)
+#   data[!is.na(`pNN20.%`), `pNN20` := `pNN20.%`]
+#   data[,      `pNN20.%` := NULL]
+# }
+# if (sum(c("hrv_rmssd30s.ms", "hrv_rmssd30s") %in% names(data)) == 2) {
+#   cat("FIX:", "hrv_rmssd30s.ms", "hrv_rmssd30s" ,"\n")
+#   stopifnot(data[!is.na(`hrv_rmssd30s.ms`) & !is.na(`hrv_rmssd30s`), .N] == 0)
+#   data[!is.na(`hrv_rmssd30s.ms`), `hrv_rmssd30s` := `hrv_rmssd30s.ms`]
+#   data[,      `hrv_rmssd30s.ms` := NULL]
+# }
+# if (sum(c("RMSSD.ms", "RMSSD") %in% names(data)) == 2) {
+#   cat("FIX:", "RMSSD.ms", "RMSSD" ,"\n")
+#   stopifnot(data[!is.na(`RMSSD.ms`) & !is.na(`RMSSD`), .N] == 0)
+#   data[!is.na(`RMSSD.ms`), `RMSSD` := `RMSSD.ms`]
+#   data[,      `RMSSD.ms` := NULL]
+# }
+# if (sum(c("SDSD.ms", "SDSD") %in% names(data)) == 2) {
+#   cat("FIX:", "SDSD.ms", "SDSD" ,"\n")
+#   stopifnot(data[!is.na(`SDSD.ms`) & !is.na(`SDSD`), .N] == 0)
+#   data[!is.na(`SDSD.ms`), `SDSD` := `SDSD.ms`]
+#   data[,      `SDSD.ms` := NULL]
+# }
+# if (sum(c("RMSSD_H.ms", "RMSSD_H") %in% names(data)) == 2) {
+#   cat("FIX:", "RMSSD_H.ms", "RMSSD_H" ,"\n")
+#   stopifnot(data[!is.na(`RMSSD_H.ms`) & !is.na(`RMSSD_H`), .N] == 0)
+#   data[!is.na(`RMSSD_H.ms`), `RMSSD_H` := `RMSSD_H.ms`]
+#   data[,      `RMSSD_H.ms` := NULL]
+# }
+
+
+subst <- data.frame(
+  matrix(
+    c(
+      "Ectopic-R.#"     , "Ectopic-R"   ,
+      "LnRMSSD.#"       , "LnRMSSD"     ,
+      "NN20.#"          , "NN20"        ,
+      "NN50.#"          , "NN50"        ,
+      "RMSSD.ms"        , "RMSSD"       ,
+      "RMSSD_H.ms"      , "RMSSD_H"     ,
+      "SDSD.ms"         , "SDSD"        ,
+      "hrv_rmssd30s.ms" , "hrv_rmssd30s",
+      "pNN20.%"         , "pNN20"       ,
+      "pNN50.%"         , "pNN50"       ,
+      NULL),
+    byrow = TRUE,
+    ncol = 2))
+
+for (al in 1:nrow(subst)) {
+  var_bad  <- subst[al, 1]
+  var_nice <- subst[al, 2]
+
+  if (sum(c(var_bad, var_nice) %in% names(data)) == 2) {
+    stop("tests")
+    cat("FIX:", var_bad, "->", var_nice ,"\n")
+    stopifnot(data[!is.na(get(var_bad)) & !is.na(get(var_nice)), .N] == 0)
+    data[!is.na(get(var_bad)), (var_nice) := get(var_bad)]
+    data[,      (var_bad) := NULL]
+  }
+
 }
-
-if (sum(c("RMSSD_H.ms", "RMSSD_H") %in% names(data)) == 2) {
-  cat("FIX:", "RMSSD_H.ms", "RMSSD_H" ,"\n")
-  stopifnot(data[!is.na(`RMSSD_H.ms`) & !is.na(RMSSD_H), .N] == 0)
-  data[!is.na(`RMSSD_H.ms`), RMSSD_H := `RMSSD_H.ms`]
-  data[,      `RMSSD_H.ms` := NULL]
-}
-
-if (sum(c("Ectopic-R.#", "Ectopic-R") %in% names(data)) == 2) {
-  cat("FIX:", "Ectopic-R.#", "Ectopic-R" ,"\n")
-  stopifnot(data[!is.na(`Ectopic-R.#`) & !is.na(`Ectopic-R`), .N] == 0)
-  data[!is.na(`Ectopic-R.#`), `Ectopic-R` := `Ectopic-R.#`]
-  data[,      `Ectopic-R.#` := NULL]
-}
-
-if (sum(c("pNN50.%", "pNN50") %in% names(data)) == 2) {
-  cat("FIX:", "pNN50.%", "pNN50" ,"\n")
-  stopifnot(data[!is.na(`pNN50.%`) & !is.na(`pNN50`), .N] == 0)
-  data[!is.na(`pNN50.%`), `pNN50` := `pNN50.%`]
-  data[,      `pNN50.%` := NULL]
-}
-
-if (sum(c("pNN20.%", "pNN20") %in% names(data)) == 2) {
-  cat("FIX:", "pNN20.%", "pNN20" ,"\n")
-  stopifnot(data[!is.na(`pNN20.%`) & !is.na(`pNN20`), .N] == 0)
-  data[!is.na(`pNN20.%`), `pNN20` := `pNN20.%`]
-  data[,      `pNN20.%` := NULL]
-}
-
-if (sum(c("hrv_rmssd30s.ms", "hrv_rmssd30s") %in% names(data)) == 2) {
-  cat("FIX:", "hrv_rmssd30s.ms", "hrv_rmssd30s" ,"\n")
-  stopifnot(data[!is.na(`hrv_rmssd30s.ms`) & !is.na(`hrv_rmssd30s`), .N] == 0)
-  data[!is.na(`hrv_rmssd30s.ms`), `hrv_rmssd30s` := `hrv_rmssd30s.ms`]
-  data[,      `hrv_rmssd30s.ms` := NULL]
-}
-
-if (sum(c("RMSSD.ms", "RMSSD") %in% names(data)) == 2) {
-  cat("FIX:", "RMSSD.ms", "RMSSD" ,"\n")
-  stopifnot(data[!is.na(`RMSSD.ms`) & !is.na(`RMSSD`), .N] == 0)
-  data[!is.na(`RMSSD.ms`), `RMSSD` := `RMSSD.ms`]
-  data[,      `RMSSD.ms` := NULL]
-}
-
-if (sum(c("SDSD.ms", "SDSD") %in% names(data)) == 2) {
-  cat("FIX:", "SDSD.ms", "SDSD" ,"\n")
-  stopifnot(data[!is.na(`SDSD.ms`) & !is.na(`SDSD`), .N] == 0)
-  data[!is.na(`SDSD.ms`), `SDSD` := `SDSD.ms`]
-  data[,      `SDSD.ms` := NULL]
-}
-
-if (sum(c("RMSSD_H.ms", "RMSSD_H") %in% names(data)) == 2) {
-  cat("FIX:", "RMSSD_H.ms", "RMSSD_H" ,"\n")
-  stopifnot(data[!is.na(`RMSSD_H.ms`) & !is.na(`RMSSD_H`), .N] == 0)
-  data[!is.na(`RMSSD_H.ms`), `RMSSD_H` := `RMSSD_H.ms`]
-  data[,      `RMSSD_H.ms` := NULL]
-}
-
-
-
 
 
 # if (sum(c("Distance", "distance") %in% names(data)) == 2) {
