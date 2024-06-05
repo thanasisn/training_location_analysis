@@ -849,16 +849,18 @@ for (al in 1:nrow(subst)) {
   var_bad  <- subst[al, 1]
   var_nice <- subst[al, 2]
 
-  if (sum(c(var_bad, var_nice) %in% names(data)) == 2) {
-    stop("tests")
+  if (var_bad %in% names(data)) {
     cat("FIX:", var_bad, "->", var_nice ,"\n")
-    stopifnot(data[!is.na(get(var_bad)) & !is.na(get(var_nice)), .N] == 0)
+    ## check for overlap of values
+    if (all(c(var_bad, var_nice) %in% names(data))) {
+      stopifnot(data[!is.na(get(var_bad)) & !is.na(get(var_nice)), .N] == 0)
+    }
+    ## move to the new variable
     data[!is.na(get(var_bad)), (var_nice) := get(var_bad)]
-    data[,      (var_bad) := NULL]
+    ## remove ald variable
+    data[, (var_bad) := NULL]
   }
-
 }
-
 
 # if (sum(c("Distance", "distance") %in% names(data)) == 2) {
 #   ## sanity check
@@ -891,6 +893,7 @@ class(data$PERFORMANCECONDITION) <- "double"
 class(data$Spike.Time)           <- "double"
 class(data$TEMP)                 <- "double"
 class(data$ALT)                  <- "double"
+class(data$NN50)                 <- "double"
 
 ## Drop data
 data <- remove_empty(data, which = "cols")
@@ -900,9 +903,9 @@ suppressWarnings({
   data$Route              <- NULL
 })
 
-## drop whole files with any missing dates
-cat(paste("Drop missing dates:", data[is.na(time), file], "\n"))
-data <- data[!file %in% data[is.na(time), file], ]
+# ## drop whole files with any missing dates
+# cat(paste("Drop missing dates:", data[is.na(time), file], "\n"))
+# data <- data[!file %in% data[is.na(time), file], ]
 
 ## sanity check
 if (any(names(data) == "position_lat")) stop()

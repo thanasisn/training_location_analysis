@@ -38,7 +38,6 @@ if (!file.exists(DATASET)) {
 DB <- opendata()
 
 
-
 ##  Check empty variables  -----------------------------------------------------
 empty <- DB |>
   select(!c(time, parsed, filemtime, filehash)) |>
@@ -52,7 +51,6 @@ if (length(emptyvars)) {
 }
 
 # DB |> filter(!is.na(Route)) |> collect()
-
 
 
 # ## remove empty vars will rewrite the whole dataset
@@ -125,7 +123,6 @@ for (al in algo) {
 
 
 
-
 # DB |>
 #   select(filetype, dataset, distance, Distance) |>
 #   group_by(filetype, dataset) |>
@@ -183,40 +180,45 @@ for (al in algo) {
 # RMSSD_H.ms      RMSSD_H
 
 
-var_bad  <- "pNN50.%"
-var_nice <- "pNN50"
+# var_bad  <- "pNN50.%"
+# var_nice <- "pNN50"
+#
+# # hrv_rmssd30s           hrv_rmssd30s.ms
+#
+# ## count data overlaps
+# (sound <- DB |> filter(!is.na(get(var_bad)) & !is.na(get(var_nice))) |> count() |> collect() |> unlist())
+# if (sound == 0) {
+#
+#   test <- DB |> filter(!is.na(get(var_bad)) | !is.na(get(var_nice))) |>
+#     collect()
+#
+#   test |> filter(!is.na(get(var_bad))) |> count()
+#   test |> filter(!is.na(var_nice))     |> count()
+#
+#   ## check data
+#   test |> filter(!is.na(get(var_nice))) |>
+#     select(file, time, var_nice, var_bad, filetype, dataset) |> summary()
+#   test |> filter(!is.na(get(var_bad)))  |>
+#     select(file, time, var_nice, var_bad, filetype, dataset) |> summary()
+#
+#   dropfiles <- DB |> filter(!is.na(get(var_bad))) |> select(file, year) |> distinct() |> collect() |> data.table()
+#
+#   # if (nrow(dropfiles)>0){
+#   #   if (file.exists(REMOVEFL)) {
+#   #     exrarm    <- read.csv2(REMOVEFL)
+#   #     dropfiles <- unique(data.table(plyr::rbind.fill(dropfiles, exrarm)))
+#   #     dropfiles <- unique(dropfiles[!is.na(year), ])
+#   #     write.csv2(dropfiles, file = REMOVEFL)
+#   #   } else {
+#   #     write.csv2(dropfiles, file = REMOVEFL)
+#   #   }
+#   # }
+# }
 
-# hrv_rmssd30s           hrv_rmssd30s.ms
 
-## count data overlaps
-(sound <- DB |> filter(!is.na(get(var_bad)) & !is.na(get(var_nice))) |> count() |> collect() |> unlist())
-if (sound == 0) {
 
-  test <- DB |> filter(!is.na(get(var_bad)) | !is.na(get(var_nice))) |>
-    collect()
 
-  test |> filter(!is.na(get(var_bad))) |> count()
-  test |> filter(!is.na(var_nice))     |> count()
-
-  ## check data
-  test |> filter(!is.na(get(var_nice))) |>
-    select(file, time, var_nice, var_bad, filetype, dataset) |> summary()
-  test |> filter(!is.na(get(var_bad)))  |>
-    select(file, time, var_nice, var_bad, filetype, dataset) |> summary()
-
-  dropfiles <- DB |> filter(!is.na(get(var_bad))) |> select(file, year) |> distinct() |> collect() |> data.table()
-
-  # if (nrow(dropfiles)>0){
-  #   if (file.exists(REMOVEFL)) {
-  #     exrarm    <- read.csv2(REMOVEFL)
-  #     dropfiles <- unique(data.table(plyr::rbind.fill(dropfiles, exrarm)))
-  #     dropfiles <- unique(dropfiles[!is.na(year), ])
-  #     write.csv2(dropfiles, file = REMOVEFL)
-  #   } else {
-  #     write.csv2(dropfiles, file = REMOVEFL)
-  #   }
-  # }
-}
+# SDNN.ms               -->  double
 
 subst <- data.frame(
   matrix(
@@ -238,6 +240,8 @@ subst <- data.frame(
 for (al in 1:nrow(subst)) {
   var_bad  <- subst[al, 1]
   var_nice <- subst[al, 2]
+
+  if (!all(c(var_bad, var_nice) %in% names(DB))) next()
 
   # data <- DB |> filter(!is.na(get(var_bad)) | !is.na(get(var_nice))) |> collect() |> data.table()
   #
