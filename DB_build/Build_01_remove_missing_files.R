@@ -95,7 +95,7 @@ for (ay in unique(removefl$year)) {
   DB <- opendata()
 }
 ## remove list of files tp remove
-file.remove(REMOVEFL)
+if (file.exists(REMOVEFL)) file.remove(REMOVEFL)
 
 
 # if (nrow(removefl) > 0){
