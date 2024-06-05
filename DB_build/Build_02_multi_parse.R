@@ -725,9 +725,7 @@ for (i in 1:nrow(files)) {
   }
 
   ## remove temporary file from memory
-  if (exists("from")) {
-    if (file.exists(from)) unlink(from)
-  }
+  if (exists("from")) {if (file.exists(from)) unlink(from)}
   rm(px, pf)
 }
 cat("\n")
