@@ -226,6 +226,7 @@ for (i in 1:nrow(files)) {
   if (px == "tcx") {
     cat(" == SKIP TYPE == ")
     metadt$parsed <- as.POSIXct(NA)
+    metadt$time   <- as.POSIXct("1970-01-01") ## fake time for unreaded
     if (exists("from")) {if (file.exists(from)) unlink(from)}
     rm(pf)
     ## store only file meta data
@@ -236,6 +237,7 @@ for (i in 1:nrow(files)) {
   if (px == "hrm") {
     cat(" == SKIP TYPE == ")
     metadt$parsed <- as.POSIXct(NA)
+    metadt$time   <- as.POSIXct("1970-01-01") ## fake time for unreaded
     if (exists("from")) {if (file.exists(from)) unlink(from)}
     rm(pf)
     ## store only file meta data
@@ -926,9 +928,10 @@ if (!is.null(data$DEVICETYPE) | all(data$Device == data$DEVICETYPE)) {
 # which(names(data) == names(data)[(duplicated(names(data)))])
 stopifnot(!any(duplicated(names(data))))
 
-# stop("DDD")
 
 data <- remove_empty(data, which = "cols")
+
+
 
 ## Add data to DB  -------------------------------------------------------------
 if (nrow(data) < 10) {
