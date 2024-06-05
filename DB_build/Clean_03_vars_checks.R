@@ -117,7 +117,7 @@ for (al in algo) {
   row.names(res) <- NULL
   res    <- res[, c("V2", "V3")]
 
-  print(head(res, 25))
+  print(head(res, 30))
 }
 # agrep("Device", names(DB), ignore.case = T, value = T)
 
@@ -218,6 +218,7 @@ subst <- data.frame(
       "hrv_rmssd30s.ms" , "hrv_rmssd30s",
       "pNN20.%"         , "pNN20"       ,
       "pNN50.%"         , "pNN50"       ,
+      "AvgPulse.bpm"    , "AvgPulse"    ,
       NULL),
     byrow = TRUE,
     ncol = 2))
