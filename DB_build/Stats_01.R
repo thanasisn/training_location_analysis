@@ -54,7 +54,6 @@ cat(pander(DB |> select(file, filetype) |>
              table(),
            caption = "File types",
            style   = "rmarkdown"))
-cat("\n")
 
 
 ##  Source file extensions  ----------------------------------------------------
@@ -67,7 +66,6 @@ files <- DB |>
 cat(pander(table(file_ext(files$file)),
     caption = "Files extensions",
     style   = "rmarkdown"))
-cat("\n")
 
 
 cat(pander(
@@ -78,7 +76,6 @@ cat(pander(
     collect() |>
     table(),
   style   = "rmarkdown"))
-cat("\n")
 
 
 
@@ -90,7 +87,6 @@ cat(pander(
     collect() |>
     table(),
   style   = "rmarkdown"))
-cat("\n")
 
 
 cat(pander(
@@ -101,7 +97,6 @@ cat(pander(
     collect() |>
     table(),
   style   = "rmarkdown"))
-cat("\n")
 
 
 cat(pander(
@@ -112,7 +107,6 @@ cat(pander(
     tally() |>
     collect(),
   style   = "rmarkdown"))
-cat("\n")
 
 
 cat(pander(
@@ -123,17 +117,7 @@ cat(pander(
     collect() |>
     table(),
   style   = "rmarkdown"))
-cat("\n")
 
-cat(pander(
-  DB |>
-    select(file, dataset, filetype) |>
-    distinct() |>
-    select(!file) |>
-    collect() |>
-    table(),
-  style   = "rmarkdown"))
-cat("\n")
 
 
 cat(pander(
@@ -145,7 +129,6 @@ cat(pander(
     arrange(year, filetype) |>
     collect(),
   style   = "rmarkdown"))
-cat("\n")
 
 
 
@@ -190,7 +173,7 @@ cat("Source Size:",
 
 
 
-
+schema(DB)
 
 
 
