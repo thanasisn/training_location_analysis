@@ -225,23 +225,25 @@ for (i in 1:nrow(files)) {
   ##  TCX  ---------------------------------------------------------------------
   if (px == "tcx") {
     cat(" == SKIP TYPE == ")
-    metadt$parsed <- as.POSIXct(NA)
-    metadt$time   <- as.POSIXct("1970-01-01") ## fake time for unreaded
+    # metadt$parsed <- as.POSIXct(NA)
+    # metadt$time   <- as.POSIXct("1970-01-01") ## fake time for unreaded
     if (exists("from")) {if (file.exists(from)) unlink(from)}
     rm(pf)
     ## store only file meta data
-    store <- metadt
+    # store <- metadt
+    next{}
   }
 
   ##  HRM  ---------------------------------------------------------------------
   if (px == "hrm") {
     cat(" == SKIP TYPE == ")
-    metadt$parsed <- as.POSIXct(NA)
-    metadt$time   <- as.POSIXct("1970-01-01") ## fake time for unreaded
+    # metadt$parsed <- as.POSIXct(NA)
+    # metadt$time   <- as.POSIXct("1970-01-01") ## fake time for unreaded
     if (exists("from")) {if (file.exists(from)) unlink(from)}
     rm(pf)
     ## store only file meta data
-    store <- metadt
+    # store <- metadt
+    next{}
   }
 
 
