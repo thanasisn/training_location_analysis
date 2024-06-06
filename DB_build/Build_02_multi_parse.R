@@ -158,7 +158,7 @@ print(table(files$file_ext))
 ## read some files for testing and to limit memory usage
 files <- unique(rbind(
   tail(files[order(files$filemtime), ], 30),
-  files[sample.int(nrow(files),  size = 30, replace = T), ],
+  files[sample.int(nrow(files),  size = 50, replace = T), ],
   NULL
 ))
 
@@ -231,7 +231,7 @@ for (i in 1:nrow(files)) {
     rm(pf)
     ## store only file meta data
     # store <- metadt
-    next{}
+    next()
   }
 
   ##  HRM  ---------------------------------------------------------------------
@@ -243,7 +243,7 @@ for (i in 1:nrow(files)) {
     rm(pf)
     ## store only file meta data
     # store <- metadt
-    next{}
+    next()
   }
 
 
