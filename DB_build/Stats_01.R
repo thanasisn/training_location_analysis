@@ -173,8 +173,9 @@ cat("Source Size:",
 
 
 
-schema(DB)
 
+## TODO there are units in the metadata !!
+# schema(DB)$metadata
 
 
 
