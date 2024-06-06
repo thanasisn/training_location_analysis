@@ -827,19 +827,23 @@ names(data)[names(data) == "temperature"] <- "TEMP"
 names(data)[names(data) == "Performance.Condition"] <- "Activity.Performance.Condition"
 
 ## fix some data types
+class(data$ALT)                  <- "double"
+class(data$AvgPulse)             <- "double"
 class(data$CAD)                  <- "double"
 class(data$FIELD_135)            <- "double"
 class(data$FIELD_136)            <- "double"
 class(data$HR)                   <- "double"
+class(data$NN20)                 <- "integer"
+class(data$NN50)                 <- "integer"
 class(data$OVRD_total_kcalories) <- "double"
 class(data$PERFORMANCECONDITION) <- "double"
 class(data$Spike.Time)           <- "double"
 class(data$TEMP)                 <- "double"
 class(data$`Ectopic-R`)          <- "double"
-class(data$ALT)                  <- "double"
-class(data$NN50)                 <- "integer"
-class(data$NN20)                 <- "integer"
 class(data$hrv_hr)               <- "integer"
+
+# stop("Dd")
+# schema(DB)
 
 
 ## Drop data
