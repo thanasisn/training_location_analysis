@@ -41,6 +41,15 @@ DB <- opendata()
 
 ## TESTS --------
 
+
+
+test <- DB |>
+  filter(SubSport == "generic") |>
+  filter(Name == "Bike") |>
+  collect() |> data.table()
+(test <- remove_empty(test, which = "cols"))
+
+stop("")
 ## TODO check max date
 
 extdate <- DB |>

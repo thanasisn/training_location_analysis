@@ -103,8 +103,9 @@ cat(pander(
   DB |>
     select(file, SubSport, dataset, Sport, Name) |>
     distinct() |>
-    group_by(Name, SubSport) |>
-    tally() |>
+    group_by(Name, SubSport, Sport) |>
+    tally()    |>
+    arrange(n) |>
     collect(),
   style   = "rmarkdown"))
 
