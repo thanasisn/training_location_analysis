@@ -202,7 +202,7 @@ for (al in algo) {
 # }
 
 
-# SDNN.ms               -->  double
+# Daniels.EqP            Daniels.Points
 
 subst <- data.frame(
   matrix(
@@ -221,6 +221,7 @@ subst <- data.frame(
       "AvgPulse.bpm"    , "AvgPulse"    ,
       "hrv_hr.bpm"      , "hrv_hr"      ,
       "hrv_s.ms"        , "hrv_s"       ,
+      "Daniels.EqP"     , "Daniels.Points",
       NULL),
     byrow = TRUE,
     ncol = 2))
