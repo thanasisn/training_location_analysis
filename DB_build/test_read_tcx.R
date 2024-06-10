@@ -277,9 +277,6 @@ for (i in 1:nrow(files)) {
 
       temp <- samples[!is.na(position_long) & !is.na(position_lat)]
 
-      # temp <- st_as_sf(re,
-      #                  coords = c("position_long", "position_lat","enhanced_altitude"))
-
       temp <- st_as_sf(temp,
                        coords = c("position_long", "position_lat"),
                        crs = EPSG_WGS84)
@@ -318,21 +315,19 @@ for (i in 1:nrow(files)) {
       rm(temp, samples)
 
 
+      ## store only file meta data
+      # store <- metadt
 
-
-    ## store only file meta data
-    # store <- metadt
-    stop()
-
+    }
   }
 
-agrep("pwr",names(DB), value = T)
-
-DB |> filter(!is.na(pwr.w)) |> select(pwr.w) |> collect() |> summary()
-DB |> filter(!is.na(pwr_PowerInWatts)) |> select(pwr_PowerInWatts) |> collect() |> summary()
-
-
-summary(samples$speed)
+  # agrep("pwr",names(DB), value = T)
+  #
+  # DB |> filter(!is.na(pwr.w)) |> select(pwr.w) |> collect() |> summary()
+  # DB |> filter(!is.na(pwr_PowerInWatts)) |> select(pwr_PowerInWatts) |> collect() |> summary()
+  #
+  #
+  # summary(samples$speed)
 
 
   ## Gather data  --------------------------------------------------------------
