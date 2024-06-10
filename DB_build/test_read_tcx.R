@@ -225,31 +225,114 @@ for (i in 1:nrow(files)) {
   ##  TCX  ---------------------------------------------------------------------
   if (px == "tcx") {
     cat(" == SKIP TYPE == ")
-    stop()
 
     library(XML)
-    library(xml2)
-
-    con   <- read_xml(pf)
-
 
 
     doc   <- xmlParse(pf)
-    basic <- xmlToDataFrame(nodes <- getNodeSet(doc, "//ns:Trackpoint", "ns"))
 
-    nodes <- getNodeSet(doc, "//ns:Trackpoint", "ns")
-    rows  <-  lapply(nodes, function(x) data.frame(xmlToList(x) ))
-    do.call("rbind", rows)
+    ## get points and ignore any summary data
+    nodes   <- getNodeSet(doc, "//ns:Trackpoint", "ns")
+    rows    <- lapply(nodes, function(x) data.frame(xmlToList(x) ))
+    samples <- do.call(rbind.data.frame , rows)
 
-    dd <- do.call(rbind.data.frame , rows)
+    rownames(samples) <- NULL
+
+    samples$HeartRateBpm..attrs <- NULL
+
+    samples$time <- as.POSIXct(samples$Time, tz = "UTC")
+    samples$Time <- NULL
+
+    samples$HR <- as.numeric(samples$HeartRateBpm.Value)
+    samples$HeartRateBpm.Value <- NULL
+
+    samples$speed <- as.numeric(samples$Extensions.TPX.Speed)
+    samples$Extensions.TPX.Speed <- NULL
+
+    samples$pwr_PowerInWatts <- as.numeric(samples$Extensions.TPX.Watts)
+    samples$Extensions.TPX.Watts <- NULL
+
+    samples$position_lat <- as.numeric(samples$Position.LatitudeDegrees)
+    samples$Position.LatitudeDegrees <- NULL
+
+    samples$position_lon <- as.numeric(samples$Position.LongitudeDegrees)
+    samples$Position.LongitudeDegrees <- NULL
+
+    samples$altitude <- as.numeric(samples$AltitudeMeters)
+    samples$AltitudeMeters <- NULL
+
+    samples$distance <- as.numeric(samples$DistanceMeters)
+    samples$DistanceMeters <- NULL
+
+    samples <- data.table(samples)
+
+    ## process location
+    wewant <- c("time",
+                "position_long",
+                "position_lat")
+
+    if (all(wewant %in% names(samples))) {
+      samples[position_lat  >= 179.99, position_lat  := NA]
+      samples[position_long >= 179.99, position_long := NA]
+
+      temp <- samples[!is.na(position_long) & !is.na(position_lat)]
+
+      # temp <- st_as_sf(re,
+      #                  coords = c("position_long", "position_lat","enhanced_altitude"))
+
+      temp <- st_as_sf(temp,
+                       coords = c("Position.LongitudeDegrees", "Position.LatitudeDegrees"),
+                       crs = EPSG_WGS84)
+
+      ## keep initial coordinates
+      latlon <- st_coordinates(temp$geometry)
+      latlon <- data.table(latlon)
+      names(latlon)[names(latlon) == "X"] <- "X_LON"
+      names(latlon)[names(latlon) == "Y"] <- "Y_LAT"
+
+      ## add distance between points in meters
+      if (nrow(temp) > 1) {
+        temp$dist_2D <- c(0, trackDistance(st_coordinates(temp$geometry), longlat = TRUE)) * 1000
+      } else {
+        temp$dist_2D <- NA
+      }
+
+      ## add time between points
+      temp$timediff <- c(0, diff(temp$time))
+
+      ## create speed
+      temp <- temp |> mutate(kph_2D = (dist_2D/1000) / (timediff/3600)) |> collapse()
+
+      ## parse coordinates for process in meters
+      temp   <- st_transform(temp, crs = EPSG_PMERC)
+      trkcco <- st_coordinates(temp)
+      temp   <- data.table(temp)
+      temp$X <- unlist(trkcco[,1])
+      temp$Y <- unlist(trkcco[,2])
+      temp   <- cbind(temp, latlon)
+      temp[, geometry := NULL]
+
+      act_ME$position_lat  <- NULL
+      act_ME$position_long <- NULL
+      act_ME <- merge(act_ME, temp, all = T)
+      rm(temp)
+
+
 
 
     ## store only file meta data
     # store <- metadt
+    stop()
 
   }
 
+agrep("pwr",names(DB), value = T)
 
+DB |> filter(!is.na(pwr.w)) |> select(pwr.w) |> collect() |> summary()
+DB |> filter(!is.na(pwr_PowerInWatts)) |> select(pwr_PowerInWatts) |> collect() |> summary()
+
+
+summary(samples$speed)
 
 
   ## Gather data  --------------------------------------------------------------
