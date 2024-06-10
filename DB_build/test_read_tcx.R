@@ -240,7 +240,7 @@ for (i in 1:nrow(files)) {
 
     samples$HeartRateBpm..attrs <- NULL
 
-    samples$time <- as.POSIXct(samples$Time, tz = "UTC")
+    samples$time <- as.POSIXct(samples$Time, "%FT%T", tz = "UTC")
     samples$Time <- NULL
 
     samples$HR <- as.numeric(samples$HeartRateBpm.Value)
@@ -255,7 +255,7 @@ for (i in 1:nrow(files)) {
     samples$position_lat <- as.numeric(samples$Position.LatitudeDegrees)
     samples$Position.LatitudeDegrees <- NULL
 
-    samples$position_lon <- as.numeric(samples$Position.LongitudeDegrees)
+    samples$position_long <- as.numeric(samples$Position.LongitudeDegrees)
     samples$Position.LongitudeDegrees <- NULL
 
     samples$altitude <- as.numeric(samples$AltitudeMeters)
@@ -281,7 +281,7 @@ for (i in 1:nrow(files)) {
       #                  coords = c("position_long", "position_lat","enhanced_altitude"))
 
       temp <- st_as_sf(temp,
-                       coords = c("Position.LongitudeDegrees", "Position.LatitudeDegrees"),
+                       coords = c("position_long", "position_lat"),
                        crs = EPSG_WGS84)
 
       ## keep initial coordinates
@@ -312,10 +312,10 @@ for (i in 1:nrow(files)) {
       temp   <- cbind(temp, latlon)
       temp[, geometry := NULL]
 
-      act_ME$position_lat  <- NULL
-      act_ME$position_long <- NULL
-      act_ME <- merge(act_ME, temp, all = T)
-      rm(temp)
+      samples <- merge(temp, samples, all = T)
+
+      store <- cbind(metadt, samples)
+      rm(temp, samples)
 
 
 
