@@ -225,20 +225,27 @@ for (i in 1:nrow(files)) {
   ##  TCX  ---------------------------------------------------------------------
   if (px == "tcx") {
     cat(" == SKIP TYPE == ")
-    # metadt$parsed <- as.POSIXct(NA)
-    # metadt$time   <- as.POSIXct("1970-01-01") ## fake time for unreaded
-    if (exists("from")) {if (file.exists(from)) unlink(from)}
-    rm(pf)
-    ## store only file meta data
-    # store <- metadt
     stop()
 
     library(XML)
-    doc = xmlParse("testfile.tcx")
-    basic = xmlToDataFrame(nodes <- getNodeSet(doc, "//ns:Trackpoint", "ns"))
+    library(xml2)
+
+    con   <- read_xml(pf)
+
+
+
+    doc   <- xmlParse(pf)
+    basic <- xmlToDataFrame(nodes <- getNodeSet(doc, "//ns:Trackpoint", "ns"))
+
     nodes <- getNodeSet(doc, "//ns:Trackpoint", "ns")
-    rows <-  lapply(nodes, function(x) data.frame(xmlToList(x) ))
+    rows  <-  lapply(nodes, function(x) data.frame(xmlToList(x) ))
     do.call("rbind", rows)
+
+    dd <- do.call(rbind.data.frame , rows)
+
+
+    ## store only file meta data
+    # store <- metadt
 
   }
 
