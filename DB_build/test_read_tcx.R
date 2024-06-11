@@ -341,7 +341,10 @@ for (i in 1:nrow(files)) {
     data <- plyr::rbind.fill(data, store)
     rm(store)
 
-    if (any(names(data) == "position_lat")) stop("loc")
+    data$position_lat  <- NULL
+    data$position_long <- NULL
+
+    if (any(names(data) == "position_lat")) stop("no loc")
 
     ## remove some list columns
     data$hrv_btb <- NULL
