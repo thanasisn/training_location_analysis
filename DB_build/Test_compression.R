@@ -23,7 +23,7 @@ library(data.table, quietly = TRUE, warn.conflicts = FALSE)
 library(ggplot2,    quietly = TRUE, warn.conflicts = FALSE)
 library(plotly,     quietly = TRUE, warn.conflicts = FALSE)
 
-source("../DEFINITIONS.R")
+source("~/CODE/training_location_analysis/DEFINITIONS.R")
 
 ## make sure only one parser is this working
 lock <- lock(paste0(DATASET, ".lock"))
