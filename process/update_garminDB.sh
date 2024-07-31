@@ -17,7 +17,7 @@ pip install --upgrade garmindb
 garmindb_cli.py --all --download --import --analyze --latest
 
 ## remove old files
-/home/athan/CODE/training_location_analysis/process/Remove_garminDB_files.R
+"$HOME/CODE/training_location_analysis/process/Remove_garminDB_files.R"
 
 ##  END  ##
 exit 0 
