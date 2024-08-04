@@ -61,6 +61,8 @@ dir.create(tempfl, showWarnings = F, recursive = T)
 db_fl <- "~/DATA/Other/Activities_records.duckdb"
 con   <- dbConnect(duckdb(dbdir = db_fl))
 
+dbListTables(con)
+
 stop()
 ## get last fid
 if (dbExistsTable(con, "files")) {
