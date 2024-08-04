@@ -134,9 +134,9 @@ files[grepl("/original/",                  files$file), dataset := "Garmin Origi
 files[grepl("GoldenCheetah/.*/imports",    files$file), dataset := "GoldenCheetah imports"   ]
 files[grepl("GoldenCheetah/.*/activities", files$file), dataset := "GoldenCheetah activities"]
 
+stop("DDD")
 
-
-# ##  Open dataset  --------------------------------------------------------------
+##  Open dataset  --------------------------------------------------------------
 # if (dbExistsTable(con, "files")) {
 #   DB       <- opendata()
 #   db_rows  <- unlist(DB |> tally()      |> collect())
