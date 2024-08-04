@@ -47,7 +47,7 @@ suppressPackageStartupMessages({
   require(duckdb,     quietly = TRUE, warn.conflicts = FALSE)
 })
 
-source("./DEFINITIONS.R")
+source("~/CODE/training_location_analysis/DEFINITIONS.R")
 
 
 
@@ -62,20 +62,27 @@ db_fl <- "~/DATA/Other/Activities_records.duckdb"
 con   <- dbConnect(duckdb(dbdir = db_fl))
 
 
-db_rows  <- unlist(tbl(con, "records") |> tally() |> collect())
-db_files <- unlist(tbl(con, "files")   |> tally() |> collect())
-db_days  <- unlist(tbl(con, "records") |> select(time) |> mutate(time = as.Date(time)) |> distinct() |> count() |> collect())
-db_vars  <- length(dbListFields(con, "records"))
-
-
 
 ## get last fid
 if (dbExistsTable(con, "files")) {
   fid <- data.frame(tbl(con, "files") |> summarise(max(fid, na.rm = T)))[1,1]
+
+  db_rows  <- unlist(tbl(con, "records") |> tally() |> collect())
+  db_files <- unlist(tbl(con, "files")   |> tally() |> collect())
+  db_days  <- unlist(tbl(con, "records") |> select(time) |> mutate(time = as.Date(time)) |> distinct() |> count() |> collect())
+  db_vars  <- length(dbListFields(con, "records"))
+
+
 } else {
   # dbSendQuery(con, "CREATE TABLE files (fid INTEGER PRIMARY KEY)")
   # dbExecute(con, "ALTER TABLE files (fid INTEGER PRIMARY KEY)")
   fid <- 0
+
+  db_rows  <- 0
+  db_files <- 0
+  db_days  <- 0
+  db_vars  <- 0
+
 }
 
 
