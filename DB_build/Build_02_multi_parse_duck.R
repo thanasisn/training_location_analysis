@@ -66,21 +66,15 @@ con   <- dbConnect(duckdb(dbdir = db_fl))
 if (dbExistsTable(con, "files")) {
   fid <- data.frame(tbl(con, "files") |> summarise(max(fid, na.rm = T)))[1,1]
 
-  db_rows  <- unlist(tbl(con, "records") |> tally() |> collect())
-  db_files <- unlist(tbl(con, "files")   |> tally() |> collect())
-  db_days  <- unlist(tbl(con, "records") |> select(time) |> mutate(time = as.Date(time)) |> distinct() |> count() |> collect())
-  db_vars  <- length(dbListFields(con, "records"))
 
 } else {
   # dbSendQuery(con, "CREATE TABLE files (fid INTEGER PRIMARY KEY)")
   # dbExecute(con, "ALTER TABLE files (fid INTEGER PRIMARY KEY)")
-  fid <- 0
-
+  fid      <- 0
   db_rows  <- 0
   db_files <- 0
   db_days  <- 0
   db_vars  <- 0
-
 }
 
 
@@ -134,53 +128,50 @@ files[grepl("/original/",                  files$file), dataset := "Garmin Origi
 files[grepl("GoldenCheetah/.*/imports",    files$file), dataset := "GoldenCheetah imports"   ]
 files[grepl("GoldenCheetah/.*/activities", files$file), dataset := "GoldenCheetah activities"]
 
-stop("DDD")
+
 
 ##  Open dataset  --------------------------------------------------------------
-# if (dbExistsTable(con, "files")) {
-#   DB       <- opendata()
-#   db_rows  <- unlist(DB |> tally()      |> collect())
-#   db_files <- unlist(DB |> select(file) |> distinct() |> count() |> collect())
-#   db_days  <- unlist(DB |> select(time) |> mutate(time = as.Date(time)) |> distinct() |> count() |> collect())
-#   db_vars  <- length(names(DB))
-#
-#   ##  Check what to do
-#   wehave <- DB |> select(file, filemtime) |> unique() |> collect() |> data.table()
-#
-#   ##  Ignore files with the same name and mtime
-#   files <- files[ !(file %in% wehave$file & filemtime %in% wehave$filemtime)]
-#   rm(wehave)
-#
-#   ##  Ignore duplicates files  -------------------------------------------------
-#
-#   ## get keys in golden cheetah
-#   ingolden <- DB |>
-#     filter(dataset == "GoldenCheetah imports") |>
-#     select(file) |>
-#     distinct()   |>
-#     collect()    |>
-#     mutate(key = stringr::str_extract(basename(file), "[0-9]{9,}")) |>
-#     filter(!is.na(key)) |>
-#     data.table()
-#
-#   ## get file from garmin
-#   garfiles <- list.files(FIT_DIR,
-#                          full.names = T,
-#                          recursive  = T)
-#   garfiles <- data.table(file = garfiles)
-#
-#   garfiles[, key := stringr::str_extract(basename(file), "[0-9]{9,}")]
-#   garfiles[, key := as.numeric(key)]
-#
-#   ## find files to ignore from parsing by key
-#   filesrm <- garfiles[key %in% ingolden$key, file]
-#   files   <- files[!file %in% filesrm, ]
-#
-# } else {
-#   cat("WILL INIT DB!\n")
-# }
+if (dbExistsTable(con, "files")) {
+  db_rows  <- unlist(tbl(con, "records") |> tally() |> collect())
+  db_files <- unlist(tbl(con, "files")   |> tally() |> collect())
+  db_days  <- unlist(tbl(con, "records") |> select(time) |> mutate(time = as.Date(time)) |> distinct() |> count() |> collect())
+  db_vars  <- length(dbListFields(con, "records"))
 
+  ##  Check what to do
+  wehave <- tbl(con, "files") |> select(file, filemtime) |> collect() |> data.table()
 
+  ##  Ignore files with the same name and mtime
+  files <- files[ !(file %in% wehave$file & filemtime %in% wehave$filemtime)]
+  rm(wehave)
+
+  ##  Ignore duplicates files  -------------------------------------------------
+
+  ## get keys in golden cheetah
+  ingolden <- tbl(con, "files") |>
+    filter(dataset == "GoldenCheetah imports") |>
+    select(file) |>
+    distinct()   |>
+    collect()    |>
+    mutate(key = stringr::str_extract(basename(file), "[0-9]{9,}")) |>
+    filter(!is.na(key)) |>
+    data.table()
+
+  ## get file from garmin
+  garfiles <- list.files(FIT_DIR,
+                         full.names = T,
+                         recursive  = T)
+  garfiles <- data.table(file = garfiles)
+
+  garfiles[, key := stringr::str_extract(basename(file), "[0-9]{9,}")]
+  garfiles[, key := as.numeric(key)]
+
+  ## find files to ignore from parsing by key
+  filesrm <- garfiles[key %in% ingolden$key, file]
+  files   <- files[!file %in% filesrm, ]
+
+} else {
+  cat("WILL INIT DB!\n")
+}
 
 cat("\nData files to parse ", length(files$file_ext))
 print(table(files$file_ext))
@@ -190,8 +181,8 @@ print(table(files$file_ext))
 
 ## read some files for testing and to limit memory usage
 files <- unique(rbind(
-  tail(files[order(files$filemtime), ], 3),
-  files[sample.int(nrow(files),  size = 5, replace = T), ],
+  tail(files[order(files$filemtime), ], 30),
+  files[sample.int(nrow(files),  size = 50, replace = T), ],
   NULL
 ))
 
@@ -940,10 +931,8 @@ append_to_table <- function(con, table, data) {
 # table <- "files"
 # data  <- filesDT
 #
-#
 # table <- "records"
 # data  <- recorDT
-
 
   ## -- Add new columns in the db table if not there ---------------------------
   if (dbExistsTable(con, table)) {
@@ -984,7 +973,6 @@ append_to_table <- function(con, table, data) {
     }
   }
 
-  ## -- Add data in the db table  ----------------------------------------------
   dbWriteTable(
     con,
     table, data,
@@ -993,10 +981,7 @@ append_to_table <- function(con, table, data) {
 }
 
 
-
-
-
-
+##  Add data in the db table  --------------------------------------------------
 append_to_table(con = con, table = "files",   filesDT)
 append_to_table(con = con, table = "records", recorDT)
 
