@@ -27,6 +27,7 @@ suppressPackageStartupMessages({
   library(rlang,      quietly = TRUE, warn.conflicts = FALSE)
   library(gdata,      quietly = TRUE, warn.conflicts = FALSE)
   library(tools,      quietly = TRUE, warn.conflicts = FALSE)
+  library(duckdb,     quietly = TRUE, warn.conflicts = FALSE)
 })
 
 source("./DEFINITIONS.R")
