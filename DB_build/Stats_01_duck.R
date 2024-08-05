@@ -85,47 +85,60 @@ cat(pander(
     table(),
   style   = "rmarkdown"))
 
-# cat(pander(
-#   tbl(con, "records") |>
-#     select(fid, SubSport, dataset) |>
-#     distinct() |>
-#     select(!fid) |>
-#     collect() |>
-#     table(),
-#   style   = "rmarkdown"))
+
+cat(pander(
+  full_join(
+    tbl(con, "files")   |> select(-filehash),
+    tbl(con, "records") |> select(fid, SubSport) |> distinct(),
+    by = "fid"
+  ) |>
+    select(fid, SubSport, dataset) |>
+    distinct() |>
+    select(!fid) |>
+    collect() |>
+    table(),
+  style   = "rmarkdown"))
 
 
-# cat(pander(
-#   tbl(con, "records") |>
-#     select(fid, SubSport, dataset, Sport, Name) |>
-#     distinct() |>
-#     group_by(Name, SubSport, Sport) |>
-#     tally()    |>
-#     arrange(n) |>
-#     collect(),
-#   style   = "rmarkdown"))
+cat(pander(
+  full_join(
+    tbl(con, "files")   |> select(-filehash),
+    tbl(con, "records") |> select(fid, SubSport, Sport, Name) |> distinct(),
+    by = "fid"
+  ) |>
+    select(fid, SubSport, dataset, Sport, Name) |>
+    distinct() |>
+    group_by(Name, SubSport, Sport) |>
+    tally()    |>
+    arrange(n) |>
+    collect(),
+  style   = "rmarkdown"))
 
 
-# cat(pander(
-#   tbl(con, "records") |>
-#     select(fid, dataset, filetype) |>
-#     distinct() |>
-#     select(!fid) |>
-#     collect() |>
-#     table(),
-#   style   = "rmarkdown"))
+cat(pander(
+  tbl(con, "files") |> select(-filehash) |>
+    select(fid, dataset, filetype) |>
+    distinct() |>
+    select(!fid) |>
+    collect() |>
+    table(),
+  style   = "rmarkdown"))
 
 
 
-# cat(pander(
-#   tbl(con, "records") |>
-#     select(fid, year, filetype) |>
-#     distinct()             |>
-#     group_by(year, filetype)         |>
-#     summarise(across(file, ~ n() )) |>
-#     arrange(year, filetype) |>
-#     collect(),
-#   style   = "rmarkdown"))
+cat(pander(
+  full_join(
+    tbl(con, "files")   |> select(-filehash),
+    tbl(con, "records") |> select(fid, year) |> distinct(),
+    by = "fid"
+  ) |>
+    select(fid, year, filetype, file) |>
+    distinct()             |>
+    group_by(year, filetype)         |>
+    summarise(across(file, ~ n() )) |>
+    arrange(year, filetype) |>
+    collect(),
+  style   = "rmarkdown"))
 
 
 
