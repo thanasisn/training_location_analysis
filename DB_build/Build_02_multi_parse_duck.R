@@ -915,9 +915,17 @@ if (nrow(data) < 10) {
 
 
 
-
+## duck db doesn't distiguish capital
 names(data)[names(data) == "Distance"] <- "Distance_1"
 names(data)[names(data) == "distance"] <- "Distance_2"
+names(data)[names(data) == "Calories"] <- "Calories_1"
+names(data)[names(data) == "calories"] <- "Calories_2"
+
+# grep("calo", names(data), ignore.case = T, value = T)
+
+if (any(duplicated(tolower(names(data))))) {
+  stop("Duplicate names!! ")
+}
 
 
 ## split data to add to db
@@ -927,12 +935,15 @@ recorDT <- data.frame(data[, ..recorDT ])
 
 
 
+#' Add a data table to a table in database
+#'
+#' @param con    Connection to the database
+#' @param table  Name of the table to use in the database
+#' @param data   Data table to add in the database
+#'
+#' @return
+#'
 append_to_table <- function(con, table, data) {
-# table <- "files"
-# data  <- filesDT
-#
-# table <- "records"
-# data  <- recorDT
 
   ## -- Add new columns in the db table if not there ---------------------------
   if (dbExistsTable(con, table)) {
@@ -986,10 +997,8 @@ append_to_table(con = con, table = "files",   filesDT)
 append_to_table(con = con, table = "records", recorDT)
 
 
-
-tbl(con, "files")    |> collect() |> data.table()
-tbl(con, "records")  |> tally() |> collect()
-
+# tbl(con, "files")    |> collect() |> data.table()
+# tbl(con, "records")  |> tally() |> collect()
 
 
 new_rows  <- unlist(tbl(con, "records") |> tally() |> collect())
@@ -1006,12 +1015,17 @@ cat("New vars:   ", new_vars  - db_vars , "\n")
 ##  Detect not parsed files  -------------------------------------------------
 wehave <- tbl(con, "files") |> select(file) |> distinct() |> collect() |> data.table()
 failed <- files[!file %in% wehave$file, .(file, dataset)]
-write.csv2(failed, "~/CODE/training_location_analysis/runtime/Failed_to_parse.csv",
-           row.names = FALSE, quote = FALSE)
 
-write.csv2(files, "~/CODE/training_location_analysis/runtime/Files_to_parse.csv",
-           row.names = FALSE, quote = FALSE)
+failed_fl <- "~/CODE/training_location_analysis/runtime/Failed_to_parse.csv"
+if (file.exists(failed_fl)) {
+  old <- unique(rbind(fread(failed_fl), failed))
+  write.csv2(old, failed_fl, row.names = FALSE, quote = FALSE)
+} else {
+  write.csv2(failed, failed_fl, row.names = FALSE, quote = FALSE)
+}
 
+toparse_fl <- "~/CODE/training_location_analysis/runtime/Files_to_parse.csv"
+write.csv2(files, toparse_fl, row.names = FALSE, quote = FALSE)
 
 
 
@@ -1029,7 +1043,3 @@ dbDisconnect(con)
 tac <- Sys.time()
 cat(sprintf("%s %s@%s %s %f mins\n\n", Sys.time(), Sys.info()["login"],
             Sys.info()["nodename"], basename(Script.Name), difftime(tac,tic,units = "mins")))
-# if (difftime(tac,tic,units = "sec") > 30) {
-#   system("mplayer /usr/share/sounds/freedesktop/stereo/dialog-warning.oga", ignore.stdout = T, ignore.stderr = T)
-#   system(paste("notify-send -u normal -t 30000 ", Script.Name, " 'R script ended'"))
-# }
