@@ -44,7 +44,36 @@ con   <- dbConnect(duckdb(dbdir = db_fl))
 ##  Remove deleted files from the DB  ------------------------------------------
 
 ##  Get file list
-wehave <- tbl(con, "files") |> select(file, filemtime) |> distinct() |> collect() |> data.table()
+wehave <- tbl(con, "files") |> select(fid, file, filemtime) |> distinct() |> collect() |> data.table()
+
+
+##  Check for duplicate fid
+stopifnot(any(duplicated(wehave$fid)) == FALSE)
+
+##  Check for duplicate files  -------------------------------------------------
+## get duplicate filenames
+dups <- wehave[file %in% wehave[, .N, by = file][N>1, file], ]
+## get fids to remove
+delfiles <- data.table()
+for (af in dups$file) {
+  aft <- wehave[file == af ]
+  delfiles <- unique(rbind(delfiles, aft[filemtime < max(filemtime)]))
+}
+## remove rows
+if (nrow(delfiles) > 0) {
+  for (afid in 1:nrow(delfiles)) {
+    cat("DELETE duplicate file: ", unlist(delfiles[afid]), '\n')
+    dbExecute(con, "DELETE FROM 'records' WHERE fid == ?", params = delfiles[afid, fid])
+    dbExecute(con, "DELETE FROM 'files'   WHERE fid == ?", params = delfiles[afid, fid])
+  }
+}
+
+
+
+
+dbDisconnect(con)
+stop("DD")
+
 
 ##  Check files exist
 wehave[, exists := file.exists(file)]

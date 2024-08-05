@@ -62,5 +62,4 @@ opendata <- function() {
 }
 
 
-
-
+FAILED_fl <- "~/CODE/training_location_analysis/runtime/Failed_to_parse.csv"
