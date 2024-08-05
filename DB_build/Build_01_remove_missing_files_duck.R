@@ -64,15 +64,9 @@ if (file.exists(REMOVEFL)) {
   removefl <- unique(removefl[!is.na(year), ])
 }
 
-pfil <- list.files(DATASET,
-                   pattern = ".*.parquet",
-                   all.files  = T,
-                   full.names = T,
-                   recursive  = T)
 
 for (ay in unique(removefl$year)) {
   ## file to touch only
-  toedit <- grep(paste0(ay), pfil, value = T)[1]
 
   cat("Removing files from", toedit, "\n")
 
@@ -90,6 +84,7 @@ for (ay in unique(removefl$year)) {
 }
 ## remove list of files tp remove
 if (file.exists(REMOVEFL)) file.remove(REMOVEFL)
+
 
 
 # if (nrow(removefl) > 0){

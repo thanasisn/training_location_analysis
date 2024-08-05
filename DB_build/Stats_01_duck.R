@@ -141,6 +141,21 @@ cat(pander(
   style   = "rmarkdown"))
 
 
+cat(pander(
+  full_join(
+    tbl(con, "files")   |> select(-filehash),
+    tbl(con, "records") |> select(fid, year) |> distinct(),
+    by = "fid"
+  ) |>
+    select(fid, year, file) |>
+    distinct()             |>
+    group_by(year)         |>
+    summarise(across(file, ~ n() )) |>
+    arrange(year) |>
+    collect(),
+  style   = "rmarkdown"))
+
+
 
 ## count number of NA/!na by variable by dataset by filetype
 
