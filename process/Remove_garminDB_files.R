@@ -33,12 +33,13 @@ source("./DEFINITIONS.R")
 
 DRY_RUN <- TRUE
 
+
 ##  Open dataset  --------------------------------------------------------------
-if (!file.exists(DATASET)) {
+db_fl <- "~/DATA/Other/Activities_records.duckdb"
+if (!file.exists(db_fl)) {
   stop("NO DB!\n")
 }
-
-DB <- opendata()
+con   <- dbConnect(duckdb(dbdir = db_fl))
 
 ## find garmin time stamp limit form the data
 limitday <- Sys.Date() - GAR_RETAIN
@@ -61,23 +62,31 @@ files[, date := as.Date(stringr::str_extract(basename(files$file), "[0-9]{4}-[0-
 files <- files[date < limitday, ]
 ## delete old json files
 cat(length(files$file), humanReadable(sum(file.size(files$file))), "\n")
-if (DRY_RUN) {
+if (DRY_RUN == FALSE) {
   cat("\nRemove files with known date\n")
   file.remove(files$file)
+} else {
+  cat("DRY RUN\n")
+  cat("\nFiles with known date\n")
+  print(files$file)
 }
 
 
 
 ##  Remove files by time stamps ------------------------------------------------
 ## find garmin timestamp limit
-stamps <- DB |>
-  select(file, time, filetype)  |>
-  filter(filetype == "fit")    |>
-  mutate(time = as.Date(time)) |>
+##
+stamps <- full_join(
+  tbl(con, "files")   |> select(-filehash, -parsed, -filemtime),
+  tbl(con, "records") |> select(fid, time) |> mutate(time = as.Date(time)) |> distinct(),
+  by = "fid"
+) |>
+  filter(filetype == "fit") |>
   distinct() |>
   collect() |>
   mutate(file = basename(file)) |>
   data.table()
+
 ## get garmin time stamp
 stamps <- stamps[grepl("activity", file, ignore.case = T), ]
 stamps <- stamps[, tst := as.numeric(stringr::str_extract(file, "[0-9]{9,}"))]
@@ -112,10 +121,15 @@ summary(stamps$tst)
 todelte <- act[tst < tstlimit, file]
 ## delete old activities files
 cat(length(todelte), humanReadable(sum(file.size(todelte))), "\n")
-if (DRY_RUN) {
+if (DRY_RUN == FALSE) {
   file.remove(todelte)
   cat("\nRemove original files with Garmin Export\n")
+} else {
+  cat("DRY RUN\n")
+  cat("\nOriginal files with Garmin Export\n")
+  print(todelte)
 }
+
 
 
 
@@ -134,9 +148,13 @@ extfiles[, tst := as.numeric(stringr::str_extract(file, "[0-9]{9,}"))]
 todelte <- extfiles[tst < tstlimit, file]
 ## delete old activities files
 cat(length(todelte), humanReadable(sum(file.size(todelte))), "\n")
-if (DRY_RUN) {
+if (DRY_RUN == FALSE) {
   file.remove(todelte)
   cat("\nRemove samples and zones files with Garmin Export\n")
+} else {
+  cat("DRY RUN\n")
+  cat("\nSamples and zones files with Garmin Export\n")
+  print(todelte)
 }
 
 
@@ -151,9 +169,13 @@ extfiles[, tst := as.numeric(stringr::str_extract(file, "[0-9]{9,}"))]
 todelte <- extfiles[tst < tstlimit, file]
 ## delete old activities files
 cat(length(todelte), humanReadable(sum(file.size(todelte))), "\n")
-if (DRY_RUN) {
+if (DRY_RUN == FALSE) {
   file.remove(todelte)
   cat("\nRemove json files with Garmin Export\n")
+} else {
+  cat("DRY RUN\n")
+  cat("\njson files with Garmin Export\n")
+  print(todelte)
 }
 
 

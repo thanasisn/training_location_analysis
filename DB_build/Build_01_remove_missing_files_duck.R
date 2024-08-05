@@ -101,33 +101,23 @@ rm(removefl)
 
 
 
-dbDisconnect(con)
-stop("DD")
 
-
-
-
-
-##  Add more files to remove
-if (file.exists(REMOVEFL)) {
-  exrarm   <- read.csv2(REMOVEFL)
-  removefl <- unique(data.table(plyr::rbind.fill(removefl, exrarm)))
-  removefl <- unique(removefl[!is.na(year), ])
-}
-
-
-
+##   Remove files from list  --------------
+# if (file.exists(REMOVEFL)) {
+#   exrarm   <- read.csv2(REMOVEFL)
+#   removefl <- unique(data.table(plyr::rbind.fill(removefl, exrarm)))
+#   removefl <- unique(removefl[!is.na(year), ])
+# }
 
 
 
 
 ##  Deduplicate Garmin exports  ------------------------------------------------
-
 ##  Assuming we have first parse all imports form GoldenGheetah
 ##  and the activity timestamp is a reliable key to use
 
 ## get keys in golden cheetah
-ingolden <- DB |>
+ingolden <- tbl(con, "files") |>
   filter(dataset == "GoldenCheetah imports") |>
   select(file) |>
   distinct()   |>
@@ -168,17 +158,12 @@ if (length(filesrm) > 0) {
 
 
 
-
-
+dbDisconnect(con)
+# stop("DD")
 
 
 
 ##  Detect empty variable  -----------------------------------------------------
-
-
-
-
-
 
 
 
