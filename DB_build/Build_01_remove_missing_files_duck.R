@@ -55,7 +55,15 @@ wehave[, currenct := filemtime == floor_date(file.mtime(file), unit = "seconds")
 ##  List of offending files
 removefl <- wehave[exists == F | currenct == F]
 
+
+
+
+grep("test",wehave$file, value = T)
+
 stop("todo remove files and records")
+
+
+
 
 ##  Add more files to remove
 if (file.exists(REMOVEFL)) {

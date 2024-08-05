@@ -897,12 +897,18 @@ stopifnot(!any(duplicated(names(data))))
 
 data <- remove_empty(data, which = "cols")
 
-names(data) <- gsub("\\.", "_", names(data))
+names(data) <- gsub("[\\./]", "_", names(data))
+
 # names(data) <- gsub("-", "_", names(data))
 
-if (length(grep("\\." ,names(data), value = T, ignore.case = T))>0) {
+if (length(grep("\\.", names(data), value = T, ignore.case = T)) > 0) {
   stop("found a dot")
 }
+# grep("/", names(data), value = T, ignore.case = T)
+#
+# gsub("\\.", "_", "eE_c.hr")
+# gsub("[\\./]", "_", "eE.c/hr")
+
 
 
 ## Add data to DB  -------------------------------------------------------------
@@ -912,24 +918,22 @@ if (nrow(data) < 10) {
 
 
 
-## duck db doesn't distiguish capital
+## duck db doesn't distinguish capital
 names(data)[names(data) == "Distance"] <- "Distance_1"
 names(data)[names(data) == "distance"] <- "Distance_2"
 names(data)[names(data) == "Calories"] <- "Calories_1"
 names(data)[names(data) == "calories"] <- "Calories_2"
 
-grep("ee", names(data), ignore.case = T, value = T)
 
 if (any(duplicated(tolower(names(data))))) {
   stop("Duplicate names!! ")
 }
 
 
-## split data to add to db
+##  Split data to add to db
 filesDT <- data.frame(data[, ..metanames] |> distinct())
 recorDT <- c("fid", names(data)[!names(data) %in% metanames])
 recorDT <- data.frame(data[, ..recorDT ])
-
 
 
 #' Add a data table to a table in database
@@ -1024,10 +1028,10 @@ write.csv2(files, toparse_fl, row.names = FALSE, quote = FALSE)
 
 
 
-cat("DB Size:    ", humanReadable(sum(file.size(db_fl))), "\n")
-filelist <- tbl(con, "files") |> select(file) |> distinct() |> collect()
-cat("Source Size:",
-    humanReadable(sum(file.size(filelist$file), na.rm = T)), "\n")
+# cat("DB Size:    ", humanReadable(sum(file.size(db_fl))), "\n")
+# filelist <- tbl(con, "files") |> select(file) |> distinct() |> collect()
+# cat("Source Size:",
+#     humanReadable(sum(file.size(filelist$file), na.rm = T)), "\n")
 
 
 dbDisconnect(con)
