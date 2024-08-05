@@ -366,13 +366,11 @@ for (i in 1:nrow(files)) {
       sp <- getMessagesByType(res, "sport")
     }
 
-
     ## more details like laps
     # se <- getMessagesByType(res, "session")
 
     ## hardware/software version
     ## getMessagesByType(res, "file_creator")
-
 
     if (!is.null(re)) {
       names(re)[names(re) == "timestamp"]          <- "time"
@@ -501,9 +499,7 @@ for (i in 1:nrow(files)) {
       })
     })
     options(show.error.messages = TRUE)
-
     cat(" .")
-
 
     if (exists("samples")) {
       if (nrow(samples) > 0) {
@@ -587,7 +583,6 @@ for (i in 1:nrow(files)) {
 
     ## Assuming all data are from one person
     act_ME$Athlete  <- NULL
-
 
     ## Read manual edited values  ------------------------------------------------
     if (!is.null(jride$OVERRIDES)) {
@@ -769,7 +764,6 @@ cat("\n")
 unlink(tempfl, recursive = T)
 
 
-
 ## Prepare for import to DB  ---------------------------------------------------
 data <- data.table(data)
 attr(data$time,      "tzone") <- "UTC"
@@ -801,7 +795,6 @@ if (sum(c("temperature", "TEMP") %in% names(data)) == 2) {
 
   data[, temperature := NULL]
 }
-
 
 
 subst <- data.frame(
@@ -907,11 +900,15 @@ data <- remove_empty(data, which = "cols")
 names(data) <- gsub("\\.", "_", names(data))
 # names(data) <- gsub("-", "_", names(data))
 
+if (length(grep("\\." ,names(data), value = T, ignore.case = T))>0) {
+  stop("found a dot")
+}
+
+
 ## Add data to DB  -------------------------------------------------------------
 if (nrow(data) < 10) {
   stop("You don't want to write")
 }
-# stop("dddss")
 
 
 
@@ -921,7 +918,7 @@ names(data)[names(data) == "distance"] <- "Distance_2"
 names(data)[names(data) == "Calories"] <- "Calories_1"
 names(data)[names(data) == "calories"] <- "Calories_2"
 
-# grep("calo", names(data), ignore.case = T, value = T)
+grep("ee", names(data), ignore.case = T, value = T)
 
 if (any(duplicated(tolower(names(data))))) {
   stop("Duplicate names!! ")
@@ -956,13 +953,11 @@ append_to_table <- function(con, table, data) {
 
     ##  different methods to get data types
     # tt2 <- data.table(names = colnames(tbl(con, table)),
-    #                   types =
-    #                     tbl(con, table) |> head(1) |> collect() |> sapply(typeof))
+    #                   types = tbl(con, table) |> head(1) |> collect() |> sapply(typeof))
     # dd2 <- data.table(names = colnames(data),
     #                   types = data |> head(1) |> collect() |> sapply(typeof))
 
     if (!all(dd1$names %in% tt1$names)) {
-
       ## get new variables
       new_vars <- dd1[!names %in% tt1$names, ]
       cat("New", new_vars$names)
