@@ -78,10 +78,6 @@ if (dbExistsTable(con, "files")) {
 }
 
 
-
-
-
-
 ##  List all files to parse  ---------------------------------------------------
 files <- list.files(
   path         = c(
@@ -99,6 +95,16 @@ files <- list.files(
 
 cat("\nAll files ", length(files))
 print(table(file_ext(files)))
+
+
+## ignore previous failed files
+if (file.exists(FAILED_fl)) {
+  cat("Will ignore failed files from", FAILED_fl, "\n")
+  failed_files <- fread(FAILED_fl)
+  failed_files <- unique(failed_files$file)
+  files        <- files[!files %in% failed_files]
+}
+
 
 ## non relevant files
 files <- grep("\\.csv$",     files, invert = T, value = T, ignore.case = T)
@@ -1015,12 +1021,11 @@ cat("New vars:   ", new_vars  - db_vars , "\n")
 wehave <- tbl(con, "files") |> select(file) |> distinct() |> collect() |> data.table()
 failed <- files[!file %in% wehave$file, .(file, dataset)]
 
-failed_fl <- "~/CODE/training_location_analysis/runtime/Failed_to_parse.csv"
-if (file.exists(failed_fl)) {
-  old <- unique(rbind(fread(failed_fl), failed))
-  write.csv2(old, failed_fl, row.names = FALSE, quote = FALSE)
+if (file.exists(FAILED_fl)) {
+  old <- unique(rbind(fread(FAILED_fl), failed))
+  write.csv2(old, FAILED_fl, row.names = FALSE, quote = FALSE)
 } else {
-  write.csv2(failed, failed_fl, row.names = FALSE, quote = FALSE)
+  write.csv2(failed, FAILED_fl, row.names = FALSE, quote = FALSE)
 }
 
 toparse_fl <- "~/CODE/training_location_analysis/runtime/Files_to_parse.csv"

@@ -50,7 +50,8 @@ wehave <- tbl(con, "files") |> select(fid, file, filemtime) |> distinct() |> col
 ##  Check for duplicate fid
 stopifnot(any(duplicated(wehave$fid)) == FALSE)
 
-##  Check for duplicate files  -------------------------------------------------
+
+##  Remove duplicate files  ----------------------------------------------------
 ## get duplicate filenames
 dups <- wehave[file %in% wehave[, .N, by = file][N>1, file], ]
 ## get fids to remove
@@ -67,29 +68,42 @@ if (nrow(delfiles) > 0) {
     dbExecute(con, "DELETE FROM 'files'   WHERE fid == ?", params = delfiles[afid, fid])
   }
 }
+rm(delfiles)
 
+
+##  Remove deleted files  ------------------------------------------------------
+##  Check files exist
+existing <- wehave[, exists := file.exists(file)]
+notexist <- existing[exists == F, ]
+## remove rows
+if (nrow(notexist) > 0) {
+  for (afid in 1:nrow(notexist)) {
+    cat("DELETE missing file: ", unlist(notexist[afid]), '\n')
+    dbExecute(con, "DELETE FROM 'records' WHERE fid == ?", params = notexist[afid, fid])
+    dbExecute(con, "DELETE FROM 'files'   WHERE fid == ?", params = notexist[afid, fid])
+  }
+}
+rm(notexist, existing)
+
+
+##  Remove edited files  -------------------------------------------------------
+wehave[, currenct := filemtime == floor_date(file.mtime(file), unit = "seconds")]
+removefl <- wehave[exists == F | currenct == F]
+## remove rows
+if (nrow(removefl) > 0) {
+  for (afid in 1:nrow(removefl)) {
+    cat("DELETE changed file: ", unlist(removefl[afid]), '\n')
+    dbExecute(con, "DELETE FROM 'records' WHERE fid == ?", params = removefl[afid, fid])
+    dbExecute(con, "DELETE FROM 'files'   WHERE fid == ?", params = removefl[afid, fid])
+  }
+}
+rm(removefl)
 
 
 
 dbDisconnect(con)
 stop("DD")
 
-
-##  Check files exist
-wehave[, exists := file.exists(file)]
-
-##  Check for edits
-wehave[, currenct := filemtime == floor_date(file.mtime(file), unit = "seconds")]
-
-##  List of offending files
-removefl <- wehave[exists == F | currenct == F]
-
-
-
-
-grep("test",wehave$file, value = T)
-
-stop("todo remove files and records")
 
 
 
@@ -102,80 +116,7 @@ if (file.exists(REMOVEFL)) {
 }
 
 
-for (ay in unique(removefl$year)) {
-  ## file to touch only
 
-  cat("Removing files from", toedit, "\n")
-
-  ytoed <- c(DB |> filter(file %in% removefl$file) |> select(year) |> distinct() |> collect() |> unlist())
-
-  plist <- list.files(DATASET, pattern = "*.parquet", full.names = T, recursive = T)
-  plist <- grep(ytoed, plist, value = T)
-
-  write_parquet(read_parquet(toedit) |>
-                  filter(!file %in% removefl$file),
-                sink              = toedit,
-                compression       = DBcodec,
-                compression_level = DBlevel)
-  DB <- opendata()
-}
-## remove list of files tp remove
-if (file.exists(REMOVEFL)) file.remove(REMOVEFL)
-
-
-
-# if (nrow(removefl) > 0){
-#   cat("Removing", nrow(removefl), "files\n")
-#   cat(removefl$file, sep = "\n")
-#   print(unique(removefl[, year]))
-#
-#   ##  Rewrite changed only data without removed files
-#   write_dataset(DB |>
-#                   filter(!file %in% removefl$file) |>
-#                   compute(),
-#                 DATASET,
-#                 compression            = DBcodec,
-#                 compression_level      = DBlevel,
-#                 format                 = "parquet",
-#                 partitioning           = c("year"),
-#                 existing_data_behavior = "delete_matching",
-#                 hive_style             = F)
-#   file.remove(REMOVEFL)
-#   DB <- opendata()
-#   # DB <- open_dataset(DATASET,
-#   #                    partitioning  = c("year", "month"),
-#   #                    unify_schemas = T)
-#   #
-#   # ##  Set some measurements
-#   # new_rows  <- unlist(DB |> tally() |> collect())
-#   # new_files <- unlist(DB |> select(file) |> distinct() |> count() |> collect())
-#   # new_days  <- unlist(DB |> select(time) |> mutate(time = as.Date(time)) |> distinct() |> count() |> collect())
-#   # new_vars  <- length(names(DB))
-#   #
-#   # cat("\n")
-#   # cat("New rows:   ", new_rows  - db_rows , "\n")
-#   # cat("New files:  ", new_files - db_files, "\n")
-#   # cat("New days:   ", new_days  - db_days , "\n")
-#   # cat("New vars:   ", new_vars  - db_vars , "\n")
-#   # cat("\n")
-#   # cat("Total rows: ", new_rows,  "\n")
-#   # cat("Total files:", new_files, "\n")
-#   # cat("Total days: ", new_days,  "\n")
-#   # cat("Total vars: ", new_vars,  "\n")
-#   # cat("Size:       ", humanReadable(sum(file.size(list.files(DATASET, recursive = T, full.names = T)))), "\n")
-#   # filelist <- DB |> select(file) |> distinct() |> collect()
-#   #
-#   # cat("DB Size:    ", humanReadable(sum(file.size(list.files(DATASET,
-#   #                                                            recursive = T,
-#   #                                                            full.names = T)),
-#   #                                       na.rm = T)), "\n")
-#   # filelist <- DB |> select(file) |> distinct() |> collect()
-#   # cat("Source Size:",
-#   #     humanReadable( sum(file.size(filelist$file), na.rm = T)), "\n")
-#
-# } else {
-#   cat("No data to remove from DB\n")
-# }
 
 
 
@@ -236,19 +177,6 @@ if (length(filesrm) > 0) {
 
 
 
-
-##  Detect duplicate parsing of files  -----------------------------------------
-
-dupread <- DB |>
-  select(file, parsed) |>
-  distinct() |>
-  collect()  |>
-  data.table()
-
-dupread <- dupread[, .N, by = file]
-dupread <- dupread[N>1, ]
-
-stopifnot(nrow(dupread)==0)
 
 
 
