@@ -2,6 +2,7 @@
 # Analysis of training and location data.
 
 Ingest data from different sources and formats into a portable "database".
+Migrating data storage from arrow parquet datasets to duckdb.
 Create some methods to find duplicate data among records and do some quality checks
 and corrections.
 Do some analysis of the training data, about the fitness aspect of the data.
@@ -66,28 +67,29 @@ data to create other datasets we need.
 
 ## My database stats
 
+
 | fit  | gpx  | json |
 |:----:|:----:|:----:|
-| 1180 | 1263 | 2277 |
+| 1274 | 4471 | 2310 |
 
 Table: File types
 
-
 | fit | gpx  | gz  | json | zip |
 |:---:|:----:|:---:|:----:|:---:|
-| 81  | 1259 | 456 | 2277 | 647 |
+| 82  | 4465 | 490 | 2310 | 708 |
 
 Table: Files extensions
 
 
-Total rows:  34548721 
+Total rows:  43603964 
 
-Total files: 4720 
+Total files: 8055 
 
-Total days:  2845 
+Total days:  3516 
 
-Total vars:  159 
+Total vars:  145 
 
-DB Size:     1.1 GiB 
+DB Size:     2.2 GiB 
 
-Source Size: 3.5 GiB 
+Source Size: 6.5 GiB 
+

@@ -37,44 +37,51 @@ if (!file.exists(DB_fl)) {
 con   <- dbConnect(duckdb(dbdir = DB_fl))
 
 
-
-
 ## Check for dups in GC imports  -----------------------------------------------
-full_join(
-  tbl(con, "files")   |> select(-filehash) |> filter(dataset == "GoldenCheetah imports") ,
-  tbl(con, "records") |> select(fid, SubSport) |> distinct(),
+test <- left_join(
+  tbl(con, "files")   |>
+    select(-filehash) |>
+    filter(dataset == "GoldenCheetah imports"),
+  tbl(con, "records") |>
+    mutate(date = as.Date(time)) |>
+    select(fid, date, SubSport)  |>
+    distinct(),
   by = "fid"
-)
-
-
-stop()
-DBtest <- DB |> filter(dataset == "GoldenCheetah imports")
-
-test <- DBtest |>
-  select(file, filetype, time) |>
-  mutate(time = as.Date(time)) |>
-  distinct() |>
+) |>
+  filter(!is.na(date)) |>
   collect() |>
   data.table()
 
 ## count different file types in same day
-cnt2 <- test[, .(N = length(unique(filetype))), by = .(time)]
+cnt2 <- test[, .(N = length(unique(filetype))), by = .(date)]
 
 ## count files in date
-cnt <- test[, .N, by = time]
+cnt  <- test[, .N, by = date]
 size <- 0
 
-ssc <- cnt2[N == 2, time]
-print(length(ssc))
+# ssc <- cnt2[N == 2, date]
+# print(length(ssc))
 
-for (ad in cnt2[N == 2, time]) {
-  cat(as.Date(ad, origin = "1970-01-01"),"\n")
-  ccc <- DBtest |>
-    filter(as.Date(time) == as.Date(ad)) |>
+for (ad in cnt2[N == 2, date]) {
+  cat("\n", paste(as.Date(ad, origin = "1970-01-01")),"\n")
+  ad <- as.Date(ad, origin = "1970-01-01")
+
+  ccc <- left_join(
+    tbl(con, "files")   |>
+      select(-filehash) |>
+      filter(dataset == "GoldenCheetah imports"),
+    tbl(con, "records") |>
+      mutate(date = as.Date(time)) |>
+      filter(date == ad)  |>
+      select(fid, time, date, SubSport)  |>
+      distinct(),
+    by = "fid"
+  ) |>
+    filter(!is.na(date)) |>
     collect() |>
     data.table()
-  ccc <- remove_empty(ccc, which = "cols")
 
+  ## list of files
   print(ccc |> select(file, filetype) |> distinct())
 
   fit <- ccc[filetype == "fit"]
@@ -104,9 +111,12 @@ for (ad in cnt2[N == 2, time]) {
           if (file.exists(fitfile)) {
             cat("1 gpx", gpxfile, "\n")
             size <- sum(size, file.size(gpxfile), na.rm = T)
-
             ## !!! remove files !!!
-            file.remove(gpxfile)
+            if (file.exists(gpxfile)) {
+              file.remove(gpxfile)
+            } else {
+              cat("File already have been removed\n")
+            }
           } else {
             cat("Other file don't exist\n")
           }
@@ -121,7 +131,7 @@ for (ad in cnt2[N == 2, time]) {
 }
 cat(humanReadable(size),"\n")
 
-
+stop("DDDd")
 
 
 ##  Check for same keys  -------------------------------------------------------
@@ -235,14 +245,10 @@ for (ah in hdups$filehash) {
 
 
 
+## TODO check dates in the future !!!
 
 
-
-
-## TODO find files in GarminDB no more needed
-
-
-
+## TODO detect points overlaps !!!
 
 # foverlaps(rangesA, rangesB, type="within", nomatch=0L)
 # findOverlaps-methods {IRanges}
