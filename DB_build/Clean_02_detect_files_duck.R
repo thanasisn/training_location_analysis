@@ -255,6 +255,7 @@ for (ah in hdups$filehash) {
 # lubridate::interval()
 
 
+dbDisconnect(con)
 #' **END**
 #+ include=T, echo=F
 tac <- Sys.time()
