@@ -32,7 +32,7 @@ suppressPackageStartupMessages({
 
 source("./DEFINITIONS.R")
 
-DRY_RUN <- TRUE
+DRY_RUN <- FALSE
 
 
 ##  Open dataset  --------------------------------------------------------------
