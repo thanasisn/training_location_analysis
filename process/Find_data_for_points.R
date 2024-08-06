@@ -6,6 +6,7 @@
 #+ echo=F, include=T
 
 ## __ Set environment  ---------------------------------------------------------
+closeAllConnections()
 Sys.setenv(TZ = "UTC")
 tic <- Sys.time()
 Script.Name <- "~/CODE/training_location_analysis/DB_build/Clean_03_vars_checks.R"
@@ -24,6 +25,7 @@ suppressPackageStartupMessages({
   library(rlang,      quietly = TRUE, warn.conflicts = FALSE)
   library(gdata,      quietly = TRUE, warn.conflicts = FALSE)
   library(duckdb,     quietly = TRUE, warn.conflicts = FALSE)
+  library(sf,         quietly = TRUE, warn.conflicts = FALSE)
 })
 
 source("./DEFINITIONS.R")
@@ -43,21 +45,75 @@ points <- data.table(readRDS(fl_waypoints))
 
 points <- points[Region == "Florina"]
 points <- points[grepl("tomap", name),]
+points <- janitor::remove_empty(points, which = "cols")
 
-tbl(con, "records") |>
-  select(-fid) |>
-  summarise(across(everything(), ~ n() - sum(is.na(.x)))) |>
-  collect() |>
-  data.table()
+pad_m  <- 25
+
+dime <- t(matrix(unlist(points$geometry), ncol = length(points$geometry)))
+points$Y <- dime[,2]
+points$X <- dime[,1]
+
+## create limits to get
+points[, X_min := X - pad_m]
+points[, Y_min := Y - pad_m]
+points[, X_max := X + pad_m]
+points[, Y_max := Y + pad_m]
+
+test <- tbl(con, "records") |> select(fid, X, Y)
+
+
+gather <- data.table()
+for (ap in 1:nrow(points)) {
+  pp <- points[ap,]
+
+  ff <- test |> filter(X < pp$X_max &
+                         X > pp$X_min &
+                         Y < pp$Y_max &
+                         Y > pp$Y_min
+  ) |>
+    select(fid) |>
+    distinct() |> collect() |>
+    data.table()
+
+  gather <- rbind(gather, ff)
+
+}
+
+
+
+for (afid in gather$fid) {
+  export <- tbl(con, "records") |>
+    filter(fid == afid) |>
+    select(time, X_LON, Y_LAT) |>
+    filter(!is.na("X_LON") & !is.na("Y_LAT")) |>
+    collect() |> data.table()
+
+  export <- st_as_sf(export, coords = c("X_LON", "Y_LAT"), crs = 4326)
+
+
+  export <- st_cast(export, "LINESTRING", warn = F)
+
+  dir.create("~/ZHOST/PointsTomap")
+  export_fl <- paste0("~/ZHOST/PointsTomap/", afid, ".gpx")
+
+  write_sf(export,
+           export_fl,
+           driver          = "GPX",
+           dataset_options = "GPX_USE_EXTENSIONS=YES",
+           append          = FALSE,
+           overwrite       = TRUE)
+
+}
+
+
+ddd <- tbl(con, "records") |> head() |> collect() |> data.table()
+ddd <- janitor::remove_empty(ddd, "cols")
 
 
 
 
 
-
-
-
-dbDisconnect(con)
+# dbDisconnect(con)
 #' **END**
 #+ include=T, echo=F
 tac <- Sys.time()
