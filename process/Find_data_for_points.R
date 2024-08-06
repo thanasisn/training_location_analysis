@@ -47,7 +47,7 @@ points <- points[Region == "Florina"]
 points <- points[grepl("tomap", name),]
 points <- janitor::remove_empty(points, which = "cols")
 
-pad_m  <- 25
+pad_m  <- 30
 
 dime <- t(matrix(unlist(points$geometry), ncol = length(points$geometry)))
 points$Y <- dime[,2]
@@ -79,29 +79,69 @@ for (ap in 1:nrow(points)) {
 
 }
 
+library(sftrack)
+
+
+
+
 
 
 for (afid in gather$fid) {
+  cat(afid,"\n")
   export <- tbl(con, "records") |>
     filter(fid == afid) |>
     select(time, X_LON, Y_LAT) |>
     filter(!is.na("X_LON") & !is.na("Y_LAT")) |>
     collect() |> data.table()
 
+  # my_sftrack <- as_sftraj(
+  #   data = export,
+  #   coords = c("X_LON", "Y_LAT"),
+  #   time   = "time",
+  #   group  = afid,
+  #   crs = 4326)
+
   export <- st_as_sf(export, coords = c("X_LON", "Y_LAT"), crs = 4326)
 
 
-  export <- st_cast(export, "LINESTRING", warn = F)
+  export <- st_cast(export, "LINESTRING", warn = F) ## works
+  # export <- st_cast(export, "POLYGON", warn = F)
+  # export <- st_cast(export, "MULTIPOINT", warn = F)
+  # export <- st_cast(export, "MULTILINESTRING", warn = F)
+
+
+  # # S3 method for class 'MULTIPOLYGON'
+  # st_cast(x, to, ...)
+  #
+  # # S3 method for class 'MULTILINESTRING'
+  # st_cast(x, to, ...)
+  #
+  # # S3 method for class 'MULTIPOINT'
+  # st_cast(x, to, ...)
+  #
+  # # S3 method for class 'POLYGON'
+  # st_cast(x, to, ...)
+  #
+  # # S3 method for class 'LINESTRING'
+  # st_cast(x, to, ...)
+  #
+  # # S3 method for class 'POINT'
+  # st_cast(x, to, ...)
+
 
   dir.create("~/ZHOST/PointsTomap")
   export_fl <- paste0("~/ZHOST/PointsTomap/", afid, ".gpx")
 
   write_sf(export,
            export_fl,
+           layer = "track_points",
            driver          = "GPX",
-           dataset_options = "GPX_USE_EXTENSIONS=YES",
+           dataset_options = "GPX_USE_EXTENSIONS=YES,FORCE_GPX_TRACK=true",
            append          = FALSE,
            overwrite       = TRUE)
+
+
+
 
 }
 
