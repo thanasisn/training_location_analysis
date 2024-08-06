@@ -6,6 +6,7 @@
 DATASET <- "~/DATA/Other/Activities_records"
 DBcodec <- "brotli"
 DBlevel <- 5
+DB_fl   <- "~/DATA/Other/Activities_records.duckdb"
 
 
 ##  Input paths  ---------------------------------------------------------------

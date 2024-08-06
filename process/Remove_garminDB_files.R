@@ -18,12 +18,9 @@ if (!interactive()) {
 #+ echo=F, include=T
 suppressPackageStartupMessages({
   library(data.table, quietly = TRUE, warn.conflicts = FALSE)
-  library(arrow,      quietly = TRUE, warn.conflicts = FALSE)
   library(dplyr,      quietly = TRUE, warn.conflicts = FALSE)
-  library(filelock,   quietly = TRUE, warn.conflicts = FALSE)
   library(lubridate,  quietly = TRUE, warn.conflicts = FALSE)
   library(janitor,    quietly = TRUE, warn.conflicts = FALSE)
-  library(stringdist, quietly = TRUE, warn.conflicts = FALSE)
   library(rlang,      quietly = TRUE, warn.conflicts = FALSE)
   library(gdata,      quietly = TRUE, warn.conflicts = FALSE)
   library(tools,      quietly = TRUE, warn.conflicts = FALSE)
@@ -36,17 +33,14 @@ DRY_RUN <- FALSE
 
 
 ##  Open dataset  --------------------------------------------------------------
-db_fl <- "~/DATA/Other/Activities_records.duckdb"
-if (!file.exists(db_fl)) {
+if (!file.exists(DB_fl)) {
   stop("NO DB!\n")
 }
-con   <- dbConnect(duckdb(dbdir = db_fl))
+con   <- dbConnect(duckdb(dbdir = DB_fl))
 
 ## find garmin time stamp limit form the data
 limitday <- Sys.Date() - GAR_RETAIN
 
-# dirlist <- list.dirs(GDB_DIR, recursive = F, full.names = T)
-# dirlist <- grep("DBs", dirlist, value = T, invert = T)
 
 
 ##  Delete all old json with date in file name  --------------------------------
@@ -182,29 +176,13 @@ if (DRY_RUN == FALSE) {
 
 
 
-# ## check for dups in GC imports  -----------------------------------------------
-#
-# DBtest <- DB |> filter(dataset == "GoldenCheetah imports")
-#
-# test <- DBtest |>
-#   select(file, filetype, time) |>
-#   mutate(time = as.Date(time)) |>
-#   distinct() |>
-#   collect() |>
-#   data.table()
-
-
-
-
-
-
 
 
 # foverlaps(rangesA, rangesB, type="within", nomatch=0L)
 # findOverlaps-methods {IRanges}
 # lubridate::interval()
 
-
+dbDisconnect(con)
 #' **END**
 #+ include=T, echo=F
 tac <- Sys.time()
