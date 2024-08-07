@@ -1,16 +1,6 @@
 #!/usr/bin/env Rscript
 # /* Copyright (C) 2022 Athanasios Natsis <natsisphysicist@gmail.com> */
 #'
-#' - Parse source files and add data to the DB
-#' - Can read from .gz and .zip files
-#' - Can parse .fit .json .gpx
-#'
-#+ echo=FALSE, include=TRUE
-
-
-## TODO explore this tools
-# library(cycleRtools)
-# https://github.com/trackerproject/trackeR
 
 #+ echo=FALSE, include=TRUE
 ## __ Set environment  ---------------------------------------------------------
@@ -28,28 +18,19 @@ suppressPackageStartupMessages({
   # devtools::install_github("trackerproject/trackeR")
   # https://msmith.de/FITfileR/articles/FITfileR.html
   # remotes::install_github("grimbough/FITfileR")
-  library(FITfileR,   quietly = TRUE, warn.conflicts = FALSE)
   library(R.utils,    quietly = TRUE, warn.conflicts = FALSE)
-  library(arrow,      quietly = TRUE, warn.conflicts = FALSE)
   library(data.table, quietly = TRUE, warn.conflicts = FALSE)
   library(dplyr,      quietly = TRUE, warn.conflicts = FALSE)
-  library(filelock,   quietly = TRUE, warn.conflicts = FALSE)
   library(janitor,    quietly = TRUE, warn.conflicts = FALSE)
-  library(jsonlite,   quietly = TRUE, warn.conflicts = FALSE)
-  library(lubridate,  quietly = TRUE, warn.conflicts = FALSE)
   library(rlang,      quietly = TRUE, warn.conflicts = FALSE)
-  library(sf,         quietly = TRUE, warn.conflicts = FALSE)
   library(tibble,     quietly = TRUE, warn.conflicts = FALSE)
+  library(lubridate,  quietly = TRUE, warn.conflicts = FALSE)
   library(tools,      quietly = TRUE, warn.conflicts = FALSE)
-  library(trackeR,    quietly = TRUE, warn.conflicts = FALSE)
-  library(trip,       quietly = TRUE, warn.conflicts = FALSE)
   library(gdata,      quietly = TRUE, warn.conflicts = FALSE)
   require(duckdb,     quietly = TRUE, warn.conflicts = FALSE)
 })
 
 source("~/CODE/training_location_analysis/DEFINITIONS.R")
-
-
 
 ##  Open dataset  --------------------------------------------------------------
 if (!file.exists(DB_fl)) {
@@ -59,7 +40,7 @@ con   <- dbConnect(duckdb(dbdir = DB_fl))
 
 
 ## periodically download of google locations
-goolgepoints_fl <- "~/DATA/Other/GLH/Count_GlL_3857.Rds"
+goolgepoints_fl  <- "~/DATA/Other/GLH/Count_GlL_3857.Rds"
 google_threshold <- 4 * 60
 
 ## TODO check if new there are newer data and remove/append
@@ -67,6 +48,8 @@ google_threshold <- 4 * 60
 
 # stop("wait for new data")
 # stop("check for new data")
+
+
 
 ## load data from google locations
 DT2 <- readRDS(goolgepoints_fl)
@@ -79,7 +62,8 @@ DT2 <- DT2[ !is.na(time), ]
 DT <- tbl(con, "records")  |> select(time) |> collect() |> data.table()
 DT <- DT[!is.na(time)]
 
-## find what to add
+
+##  Find entries to add  -------------------------------------------------------
 setorder(DT,  time)
 setorder(DT2, time)
 near    <- myRtools::nearest(as.numeric(DT2$time),
@@ -88,8 +72,7 @@ timdiff <- abs(as.numeric(DT[ near, ]$time - DT2$time))
 DT2     <- DT2[timdiff >= google_threshold]
 
 
-## Create file info to add
-
+##  Create file info to add  ---------------------------------------------------
 if (dbExistsTable(con, "files")) {
   fid <- data.frame(tbl(con, "files") |> summarise(max(fid, na.rm = T)))[1,1]
 }
@@ -105,15 +88,13 @@ metadt <- data.table(
   dataset   = "Google location history"
 )
 
-DT2 <- janitor::remove_empty(DT2, "cols")
+DT2 <- remove_empty(DT2, "cols")
 
-tbl(con, "records") |> colnames()
-
-print(tbl(con, "records") |> select(Sport) |> distinct(), n = 100)
-print(tbl(con, "records") |> select(SubSport) |> distinct(), n = 100)
-print(tbl(con, "records") |> select(Name) |> distinct(), n = 100)
-
-tbl(con, "records") |> head() |> select(X,Y,X_LON, Y_LAT)
+# tbl(con, "records") |> colnames()
+# print(tbl(con, "records") |> select(Sport) |> distinct(), n = 100)
+# print(tbl(con, "records") |> select(SubSport) |> distinct(), n = 100)
+# print(tbl(con, "records") |> select(Name) |> distinct(), n = 100)
+# tbl(con, "records") |> head() |> select(X,Y,X_LON, Y_LAT)
 
 
 ## fix columns
@@ -129,41 +110,27 @@ DT2$filename         <- NULL
 DT2$verticalAccuracy <- NULL
 DT2$fid              <- fid
 
+stop()
 
-## combine data#nullfile()# combine data
+## Import data to db
+if (nrow(DT2) > 0) {
+  cat("\nAppend data to database\n")
 
+  dbWriteTable(
+    con,
+    "files", metadt,
+    append = TRUE
+  )
 
-# dbWriteTable(
-#   con,
-#   "files", metadt,
-#   append = TRUE
-# )
-#
-# dbWriteTable(
-#   con,
-#   "records", DT2,
-#   append = TRUE
-# )
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  dbWriteTable(
+    con,
+    "records", DT2,
+    append = TRUE
+  )
+}
 
 
 dbDisconnect(con)
-
-
 #' **END**
 #+ include=T, echo=F
 tac <- Sys.time()
