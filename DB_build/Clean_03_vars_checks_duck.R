@@ -19,6 +19,7 @@ if (!interactive()) {
 suppressPackageStartupMessages({
   library(data.table, quietly = TRUE, warn.conflicts = FALSE)
   library(dplyr,      quietly = TRUE, warn.conflicts = FALSE)
+  library(arrow,      quietly = TRUE, warn.conflicts = FALSE)
   library(lubridate,  quietly = TRUE, warn.conflicts = FALSE)
   library(stringdist, quietly = TRUE, warn.conflicts = FALSE)
   library(rlang,      quietly = TRUE, warn.conflicts = FALSE)
@@ -34,61 +35,10 @@ if (!file.exists(DB_fl)) {
 }
 con   <- dbConnect(duckdb(dbdir = DB_fl))
 
-stop()
-
-
-tbl(con, "records") |>
-  select(-fid) |>
-  summarise(across(everything(), ~ n() - sum(is.na(.x)))) |>
-  collect() |>
-  data.table()
-
-
-
-
-##  Check empty variables  -----------------------------------------------------
-empty <- DB |>
-  select(!c(time, parsed, filemtime, filehash)) |>
-  summarise(across(everything(), ~ n() - sum(is.na(.x)))) |>
-  collect() |> data.table()
-emptyvars <- names(empty)[empty == 0]
-
-if (length(emptyvars)) {
-  cat(paste("Empty var:  ", emptyvars), sep = "\n")
-  warning("Fix empty vars or rebuild")
-}
-
-# DB |> filter(!is.na(Route)) |> collect()
-
-
-# ## remove empty vars will rewrite the whole dataset
-# if (Sys.info()["nodename"] == "sagan") {
-#   ## rewrite all files in dataset without emtpy variables
-#   pfils <- list.files(DATASET,
-#                       pattern    = ".parquet",
-#                       recursive  = T,
-#                       full.names = T)
-#   var <- names(empty)[empty == 0]
-#   cat(var, "\n")
-#   for (af in pfils) {
-#     cat(af, "\n")
-#     # read_parquet(af) |> select(!(!!var)) |> names()
-#     write_parquet(read_parquet(af)   |>
-#                     select(!(!!var)) |>
-#                     compute(),  # ? do we need compute here?
-#                   sink = af,
-#                   compression       = DBcodec,
-#                   compression_level = DBlevel)
-#   }
-# }
-
-
 
 
 ##  Check variable names similarity  -------------------------------------------
-
 coo <- tbl(con, "records") |> colnames()
-
 rowvec <- coo[nchar(coo) > 1]
 colvec <- coo[nchar(coo) > 1]
 # rowvec <- rowvec[!rowvec %in% emptyvars]
@@ -128,9 +78,48 @@ for (al in algo) {
   row.names(res) <- NULL
   res    <- res[, c("V2", "V3")]
 
-  print(head(res, 30))
+  print(head(res, 40))
 }
 # agrep("Device", names(DB), ignore.case = T, value = T)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+stop()
+
+
+
+
+##  Check empty variables  -----------------------------------------------------
+empty <- tbl(con, "records") |>
+  to_arrow()   |>
+  select(-fid) |>
+  summarise(across(everything(), ~ n() - sum(is.na(.x)))) |>
+  collect() |>
+  data.table()
+
+emptyvars <- names(empty)[empty == 0]
+
+if (length(emptyvars)) {
+  cat(paste("Empty var:  ", emptyvars), sep = "\n")
+  warning("Fix empty vars or rebuild")
+}
+
+
+grep("rmssd", tbl(con, "records") |> colnames(), value = T, ignore.case = T)
+
+
+
 
 
 
