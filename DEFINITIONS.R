@@ -64,3 +64,7 @@ opendata <- function() {
 
 
 FAILED_fl <- "~/CODE/training_location_analysis/runtime/Failed_to_parse.csv"
+
+## Temporal aggregation
+rsltemp         <- 300    ##  in seconds, it is computed to minutes for lubridate
+## points inside the square counts once every 300 secs
