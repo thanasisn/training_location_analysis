@@ -88,14 +88,12 @@ timdiff <- abs(as.numeric(DT[ near, ]$time - DT2$time))
 DT2     <- DT2[timdiff >= google_threshold]
 
 
-## create file intro
+## Create file info to add
 
-## get last fid
 if (dbExistsTable(con, "files")) {
   fid <- data.frame(tbl(con, "files") |> summarise(max(fid, na.rm = T)))[1,1]
 }
-
-
+fid <- fid + 1
 
 metadt <- data.table(
   fid       = fid,
@@ -129,6 +127,7 @@ names(DT2)[names(DT2) == "velocity"]      <- "speed"
 DT2$geometry         <- NULL
 DT2$filename         <- NULL
 DT2$verticalAccuracy <- NULL
+DT2$fid              <- fid
 
 
 ## combine data#nullfile()# combine data
