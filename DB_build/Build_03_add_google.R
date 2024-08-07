@@ -60,37 +60,93 @@ con   <- dbConnect(duckdb(dbdir = DB_fl))
 
 ## periodically download of google locations
 goolgepoints_fl <- "~/DATA/Other/GLH/Count_GlL_3857.Rds"
+google_threshold <- 4 * 60
 
-## TODO check if new
+## TODO check if new there are newer data and remove/append
+
+
+# stop("wait for new data")
+# stop("check for new data")
 
 ## load data from google locations
 DT2 <- readRDS(goolgepoints_fl)
-names(DT2)[names(DT2)=="file"] <- "filename"
-DT2[, F_mtime:=NULL]
+names(DT2)[names(DT2) == "file"] <- "filename"
+DT2[, F_mtime := NULL]
 DT2[ time < "1971-01-01", time := NA ]
 # DT2[, type := 2]
 DT2 <- DT2[ !is.na(time), ]
 
+DT <- tbl(con, "records")  |> select(time) |> collect() |> data.table()
+DT <- DT[!is.na(time)]
 
-tbl(con, "records")
-
-
-
-# setorder(DT2, time )
+## find what to add
 setorder(DT,  time)
-near    <- myRtools::nearest(as.numeric( DT2$time),
-                             as.numeric( DT$time ))
-timdiff <- abs( as.numeric(DT[ near, ]$time - DT2$time))
-DT2     <- DT2[ timdiff >= google_threshold ]
-
-## combine data
-DT <- rbind(DT, DT2[, names(DT), with =F ] )
-DT <- DT[ ! is.na(time) ]
-rm(DT2)
+setorder(DT2, time)
+near    <- myRtools::nearest(as.numeric(DT2$time),
+                             as.numeric(DT$time ))
+timdiff <- abs(as.numeric(DT[ near, ]$time - DT2$time))
+DT2     <- DT2[timdiff >= google_threshold]
 
 
+## create file intro
 
-stop("DDD")
+## get last fid
+if (dbExistsTable(con, "files")) {
+  fid <- data.frame(tbl(con, "files") |> summarise(max(fid, na.rm = T)))[1,1]
+}
+
+
+
+metadt <- data.table(
+  fid       = fid,
+  file      = goolgepoints_fl,
+  filemtime = as.POSIXct(floor_date(file.mtime(goolgepoints_fl), unit = "seconds"), tz = "UTC"),
+  parsed    = as.POSIXct(floor_date(Sys.time(),                  unit = "seconds"), tz = "UTC"),
+  filetype  = "Rds",
+  filehash  = hash_file(goolgepoints_fl),
+  dataset   = "Google location history"
+)
+
+DT2 <- janitor::remove_empty(DT2, "cols")
+
+tbl(con, "records") |> colnames()
+
+print(tbl(con, "records") |> select(Sport) |> distinct(), n = 100)
+print(tbl(con, "records") |> select(SubSport) |> distinct(), n = 100)
+print(tbl(con, "records") |> select(Name) |> distinct(), n = 100)
+
+tbl(con, "records") |> head() |> select(X,Y,X_LON, Y_LAT)
+
+
+## fix columns
+names(DT2)[names(DT2) == "main_activity"] <- "Name"
+names(DT2)[names(DT2) == "dist"]          <- "dist_2D"
+names(DT2)[names(DT2) == "Xdeg"]          <- "X_LON"
+names(DT2)[names(DT2) == "Ydeg"]          <- "Y_LAT"
+names(DT2)[names(DT2) == "altitude"]      <- "ALT"
+names(DT2)[names(DT2) == "velocity"]      <- "speed"
+
+DT2$geometry         <- NULL
+DT2$filename         <- NULL
+DT2$verticalAccuracy <- NULL
+
+
+## combine data#nullfile()# combine data
+
+
+# dbWriteTable(
+#   con,
+#   "files", metadt,
+#   append = TRUE
+# )
+#
+# dbWriteTable(
+#   con,
+#   "records", DT2,
+#   append = TRUE
+# )
+
+
 
 
 
