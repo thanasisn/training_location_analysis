@@ -33,11 +33,10 @@ source("./DEFINITIONS.R")
 
 
 ##  Open dataset  --------------------------------------------------------------
-db_fl <- "~/DATA/Other/Activities_records.duckdb"
-if (!file.exists(db_fl)) {
+if (!file.exists(DB_fl)) {
   stop("NO DB!\n")
 }
-con   <- dbConnect(duckdb(dbdir = db_fl))
+con   <- dbConnect(duckdb(dbdir = DB_fl))
 
 
 
