@@ -25,6 +25,7 @@ suppressPackageStartupMessages({
   library(rlang,      quietly = TRUE, warn.conflicts = FALSE)
   library(gdata,      quietly = TRUE, warn.conflicts = FALSE)
   library(duckdb,     quietly = TRUE, warn.conflicts = FALSE)
+  library(duckplyr,   quietly = TRUE, warn.conflicts = FALSE)
 })
 
 source("./DEFINITIONS.R")
@@ -53,7 +54,7 @@ cat(paste(DT |> tally() |> pull(), "points to bin\n" ))
 ff <- paste(rsltemp / 60, "minutes")
 DT <- DT |> to_arrow() |> mutate(
   time = floor_date(time, unit = ff)
-)
+) |> compute()
 DT |> tally() |> collect()
 
 
@@ -72,14 +73,14 @@ stopifnot(length(ignorefid)==0)
 ## get unique points
 DT <- DT |> distinct() |> compute()
 
-DT |> explain()
+DT |> tally() |> collect()
 
 
 
-names(DT)
+tbl(con, "files") |> select(dataset) |> collect() |> table()
 
-DT |> select(Sport) |> distinct() |> collect()
 
+stop()
 
 # unique(dirname( DT$file))
 
