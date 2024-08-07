@@ -31,6 +31,7 @@ suppressPackageStartupMessages({
 })
 
 source("~/CODE/training_location_analysis/DEFINITIONS.R")
+source("~/CODE/training_location_analysis/FUNCTIONS.R")
 
 ##  Open dataset  --------------------------------------------------------------
 if (!file.exists(DB_fl)) {
@@ -38,18 +39,29 @@ if (!file.exists(DB_fl)) {
 }
 con   <- dbConnect(duckdb(dbdir = DB_fl))
 
-
 ## periodically download of google locations
 goolgepoints_fl  <- "~/DATA/Other/GLH/Count_GlL_3857.Rds"
 google_threshold <- 4 * 60
 
 ## TODO check if new there are newer data and remove/append
 
+wegot <- tbl(con, "files") |> filter(grepl("Count_GlL_3857.Rds", file)) |> collect() |> data.table()
+
+if (wegot$filemtime < floor_date(file.mtime(goolgepoints_fl), unit = "seconds")) {
+  cat("Remove old files and replace")
+  # remove old lines
+  # add new data as normal
+} else {
+  cat("No new data to import!\n")
+  stop("END HERE!")
+}
+
+
 
 # stop("wait for new data")
 # stop("check for new data")
 
-
+stop("DD")
 
 ## load data from google locations
 DT2 <- readRDS(goolgepoints_fl)
@@ -62,7 +74,6 @@ DT2 <- DT2[ !is.na(time), ]
 DT <- tbl(con, "records")  |> select(time) |> collect() |> data.table()
 DT <- DT[!is.na(time)]
 
-
 ##  Find entries to add  -------------------------------------------------------
 setorder(DT,  time)
 setorder(DT2, time)
@@ -70,7 +81,6 @@ near    <- myRtools::nearest(as.numeric(DT2$time),
                              as.numeric(DT$time ))
 timdiff <- abs(as.numeric(DT[ near, ]$time - DT2$time))
 DT2     <- DT2[timdiff >= google_threshold]
-
 
 ##  Create file info to add  ---------------------------------------------------
 if (dbExistsTable(con, "files")) {
@@ -90,12 +100,11 @@ metadt <- data.table(
 
 DT2 <- remove_empty(DT2, "cols")
 
-# tbl(con, "records") |> colnames()
+# grep("ac",  tbl(con, "records") |> colnames(), ignore.case = T, value = T)
 # print(tbl(con, "records") |> select(Sport) |> distinct(), n = 100)
 # print(tbl(con, "records") |> select(SubSport) |> distinct(), n = 100)
 # print(tbl(con, "records") |> select(Name) |> distinct(), n = 100)
 # tbl(con, "records") |> head() |> select(X,Y,X_LON, Y_LAT)
-
 
 ## fix columns
 names(DT2)[names(DT2) == "main_activity"] <- "Name"
@@ -116,17 +125,9 @@ stop()
 if (nrow(DT2) > 0) {
   cat("\nAppend data to database\n")
 
-  dbWriteTable(
-    con,
-    "files", metadt,
-    append = TRUE
-  )
-
-  dbWriteTable(
-    con,
-    "records", DT2,
-    append = TRUE
-  )
+  ##  Add data in the db table  ------------------------------------------------
+  append_to_table(con = con, table = "files",   metadt)
+  append_to_table(con = con, table = "records", DT2)
 }
 
 
