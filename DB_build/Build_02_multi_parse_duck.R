@@ -184,6 +184,10 @@ print(table(files$file_ext))
 
 
 ## Read a set of files with each run  ------------------------------------------
+if (nrow(files) == 0) {
+  cat("No more files to parse\n")
+  stop("END")
+}
 
 ## read some files for testing and to limit memory usage
 files <- unique(rbind(
