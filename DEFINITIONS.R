@@ -69,8 +69,8 @@ FAILED_fl <- "~/CODE/training_location_analysis/runtime/Failed_to_parse.csv"
 rsltemp         <- 300    ##  in seconds, it is computed to minutes for lubridate
 ## points inside the square counts once every 300 secs
 
-fl_gis_data      <-  "~/DATA/GIS/Grid_static.gpkg"
-fl_gis_data_time <-  "~/DATA/GIS/Grid_temporal.gpkg"
+fl_gis_data      <-  "~/DATA/GIS/GRID_POINTS/Grid_static.gpkg"
+fl_gis_data_time <-  "~/DATA/GIS/GRID_POINTS/Grid_temporal.gpkg"
 
 
 
