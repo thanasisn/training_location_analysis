@@ -31,14 +31,17 @@ suppressPackageStartupMessages({
 
 source("./DEFINITIONS.R")
 
+FORCE_EXPORT <- TRUE
+
+
+
 ##  Open dataset  --------------------------------------------------------------
 if (!file.exists(DB_fl)) {
   stop("NO DB!\n")
 }
 con   <- dbConnect(duckdb(dbdir = DB_fl))
 
-file.mtime(DB_fl)
-file.mtime(fl_gis_data)
+
 
 ##  Bin poidbListFields()##  Bin points in grids  -------------------------------------------------------
 
@@ -48,12 +51,12 @@ ignorefid <- tbl(con, "files") |>
   filter(grepl("/Plans/", file)) |>
   filter(grepl("/ROUT/", file))  |>
   select(fid) |> pull()
-stopifnot(length(ignorefid)==0)
+stopifnot(length(ignorefid) == 0)
 
 
 
 
-## no need for all data for gridding
+## no need for all data for griding
 DT <- tbl(con, "records") |>
   select(X, Y, time, Sport, fid) |>
   filter(!is.na(X) & !is.na(Y))
@@ -64,110 +67,109 @@ cat(paste(DT |> tally() |> pull(), "points to bin\n" ))
 
 ## add file info
 DT <- right_join(
-  tbl(con, "files")   |> select(fid, dataset),
+  tbl(con, "files") |> select(fid, dataset),
   DT,
   by = "fid"
 ) |> select(-fid)
 
 
 
-
-
 ##  Export static grid  --------------------------------------------------------
-for (res in unique(c(5, rsls))) {
-  ##  Aggregate spacetime  -----------------------------------------------------
-  ff <- paste(rsltemp / 60, "minutes")
-  AG <- DT |> to_arrow() |> mutate(
-    time = floor_date(time, unit = ff),
-    X    = (X %/% res * res) + (res/2),
-    Y    = (Y %/% res * res) + (res/2)
-  ) |>
-    distinct() |>
-    compute()
-  cat(AG |> tally() |> collect() |> pull(), "spacetime points\n")
+if (FORCE_EXPORT | file.mtime(DB_fl) > file.mtime(fl_gis_data)) {
+  for (res in unique(c(5, rsls))) {
+    ##  Aggregate spacetime  ---------------------------------------------------
+    ff <- paste(rsltemp / 60, "minutes")
+    AG <- DT |> to_arrow() |> mutate(
+      time = floor_date(time, unit = ff),
+      X    = (X %/% res * res) + (res/2),
+      Y    = (Y %/% res * res) + (res/2)
+    ) |>
+      distinct() |>
+      compute()
+    cat(AG |> tally() |> collect() |> pull(), "spacetime points\n")
 
 
-  ## __ Count by type  ---------------------------------------------------------
-  CN <- AG |>
-    group_by(X, Y, dataset) |>
-    summarise(N = n()) |>
-    collect()
+    ## __ Count by type  -------------------------------------------------------
+    CN <- AG |>
+      group_by(X, Y, dataset) |>
+      summarise(N = n()) |>
+      collect()
 
-  cat(CN |> ungroup() |> distinct(X, Y) |> tally() |> pull(), "grid points for", res, "m at", ff, "\n")
+    cat(CN |> ungroup() |> distinct(X, Y) |> tally() |> pull(),
+        "grid points for", res, "m at", ff, "\n")
 
+    ## __ Split by dataset  ----------------------------------------------------
+    # CN |> ungroup() |> select(dataset) |> distinct()
+    # CN |> group_by(dataset) |> summarise(N = n())
 
-  ## __ Split by dataset  ------------------------------------------------------
-  # CN |> ungroup() |> select(dataset) |> distinct()
-  # CN |> group_by(dataset) |> summarise(N = n())
+    other <- c("GPX repo", "Google location history", "Garmin Original")
 
-  other <- c("GPX repo", "Google location history", "Garmin Original")
+    ## add info for qgis plotting functions
+    CN$Resolution <- res
 
-  ## add info for qgis plotting functions
-  CN$Resolution <- res
+    ## convert to spatial data objects
+    ALL <- st_as_sf(CN,
+                    coords = c("X", "Y"), crs = EPSG_PMERC, agr = "constant")
+    OTH <- st_as_sf(CN |> filter(dataset %in% other),
+                    coords = c("X", "Y"), crs = EPSG_PMERC, agr = "constant")
+    TRN <- st_as_sf(CN |> filter(! dataset %in% other),
+                    coords = c("X", "Y"), crs = EPSG_PMERC, agr = "constant")
 
-  ## convert to spatial data objects
-  ALL <- st_as_sf(CN,
-                  coords = c("X", "Y"), crs = EPSG_PMERC, agr = "constant")
-  OTH <- st_as_sf(CN |> filter(dataset %in% other),
-                  coords = c("X", "Y"), crs = EPSG_PMERC, agr = "constant")
-  TRN <- st_as_sf(CN |> filter(! dataset %in% other),
-                  coords = c("X", "Y"), crs = EPSG_PMERC, agr = "constant")
-
-  ## __ Write data  ------------------------------------------------------------
-  st_write(ALL, fl_gis_data, layer = sprintf("ALL   %8d m", res), append = FALSE, delete_layer = TRUE)
-  st_write(OTH, fl_gis_data, layer = sprintf("Other %8d m", res), append = FALSE, delete_layer = TRUE)
-  st_write(TRN, fl_gis_data, layer = sprintf("Train %8d m", res), append = FALSE, delete_layer = TRUE)
+    ## __ Write data  ----------------------------------------------------------
+    st_write(ALL, fl_gis_data, layer = sprintf("ALL   %8d m", res), append = FALSE, delete_layer = TRUE)
+    st_write(OTH, fl_gis_data, layer = sprintf("Other %8d m", res), append = FALSE, delete_layer = TRUE)
+    st_write(TRN, fl_gis_data, layer = sprintf("Train %8d m", res), append = FALSE, delete_layer = TRUE)
+  }
 }
-
 
 
 ##  Export temporal grid  ------------------------------------------------------
-for (res in rsls) {
-  ##  Aggregate spacetime  -------
-  ff <- paste(rsltemp / 60, "minutes")
-  AG <- DT |> to_arrow() |> mutate(
-    time = floor_date(time, unit = ff),
-    X    = (X %/% res * res) + (res/2),
-    Y    = (Y %/% res * res) + (res/2)
-  ) |>
-    distinct() |>
-    compute()
-  cat(AG |> tally() |> collect() |> pull(), "spacetime points\n")
+if (FORCE_EXPORT | file.mtime(DB_fl) > file.mtime(fl_gis_data_time)) {
+  for (res in rsls_T) {
+    ##  Aggregate spacetime  -------
+    ff <- paste(rsltemp / 60, "minutes")
+    AG <- DT |> to_arrow() |> mutate(
+      time = floor_date(time, unit = ff),
+      X    = (X %/% res * res) + (res/2),
+      Y    = (Y %/% res * res) + (res/2)
+    ) |>
+      distinct() |>
+      compute()
+    cat(AG |> tally() |> collect() |> pull(), "spacetime points\n")
 
 
-  ## __ Count by type  ---------------------------------------------------------
-  CN <- AG |>
-    group_by(X, Y, dataset, time) |>
-    summarise(N = n()) |>
-    collect()
+    ## __ Count by type  -------------------------------------------------------
+    CN <- AG |>
+      group_by(X, Y, dataset, time) |>
+      summarise(N = n()) |>
+      collect()
 
-  cat(CN |> ungroup() |> distinct(X, Y, time) |> tally() |> pull(),
-      "grid points for", res, "m at", ff, "\n")
+    cat(CN |> ungroup() |> distinct(X, Y, time) |> tally() |> pull(),
+        "grid points for", res, "m at", ff, "\n")
 
+    ## __ Split by dataset  ----------------------------------------------------
+    # CN |> ungroup() |> select(dataset) |> distinct()
+    # CN |> group_by(dataset) |> summarise(N = n())
 
-  ## __ Split by dataset  ------------------------------------------------------
-  # CN |> ungroup() |> select(dataset) |> distinct()
-  # CN |> group_by(dataset) |> summarise(N = n())
+    other <- c("GPX repo", "Google location history", "Garmin Original")
 
-  other <- c("GPX repo", "Google location history", "Garmin Original")
+    ## add info for qgis plotting functions
+    CN$Resolution <- res
 
-  ## add info for qgis plotting functions
-  CN$Resolution <- res
+    ## convert to spatial data objects
+    ALL <- st_as_sf(CN,
+                    coords = c("X", "Y"), crs = EPSG_PMERC, agr = "constant")
+    OTH <- st_as_sf(CN |> filter(dataset %in% other),
+                    coords = c("X", "Y"), crs = EPSG_PMERC, agr = "constant")
+    TRN <- st_as_sf(CN |> filter(! dataset %in% other),
+                    coords = c("X", "Y"), crs = EPSG_PMERC, agr = "constant")
 
-  ## convert to spatial data objects
-  ALL <- st_as_sf(CN,
-                  coords = c("X", "Y"), crs = EPSG_PMERC, agr = "constant")
-  OTH <- st_as_sf(CN |> filter(dataset %in% other),
-                  coords = c("X", "Y"), crs = EPSG_PMERC, agr = "constant")
-  TRN <- st_as_sf(CN |> filter(! dataset %in% other),
-                  coords = c("X", "Y"), crs = EPSG_PMERC, agr = "constant")
-
-  ## __ Write data  ------------------------------------------------------------
-  st_write(ALL, fl_gis_data_time, layer = sprintf("ALL   %8d m", res), append = FALSE, delete_layer = TRUE)
-  st_write(OTH, fl_gis_data_time, layer = sprintf("Other %8d m", res), append = FALSE, delete_layer = TRUE)
-  st_write(TRN, fl_gis_data_time, layer = sprintf("Train %8d m", res), append = FALSE, delete_layer = TRUE)
+    ## __ Write data  ----------------------------------------------------------
+    st_write(ALL, fl_gis_data_time, layer = sprintf("ALL   %8d m", res), append = FALSE, delete_layer = TRUE)
+    st_write(OTH, fl_gis_data_time, layer = sprintf("Other %8d m", res), append = FALSE, delete_layer = TRUE)
+    st_write(TRN, fl_gis_data_time, layer = sprintf("Train %8d m", res), append = FALSE, delete_layer = TRUE)
+  }
 }
-
 
 
 
