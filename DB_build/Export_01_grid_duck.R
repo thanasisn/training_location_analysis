@@ -33,7 +33,7 @@ source("./DEFINITIONS.R")
 
 
 FORCE_EXPORT <- TRUE
-FORCE_EXPORT <- FALSE
+# FORCE_EXPORT <- FALSE
 
 
 
@@ -74,13 +74,15 @@ DT <- right_join(
   by = "fid"
 ) |> select(-fid)
 
-
+res <- 5
 
 ##  Export static grid  --------------------------------------------------------
 if (FORCE_EXPORT | file.mtime(DB_fl) > file.mtime(fl_gis_data)) {
   for (res in unique(c(5, rsls))) {
     ##  Aggregate spacetime  ---------------------------------------------------
-    ff <- paste(rsltemp / 60, "minutes")
+    # ff <- paste(rsltemp / 60, "minutes")
+    ##  Create a relative time resolution in seconds
+    ff <- paste(res * 3600 / (1000 * SPEED_RES_kmh), "seconds")
     AG <- DT |> to_arrow() |> mutate(
       time = floor_date(time, unit = ff),
       X    = (X %/% res * res) + (res/2),
@@ -174,6 +176,14 @@ if (FORCE_EXPORT | file.mtime(DB_fl) > file.mtime(fl_gis_data_time)) {
 }
 
 
+# ##
+# rsls * 36 / 40
+#
+# rsls * 3600 / (1000 * SPEED_RES_kmh)
+#
+# floor_date(Sys.time(), unit = "4.5 seconds")
+# floor_date(Sys.time(), unit = "450 aseconds")
+# floor_date(Sys.time(), unit = "45000 aseconds")
 
 
 
