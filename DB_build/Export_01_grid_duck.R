@@ -74,7 +74,8 @@ DT <- right_join(
 
 ##  Export static grid  --------------------------------------------------------
 for (res in rsls) {
-  ##  Aggregate spacetime  -------
+  stop()
+  ##  Aggregate spacetime  -----------------------------------------------------
   ff <- paste(rsltemp / 60, "minutes")
   AG <- DT |> to_arrow() |> mutate(
     time = floor_date(time, unit = ff),
@@ -122,6 +123,7 @@ for (res in rsls) {
 
 ##  Export temporal grid  ------------------------------------------------------
 for (res in rsls) {
+  stop()
   ##  Aggregate spacetime  -------
   ff <- paste(rsltemp / 60, "minutes")
   AG <- DT |> to_arrow() |> mutate(
