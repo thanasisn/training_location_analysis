@@ -77,15 +77,15 @@ fl_gis_data_time <-  "~/DATA/GIS/GRID_POINTS/Grid_temporal.gpkg"
 
 ## Spatial aggregation
 rsls <- unique(c(
-  10,
-  20,
-  50,
-  100,
-  500,
-  1000,
-  2000,
-  5000,
+     15,
+     50,
+    100,
+    500,
+   1000,
+   2000,
+   5000,
   10000,
   20000,
-  50000 ))
+  50000
+))
 

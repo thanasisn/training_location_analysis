@@ -37,9 +37,10 @@ if (!file.exists(DB_fl)) {
 }
 con   <- dbConnect(duckdb(dbdir = DB_fl))
 
+file.mtime(DB_fl)
+file.mtime(fl_gis_data)
 
-
-##  Bin points in grids  -------------------------------------------------------
+##  Bin poidbListFields()##  Bin points in grids  -------------------------------------------------------
 
 
 ## exclude some data paths not mine
@@ -73,8 +74,7 @@ DT <- right_join(
 
 
 ##  Export static grid  --------------------------------------------------------
-for (res in rsls) {
-  stop()
+for (res in unique(c(5, rsls))) {
   ##  Aggregate spacetime  -----------------------------------------------------
   ff <- paste(rsltemp / 60, "minutes")
   AG <- DT |> to_arrow() |> mutate(
@@ -84,7 +84,7 @@ for (res in rsls) {
   ) |>
     distinct() |>
     compute()
-  cat(AG |> tally() |> collect() |> pull(), "spacetime points" )
+  cat(AG |> tally() |> collect() |> pull(), "spacetime points\n")
 
 
   ## __ Count by type  ---------------------------------------------------------
@@ -93,14 +93,14 @@ for (res in rsls) {
     summarise(N = n()) |>
     collect()
 
-  cat(CN |> ungroup() |> distinct(X, Y) |> tally() |> pull(), "grid points for", res, "m at",ff)
+  cat(CN |> ungroup() |> distinct(X, Y) |> tally() |> pull(), "grid points for", res, "m at", ff, "\n")
 
 
   ## __ Split by dataset  ------------------------------------------------------
   # CN |> ungroup() |> select(dataset) |> distinct()
   # CN |> group_by(dataset) |> summarise(N = n())
 
-  other <- c("GPX repo", "Google location history")
+  other <- c("GPX repo", "Google location history", "Garmin Original")
 
   ## add info for qgis plotting functions
   CN$Resolution <- res
@@ -123,7 +123,6 @@ for (res in rsls) {
 
 ##  Export temporal grid  ------------------------------------------------------
 for (res in rsls) {
-  stop()
   ##  Aggregate spacetime  -------
   ff <- paste(rsltemp / 60, "minutes")
   AG <- DT |> to_arrow() |> mutate(
@@ -133,7 +132,7 @@ for (res in rsls) {
   ) |>
     distinct() |>
     compute()
-  cat(AG |> tally() |> collect() |> pull(), "spacetime points" )
+  cat(AG |> tally() |> collect() |> pull(), "spacetime points\n")
 
 
   ## __ Count by type  ---------------------------------------------------------
@@ -142,14 +141,15 @@ for (res in rsls) {
     summarise(N = n()) |>
     collect()
 
-  cat(CN |> ungroup() |> distinct(X, Y, time) |> tally() |> pull(), "grid points for", res, "m at",ff)
+  cat(CN |> ungroup() |> distinct(X, Y, time) |> tally() |> pull(),
+      "grid points for", res, "m at", ff, "\n")
 
 
   ## __ Split by dataset  ------------------------------------------------------
   # CN |> ungroup() |> select(dataset) |> distinct()
   # CN |> group_by(dataset) |> summarise(N = n())
 
-  other <- c("GPX repo", "Google location history")
+  other <- c("GPX repo", "Google location history", "Garmin Original")
 
   ## add info for qgis plotting functions
   CN$Resolution <- res
@@ -161,7 +161,6 @@ for (res in rsls) {
                   coords = c("X", "Y"), crs = EPSG_PMERC, agr = "constant")
   TRN <- st_as_sf(CN |> filter(! dataset %in% other),
                   coords = c("X", "Y"), crs = EPSG_PMERC, agr = "constant")
-
 
   ## __ Write data  ------------------------------------------------------------
   st_write(ALL, fl_gis_data_time, layer = sprintf("ALL   %8d m", res), append = FALSE, delete_layer = TRUE)
