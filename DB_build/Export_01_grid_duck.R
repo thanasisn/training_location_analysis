@@ -40,33 +40,6 @@ con   <- dbConnect(duckdb(dbdir = DB_fl))
 
 ##  Bin points in grids  -------------------------------------------------------
 
-## no need for all data for griding
-DT <- tbl(con, "records") |>
-  select(X, Y, time, Sport, SubSport, source) |>
-  filter(!is.na(X) & !is.na(Y))
-DT |> tally()
-
-## keep only existing coordinates
-cat(paste(DT |> tally() |> pull(), "points to bin\n" ))
-
-
-res <- 20
-
-
-## aggregate times
-ff <- paste(rsltemp / 60, "minutes")
-DT <- DT |> to_arrow() |> mutate(
-  time = floor_date(time, unit = ff),
-  X    = (X %/% res * res) + (res/2),
-  Y    = (Y %/% res * res) + (res/2)
-) |>
-  compute()
-DT |> tally() |> collect()
-
-
-
-
-# DT |> head() |> collect()
 
 ## exclude some data paths not mine
 ignorefid <- tbl(con, "files") |>
@@ -78,14 +51,81 @@ stopifnot(length(ignorefid)==0)
 
 
 
+
+## no need for all data for gridding
+DT <- tbl(con, "records") |>
+  select(X, Y, time, Sport, fid) |>
+  filter(!is.na(X) & !is.na(Y))
+
+## keep only existing coordinates
+cat(paste(DT |> tally() |> pull(), "points to bin\n" ))
+
+
+## add file info
+DT <- right_join(
+  tbl(con, "files")   |> select(fid, dataset),
+  DT,
+  by = "fid"
+) |> select(-fid)
+
+
+res <- 20
+
+
+## Aggregate timespace
+ff <- paste(rsltemp / 60, "minutes")
+
+AG <- DT |> to_arrow() |> mutate(
+  time = floor_date(time, unit = ff),
+  X    = (X %/% res * res) + (res/2),
+  Y    = (Y %/% res * res) + (res/2)
+) |>
+  distinct() |>
+  compute()
+cat(AG |> tally() |> collect() |> pull(), "spacetime points" )
+
+
+## Count by type
+CN <- AG |>
+  group_by(X, Y, dataset) |>
+  summarise(N = n()) |>
+  collect()
+
+cat(CN |> ungroup() |> distinct(X, Y) |> tally() |> pull(), "grid points for", res, "m at",ff)
+
+## Split by dataset
+
+CN |> ungroup() |> select(dataset) |> distinct()
+
+CN |> group_by(dataset) |> summarise(N = n())
+
+other <- c("GPX repo", "Google location history")
+
+# other
+OTHER <- CN |> filter(dataset %in% other)
+# train
+TRAIN <- CN |> filter(!dataset %in% other)
+# all
+CN
+
+
+# DT |> head() |> collect()
+
+library(sf)
+## add info for qgis plotting functions
+CN$Resolution <- res
+resolname <- sprintf("Res %8d m",res)
+
+## convert to spatial data objects
+gather <- st_as_sf(CN, coords = c("X", "Y"), crs = EPSG_PMERC, agr = "constant")
+
+## store spatial data one layer per file
+# st_write(gather, traindb, layer = NULL, append = FALSE, delete_layer= TRUE)
+
+## store data as one layer in one file one layer per resolution
+st_write(gather, fl_gis_data, layer = resolname, append = FALSE, delete_layer= TRUE)
+
 ## get unique points
-DT <- DT |> distinct() |> compute()
-
-DT |> tally() |> collect()
-
-
-
-tbl(con, "files") |> select(dataset) |> collect() |> table()
 
 
 stop()
