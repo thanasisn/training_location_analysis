@@ -69,4 +69,23 @@ FAILED_fl <- "~/CODE/training_location_analysis/runtime/Failed_to_parse.csv"
 rsltemp         <- 300    ##  in seconds, it is computed to minutes for lubridate
 ## points inside the square counts once every 300 secs
 
-fl_gis_data      <-  "~/DATA/GIS/Grid_test.gpkg"
+fl_gis_data      <-  "~/DATA/GIS/Grid_static.gpkg"
+fl_gis_data_time <-  "~/DATA/GIS/Grid_temporal.gpkg"
+
+
+
+
+## Spatial aggregation
+rsls <- unique(c(
+  10,
+  20,
+  50,
+  100,
+  500,
+  1000,
+  2000,
+  5000,
+  10000,
+  20000,
+  50000 ))
+
