@@ -75,7 +75,7 @@ fl_gis_data_time <-  "~/DATA/GIS/GRID_POINTS/Grid_temporal.gpkg"
 
 
 
-## Spatial aggregation
+## Spatial aggregation static
 rsls <- unique(c(
      15,
      50,
@@ -89,3 +89,15 @@ rsls <- unique(c(
   50000
 ))
 
+## Spatial aggregation temporal
+rsls_T <- unique(c(
+     25,
+     50,
+    100,
+    500,
+   1000,
+   2000,
+   5000,
+  10000,
+  20000
+))
