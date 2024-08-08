@@ -31,7 +31,9 @@ suppressPackageStartupMessages({
 
 source("./DEFINITIONS.R")
 
+
 FORCE_EXPORT <- TRUE
+FORCE_EXPORT <- FALSE
 
 
 
