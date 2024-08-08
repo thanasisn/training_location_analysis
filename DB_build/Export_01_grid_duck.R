@@ -37,7 +37,6 @@ if (!file.exists(DB_fl)) {
 con   <- dbConnect(duckdb(dbdir = DB_fl))
 
 
-colnames(DT)
 
 ##  Bin points in grids  -------------------------------------------------------
 
@@ -50,12 +49,21 @@ DT |> tally()
 ## keep only existing coordinates
 cat(paste(DT |> tally() |> pull(), "points to bin\n" ))
 
+
+res <- 20
+
+
 ## aggregate times
 ff <- paste(rsltemp / 60, "minutes")
 DT <- DT |> to_arrow() |> mutate(
-  time = floor_date(time, unit = ff)
-) |> compute()
+  time = floor_date(time, unit = ff),
+  X    = (X %/% res * res) + (res/2),
+  Y    = (Y %/% res * res) + (res/2)
+) |>
+  compute()
 DT |> tally() |> collect()
+
+
 
 
 # DT |> head() |> collect()
