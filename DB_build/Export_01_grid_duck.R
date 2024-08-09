@@ -80,9 +80,10 @@ res <- 5
 if (FORCE_EXPORT | file.mtime(DB_fl) > file.mtime(fl_gis_data)) {
   for (res in unique(c(5, rsls))) {
     ##  Aggregate spacetime  ---------------------------------------------------
-    ff <- paste(rsltemp / 60, "minutes")
+    # ff <- paste(rsltemp / 60, "minutes")
     ##  Create a relative time resolution in seconds
     # ff <- paste(res * 3600 / (1000 * SPEED_RES_kmh), "seconds")
+    ff <- nice_duration(res)
     AG <- DT |> to_arrow() |> mutate(
       time = floor_date(time, unit = ff),
       X    = (X %/% res * res) + (res/2),
@@ -175,26 +176,23 @@ if (FORCE_EXPORT | file.mtime(DB_fl) > file.mtime(fl_gis_data_time)) {
   }
 }
 
-library(humanFormat)
 # ##
 # rsls * 36 / 40
 #
-rsls * 3600 / (1000 * SPEED_RES_kmh)
+# rsls * 3600 / (1000 * SPEED_RES_kmh)
+#
+# formatSeconds( rsls * 3600 / (1000 * SPEED_RES_kmh))
+# times <- rsls * 3600 / (1000 * SPEED_RES_kmh)
+# times
 
-formatSeconds( rsls * 3600 / (1000 * SPEED_RES_kmh))
-times <- rsls * 3600 / (1000 * SPEED_RES_kmh)
-times
 
-for (at in times) {
-  if (at < 60) {
-    cat(paste(at, "seconds\n"))
-  } else if (at < 3600) {
-    cat(paste(at/60, "minutes\n"))
-  } else {
 
-    cat(paste(at/3600, "hours\n"))
-  }
-}
+# for (at in times) {
+#   cat(at, nice_duration(at), "\n")
+#   # floor_date(Sys.time(), unit = ff)
+# }
+#
+# 3000 %/% 60
 
                         #
 # floor_date(Sys.time(), unit = "4.5 seconds")

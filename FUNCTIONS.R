@@ -51,3 +51,18 @@ append_to_table <- function(con, table, data) {
     append = TRUE
   )
 }
+
+
+
+nice_duration <- function(dur) {
+  if (at < 60) {
+    ff <- paste(at, "seconds")
+  } else if (at < 3600) {
+    ff <- paste(((at %/% 60) * 60) / 60, "minutes")
+  } else {
+    ff <- paste(((at %/% 3600) * 3600) / 3600, "hours")
+  }
+  # cat(at, ff, "\n")
+  # floor_date(Sys.time(), unit = ff)
+  return(ff)
+}
