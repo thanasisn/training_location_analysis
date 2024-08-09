@@ -113,11 +113,11 @@ if (FORCE_EXPORT | file.mtime(DB_fl) > file.mtime(fl_gis_data)) {
     CN$Resolution <- res
 
     ## convert to spatial data objects
-    ALL <- st_as_sf(CN,
+    ALL <- st_as_sf(CN |> select(-dataset),
                     coords = c("X", "Y"), crs = EPSG_PMERC, agr = "constant")
-    OTH <- st_as_sf(CN |> filter(dataset %in% other),
+    OTH <- st_as_sf(CN |> filter(dataset %in% other) |> select(-dataset),
                     coords = c("X", "Y"), crs = EPSG_PMERC, agr = "constant")
-    TRN <- st_as_sf(CN |> filter(! dataset %in% other),
+    TRN <- st_as_sf(CN |> filter(! dataset %in% other) |> select(-dataset),
                     coords = c("X", "Y"), crs = EPSG_PMERC, agr = "constant")
 
     ## __ Write data  ----------------------------------------------------------
@@ -163,11 +163,11 @@ if (FORCE_EXPORT | file.mtime(DB_fl) > file.mtime(fl_gis_data_time)) {
     CN$Resolution <- res
 
     ## convert to spatial data objects
-    ALL <- st_as_sf(CN,
+    ALL <- st_as_sf(CN |> select(-dataset),
                     coords = c("X", "Y"), crs = EPSG_PMERC, agr = "constant")
-    OTH <- st_as_sf(CN |> filter(dataset %in% other),
+    OTH <- st_as_sf(CN |> filter(dataset %in% other) |> select(-dataset),
                     coords = c("X", "Y"), crs = EPSG_PMERC, agr = "constant")
-    TRN <- st_as_sf(CN |> filter(! dataset %in% other),
+    TRN <- st_as_sf(CN |> filter(! dataset %in% other) |> select(-dataset),
                     coords = c("X", "Y"), crs = EPSG_PMERC, agr = "constant")
 
     ## __ Write data  ----------------------------------------------------------
