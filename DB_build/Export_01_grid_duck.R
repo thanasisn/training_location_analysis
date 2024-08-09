@@ -132,7 +132,8 @@ if (FORCE_EXPORT | file.mtime(DB_fl) > file.mtime(fl_gis_data)) {
 if (FORCE_EXPORT | file.mtime(DB_fl) > file.mtime(fl_gis_data_time)) {
   for (res in rsls_T) {
     ##  Aggregate spacetime  -------
-    ff <- paste(rsltemp / 60, "minutes")
+    # ff <- paste(rsltemp / 60, "minutes")
+    ff <- nice_duration(res)
     AG <- DT |> to_arrow() |> mutate(
       time = floor_date(time, unit = ff),
       X    = (X %/% res * res) + (res/2),
