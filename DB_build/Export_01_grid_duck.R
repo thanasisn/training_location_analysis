@@ -33,7 +33,7 @@ source("/home/athan/CODE/training_location_analysis/DEFINITIONS.R")
 source("/home/athan/CODE/training_location_analysis/FUNCTIONS.R")
 
 FORCE_EXPORT <- TRUE
-# FORCE_EXPORT <- FALSE
+FORCE_EXPORT <- FALSE
 
 
 
