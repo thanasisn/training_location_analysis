@@ -19,8 +19,8 @@ tic <- Sys.time()
 Script.Name <- "~/CODE/training_location_analysis/DB_build/Build_02_multi_parse.R"
 
 if (!interactive()) {
-  dir.create("../runtime/", showWarnings = F, recursive = T)
-  pdf( file = paste0("../runtime/", basename(sub("\\.R$",".pdf", Script.Name))))
+  dir.create("~/CODE/training_location_analysis/runtime/", showWarnings = F, recursive = T)
+  pdf( file = paste0("~/CODE/training_location_analysis/runtime/", basename(sub("\\.R$",".pdf", Script.Name))))
 }
 
 #+ echo=F, include=T
@@ -57,17 +57,13 @@ tempfl     <- "/dev/shm/tmp_loc_db/"
 unlink(tempfl, recursive = T)
 dir.create(tempfl, showWarnings = F, recursive = T)
 
-
-## test db
-db_fl <- "~/DATA/Other/Activities_records.duckdb"
-con   <- dbConnect(duckdb(dbdir = db_fl))
+##  Open dataset  --------------------------------------------------------------
+con   <- dbConnect(duckdb(dbdir = DB_fl))
 
 
 ## get last fid
 if (dbExistsTable(con, "files")) {
   fid <- data.frame(tbl(con, "files") |> summarise(max(fid, na.rm = T)))[1,1]
-
-
 } else {
   # dbSendQuery(con, "CREATE TABLE files (fid INTEGER PRIMARY KEY)")
   # dbExecute(con, "ALTER TABLE files (fid INTEGER PRIMARY KEY)")
