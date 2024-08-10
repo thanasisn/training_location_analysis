@@ -41,11 +41,11 @@ FORCE_EXPORT <- FALSE
 if (!file.exists(DB_fl)) {
   stop("NO DB!\n")
 }
-con   <- dbConnect(duckdb(dbdir = DB_fl))
+con   <- dbConnect(duckdb(dbdir = DB_fl, read_only = TRUE))
 
 
 
-##  Bin poidbListFields()##  Bin points in grids  -------------------------------------------------------
+##  Bin points in grids  -------------------------------------------------------
 
 
 ## exclude some data paths not mine
