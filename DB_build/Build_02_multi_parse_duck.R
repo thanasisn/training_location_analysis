@@ -20,7 +20,7 @@ Script.Name <- "~/CODE/training_location_analysis/DB_build/Build_02_multi_parse.
 
 if (!interactive()) {
   dir.create("~/CODE/training_location_analysis/runtime/", showWarnings = F, recursive = T)
-  pdf( file = paste0("~/CODE/training_location_analysis/runtime/", basename(sub("\\.R$",".pdf", Script.Name))))
+  # pdf( file = paste0("~/CODE/training_location_analysis/runtime/", basename(sub("\\.R$",".pdf", Script.Name))))
 }
 
 #+ echo=F, include=T
@@ -780,9 +780,9 @@ data[, year  := as.integer(year(time)) ]
 # data[, month := as.integer(month(time))]
 
 ## fix names
-names(data) <- sub("\\.$",  "", names(data))
-names(data) <- sub("[ ]+$", "", names(data))
-names(data) <- sub("^[ ]+", "", names(data))
+names(data) <-  sub("\\.$",  "", names(data))
+names(data) <-  sub("[ ]+$", "", names(data))
+names(data) <- gsub("^[ ]+", "", names(data))
 
 ## merge same data columns
 if (sum(c("heart_rate", "HR") %in% names(data)) == 2) {
@@ -794,19 +794,20 @@ if (sum(c("heart_rate", "HR") %in% names(data)) == 2) {
   data[, heart_rate := NULL]
 }
 
-if (sum(c("temperature", "TEMP") %in% names(data)) == 2) {
-  ## sanity check
-  stopifnot(data[!is.na(temperature) & !is.na(TEMP), .N] == 0)
-  ## merge
-  data[!is.na(temperature), TEMP := temperature]
-
-  data[, temperature := NULL]
-}
+# if (sum(c("temperature", "TEMP") %in% names(data)) == 2) {
+#   ## sanity check
+#   stopifnot(data[!is.na(temperature) & !is.na(TEMP), .N] == 0)
+#   ## merge
+#   data[!is.na(temperature), TEMP := temperature]
+#
+#   data[, temperature := NULL]
+# }
 
 
 subst <- data.frame(
   matrix(
     c(
+      # BAD name           GOOD name
       "Ectopic-R.#"     , "Ectopic-R"   ,
       "LnRMSSD.#"       , "LnRMSSD"     ,
       "NN20.#"          , "NN20"        ,
@@ -821,6 +822,7 @@ subst <- data.frame(
       "AvgPulse.bpm"    , "AvgPulse"    ,
       "hrv_hr.bpm"      , "hrv_hr"      ,
       "hrv_s.ms"        , "hrv_s"       ,
+      "temperature"     , "TEMP"        ,
       NULL),
     byrow = TRUE,
     ncol = 2))
@@ -843,10 +845,8 @@ for (al in 1:nrow(subst)) {
 }
 
 
-
-
-stopifnot(sum(c("heart_rate", "HR")    %in% names(data))<2)
-stopifnot(sum(c("temperature", "TEMP") %in% names(data))<2)
+# stopifnot(sum(c("heart_rate", "HR")    %in% names(data))<2)
+# stopifnot(sum(c("temperature", "TEMP") %in% names(data))<2)
 
 ## this will init columns keep bellow
 names(data)[names(data) == "heart_rate" ] <- "HR"
@@ -905,16 +905,13 @@ stopifnot(!any(duplicated(names(data))))
 data <- remove_empty(data, which = "cols")
 
 names(data) <- gsub("[\\./]", "_", names(data))
+names(data) <-  sub("[\\./]", "_", names(data))
+names(data) <-  sub("[\\./]", "_", names(data))
 
-# names(data) <- gsub("-", "_", names(data))
 
 if (length(grep("\\.", names(data), value = T, ignore.case = T)) > 0) {
   stop("found a dot")
 }
-# grep("/", names(data), value = T, ignore.case = T)
-#
-# gsub("\\.", "_", "eE_c.hr")
-# gsub("[\\./]", "_", "eE.c/hr")
 
 
 
@@ -937,21 +934,21 @@ if (any(duplicated(tolower(names(data))))) {
 }
 
 
-##  Split data to add to db
+## add some stats by file
+data[, records   := .N, by = file]
+data[, locations := sum((!is.na(X)) & (!is.na(Y))), by = file]
+metanames <- unique(c(metanames, "records", "locations"))
+
+##  Split data to adfile##  Split data to add to db
 filesDT <- data.frame(data[, ..metanames] |> distinct())
 recorDT <- c("fid", names(data)[!names(data) %in% metanames])
 recorDT <- data.frame(data[, ..recorDT ])
-
-
-
 
 ##  Add data in the db table  --------------------------------------------------
 append_to_table(con = con, table = "files",   filesDT)
 append_to_table(con = con, table = "records", recorDT)
 
 
-# tbl(con, "files")    |> collect() |> data.table()
-# tbl(con, "records")  |> tally() |> collect()
 
 
 new_rows  <- unlist(tbl(con, "records") |> tally() |> collect())
@@ -980,16 +977,7 @@ toparse_fl <- "~/CODE/training_location_analysis/runtime/Files_to_parse.csv"
 write.csv2(files, toparse_fl, row.names = FALSE, quote = FALSE)
 
 
-
-# cat("DB Size:    ", humanReadable(sum(file.size(db_fl))), "\n")
-# filelist <- tbl(con, "files") |> select(file) |> distinct() |> collect()
-# cat("Source Size:",
-#     humanReadable(sum(file.size(filelist$file), na.rm = T)), "\n")
-
-
 dbDisconnect(con)
-
-
 #' **END**
 #+ include=T, echo=F
 tac <- Sys.time()
