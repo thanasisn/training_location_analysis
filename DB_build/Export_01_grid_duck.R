@@ -56,8 +56,6 @@ ignorefid <- tbl(con, "files") |>
 stopifnot(length(ignorefid) == 0)
 
 
-
-
 ## no need for all data for griding
 DT <- tbl(con, "records") |>
   select(X, Y, time, Sport, fid) |>
@@ -74,10 +72,9 @@ DT <- right_join(
   by = "fid"
 ) |> select(-fid)
 
-res <- 5
 
 ##  Export static grid  --------------------------------------------------------
-if (FORCE_EXPORT | file.mtime(DB_fl) > file.mtime(fl_gis_data)) {
+if (FORCE_EXPORT | !file.exists(fl_gis_data) | file.mtime(DB_fl) > file.mtime(fl_gis_data)) {
   for (res in unique(c(5, rsls))) {
     ##  Aggregate spacetime  ---------------------------------------------------
     # ff <- paste(rsltemp / 60, "minutes")
