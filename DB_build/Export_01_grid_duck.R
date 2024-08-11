@@ -126,7 +126,7 @@ if (FORCE_EXPORT | !file.exists(fl_gis_data) | file.mtime(DB_fl) > file.mtime(fl
 
 
 ##  Export temporal grid  ------------------------------------------------------
-if (FORCE_EXPORT | file.mtime(DB_fl) > file.mtime(fl_gis_data_time)) {
+if (FORCE_EXPORT | !file.exists(fl_gis_data_time) | file.mtime(DB_fl) > file.mtime(fl_gis_data_time)) {
   for (res in rsls_T) {
     ##  Aggregate spacetime  -------
     # ff <- paste(rsltemp / 60, "minutes")
