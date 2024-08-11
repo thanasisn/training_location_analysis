@@ -16,7 +16,7 @@
 ## __ Set environment  ---------------------------------------------------------
 Sys.setenv(TZ = "UTC")
 tic <- Sys.time()
-Script.Name <- "~/CODE/training_location_analysis/DB_build/Build_02_multi_parse.R"
+Script.Name <- "~/CODE/training_location_analysis/DB_build/Build_02_multi_parse_duck.R"
 
 if (!interactive()) {
   dir.create("~/CODE/training_location_analysis/runtime/", showWarnings = F, recursive = T)
@@ -771,184 +771,189 @@ cat("\n")
 unlink(tempfl, recursive = T)
 
 
-## Prepare for import to DB  ---------------------------------------------------
-data <- data.table(data)
-attr(data$time,      "tzone") <- "UTC"
-attr(data$filemtime, "tzone") <- "UTC"
-attr(data$parsed,    "tzone") <- "UTC"
-data[, year  := as.integer(year(time)) ]
-# data[, month := as.integer(month(time))]
-
-## fix names
-names(data) <-  sub("\\.$",  "", names(data))
-names(data) <-  sub("[ ]+$", "", names(data))
-names(data) <- gsub("^[ ]+", "", names(data))
-
-## merge same data columns
-if (sum(c("heart_rate", "HR") %in% names(data)) == 2) {
-  ## sanity check
-  stopifnot(data[!is.na(heart_rate) & !is.na(HR), .N] == 0)
-  ## merge
-  data[!is.na(heart_rate), HR := heart_rate]
-
-  data[, heart_rate := NULL]
-}
-
-# if (sum(c("temperature", "TEMP") %in% names(data)) == 2) {
-#   ## sanity check
-#   stopifnot(data[!is.na(temperature) & !is.na(TEMP), .N] == 0)
-#   ## merge
-#   data[!is.na(temperature), TEMP := temperature]
-#
-#   data[, temperature := NULL]
-# }
+if (nrow(data) > 0) {
 
 
-subst <- data.frame(
-  matrix(
-    c(
-      # BAD name           GOOD name
-      "Ectopic-R.#"     , "Ectopic-R"   ,
-      "LnRMSSD.#"       , "LnRMSSD"     ,
-      "NN20.#"          , "NN20"        ,
-      "NN50.#"          , "NN50"        ,
-      "RMSSD.ms"        , "RMSSD"       ,
-      "RMSSD_H.ms"      , "RMSSD_H"     ,
-      "SDNN.ms"         , "SDNN"        ,
-      "SDSD.ms"         , "SDSD"        ,
-      "hrv_rmssd30s.ms" , "hrv_rmssd30s",
-      "pNN20.%"         , "pNN20"       ,
-      "pNN50.%"         , "pNN50"       ,
-      "AvgPulse.bpm"    , "AvgPulse"    ,
-      "hrv_hr.bpm"      , "hrv_hr"      ,
-      "hrv_s.ms"        , "hrv_s"       ,
-      "temperature"     , "TEMP"        ,
-      NULL),
-    byrow = TRUE,
-    ncol = 2))
+  ## Prepare for import to DB  ---------------------------------------------------
+  data <- data.table(data)
+  attr(data$time,      "tzone") <- "UTC"
+  attr(data$filemtime, "tzone") <- "UTC"
+  attr(data$parsed,    "tzone") <- "UTC"
+  data[, year  := as.integer(year(time)) ]
+  # data[, month := as.integer(month(time))]
 
-for (al in 1:nrow(subst)) {
-  var_bad  <- subst[al, 1]
-  var_nice <- subst[al, 2]
+  ## fix names
+  names(data) <-  sub("\\.$",  "", names(data))
+  names(data) <-  sub("[ ]+$", "", names(data))
+  names(data) <- gsub("^[ ]+", "", names(data))
 
-  if (var_bad %in% names(data)) {
-    cat("FIX:", var_bad, "->", var_nice ,"\n")
-    ## check for overlap of values
-    if (all(c(var_bad, var_nice) %in% names(data))) {
-      stopifnot(data[!is.na(get(var_bad)) & !is.na(get(var_nice)), .N] == 0)
-    }
-    ## move to the new variable
-    data[!is.na(get(var_bad)), (var_nice) := get(var_bad)]
-    ## remove ald variable
-    data[, (var_bad) := NULL]
+  ## merge same data columns
+  if (sum(c("heart_rate", "HR") %in% names(data)) == 2) {
+    ## sanity check
+    stopifnot(data[!is.na(heart_rate) & !is.na(HR), .N] == 0)
+    ## merge
+    data[!is.na(heart_rate), HR := heart_rate]
+
+    data[, heart_rate := NULL]
   }
-}
+
+  # if (sum(c("temperature", "TEMP") %in% names(data)) == 2) {
+  #   ## sanity check
+  #   stopifnot(data[!is.na(temperature) & !is.na(TEMP), .N] == 0)
+  #   ## merge
+  #   data[!is.na(temperature), TEMP := temperature]
+  #
+  #   data[, temperature := NULL]
+  # }
 
 
-# stopifnot(sum(c("heart_rate", "HR")    %in% names(data))<2)
-# stopifnot(sum(c("temperature", "TEMP") %in% names(data))<2)
+  subst <- data.frame(
+    matrix(
+      c(
+        # BAD name           GOOD name
+        "Ectopic-R.#"     , "Ectopic-R"   ,
+        "LnRMSSD.#"       , "LnRMSSD"     ,
+        "NN20.#"          , "NN20"        ,
+        "NN50.#"          , "NN50"        ,
+        "RMSSD.ms"        , "RMSSD"       ,
+        "RMSSD_H.ms"      , "RMSSD_H"     ,
+        "SDNN.ms"         , "SDNN"        ,
+        "SDSD.ms"         , "SDSD"        ,
+        "hrv_rmssd30s.ms" , "hrv_rmssd30s",
+        "pNN20.%"         , "pNN20"       ,
+        "pNN50.%"         , "pNN50"       ,
+        "AvgPulse.bpm"    , "AvgPulse"    ,
+        "hrv_hr.bpm"      , "hrv_hr"      ,
+        "hrv_s.ms"        , "hrv_s"       ,
+        "temperature"     , "TEMP"        ,
+        NULL),
+      byrow = TRUE,
+      ncol = 2))
 
-## this will init columns keep bellow
-names(data)[names(data) == "heart_rate" ] <- "HR"
-names(data)[names(data) == "temperature"] <- "TEMP"
+  for (al in 1:nrow(subst)) {
+    var_bad  <- subst[al, 1]
+    var_nice <- subst[al, 2]
 
-## disambiguate names
-names(data)[names(data) == "Performance.Condition"] <- "Activity.Performance.Condition"
-
-## fix some data types
-class(data$ALT)                  <- "double"
-class(data$AvgPulse)             <- "double"
-class(data$CAD)                  <- "double"
-class(data$FIELD_135)            <- "double"
-class(data$FIELD_136)            <- "double"
-class(data$HR)                   <- "double"
-class(data$NN20)                 <- "integer"
-class(data$NN50)                 <- "integer"
-class(data$OVRD_total_kcalories) <- "double"
-class(data$PERFORMANCECONDITION) <- "double"
-class(data$Spike.Time)           <- "double"
-class(data$TEMP)                 <- "double"
-class(data$`Ectopic-R`)          <- "double"
-class(data$hrv_hr)               <- "integer"
+    if (var_bad %in% names(data)) {
+      cat("FIX:", var_bad, "->", var_nice ,"\n")
+      ## check for overlap of values
+      if (all(c(var_bad, var_nice) %in% names(data))) {
+        stopifnot(data[!is.na(get(var_bad)) & !is.na(get(var_nice)), .N] == 0)
+      }
+      ## move to the new variable
+      data[!is.na(get(var_bad)), (var_nice) := get(var_bad)]
+      ## remove ald variable
+      data[, (var_bad) := NULL]
+    }
+  }
 
 
+  # stopifnot(sum(c("heart_rate", "HR")    %in% names(data))<2)
+  # stopifnot(sum(c("temperature", "TEMP") %in% names(data))<2)
+
+  ## this will init columns keep bellow
+  names(data)[names(data) == "heart_rate" ] <- "HR"
+  names(data)[names(data) == "temperature"] <- "TEMP"
+
+  ## disambiguate names
+  names(data)[names(data) == "Performance.Condition"] <- "Activity.Performance.Condition"
+
+  ## fix some data types
+  class(data$ALT)                  <- "double"
+  class(data$AvgPulse)             <- "double"
+  class(data$CAD)                  <- "double"
+  class(data$FIELD_135)            <- "double"
+  class(data$FIELD_136)            <- "double"
+  class(data$HR)                   <- "double"
+  class(data$NN20)                 <- "integer"
+  class(data$NN50)                 <- "integer"
+  class(data$OVRD_total_kcalories) <- "double"
+  class(data$PERFORMANCECONDITION) <- "double"
+  class(data$Spike.Time)           <- "double"
+  class(data$TEMP)                 <- "double"
+  class(data$`Ectopic-R`)          <- "double"
+  class(data$hrv_hr)               <- "integer"
 
 
-## Drop data
-data <- remove_empty(data, which = "cols")
-suppressWarnings({
-  data$track_seg_point_id <- NULL
-  data$dgpsid             <- NULL
-  data$Route              <- NULL
-})
 
-## drop whole files with any missing dates
-cat(paste("Drop missing dates:", data[is.na(time), file], "\n"))
-data <- data[!file %in% data[is.na(time), file], ]
 
-## sanity check
-if (any(names(data) == "position_lat")) stop()
-if (any(names(data) == "fill")) stop("This should not happened")
+  ## Drop data
+  data <- remove_empty(data, which = "cols")
+  suppressWarnings({
+    data$track_seg_point_id <- NULL
+    data$dgpsid             <- NULL
+    data$Route              <- NULL
+  })
 
-## handle duplicate column
-if (!is.null(data$DEVICETYPE) | all(data$Device == data$DEVICETYPE)) {
-  data[, DEVICETYPE := NULL]
+  ## drop whole files with any missing dates
+  cat(paste("Drop missing dates:", data[is.na(time), file], "\n"))
+  data <- data[!file %in% data[is.na(time), file], ]
+
+  ## sanity check
+  if (any(names(data) == "position_lat")) stop()
+  if (any(names(data) == "fill")) stop("This should not happened")
+
+  ## handle duplicate column
+  if (!is.null(data$DEVICETYPE) | all(data$Device == data$DEVICETYPE)) {
+    data[, DEVICETYPE := NULL]
+  } else {
+    stop("Fix device type\n")
+  }
+
+  ## check duplicate names
+  # which(names(data) == names(data)[(duplicated(names(data)))])
+  stopifnot(!any(duplicated(names(data))))
+
+
+  data <- remove_empty(data, which = "cols")
+
+  names(data) <- gsub("[\\./]", "_", names(data))
+  names(data) <-  sub("[\\./]", "_", names(data))
+  names(data) <-  sub("[\\./]", "_", names(data))
+
+
+  if (length(grep("\\.", names(data), value = T, ignore.case = T)) > 0) {
+    stop("found a dot")
+  }
+
+
+
+  ## Add data to DB  -------------------------------------------------------------
+  if (nrow(data) < 10) {
+    stop("You don't want to write")
+  }
+
+
+
+  ## duck db doesn't distinguish capital
+  names(data)[names(data) == "Distance"] <- "Distance_1"
+  names(data)[names(data) == "distance"] <- "Distance_2"
+  names(data)[names(data) == "Calories"] <- "Calories_1"
+  names(data)[names(data) == "calories"] <- "Calories_2"
+
+
+  if (any(duplicated(tolower(names(data))))) {
+    stop("Duplicate names!! ")
+  }
+
+
+  ## add some stats by file
+  data[, records   := .N, by = file]
+  data[, locations := sum((!is.na(X)) & (!is.na(Y))), by = file]
+  metanames <- unique(c(metanames, "records", "locations"))
+
+  ##  Split data to adfile##  Split data to add to db
+  filesDT <- data.frame(data[, ..metanames] |> distinct())
+  recorDT <- c("fid", names(data)[!names(data) %in% metanames])
+  recorDT <- data.frame(data[, ..recorDT ])
+
+  ##  Add data in the db table  --------------------------------------------------
+  append_to_table(con = con, table = "files",   filesDT)
+  append_to_table(con = con, table = "records", recorDT)
+
 } else {
-  stop("Fix device type\n")
+  cat("No data gathered\n")
 }
-
-## check duplicate names
-# which(names(data) == names(data)[(duplicated(names(data)))])
-stopifnot(!any(duplicated(names(data))))
-
-
-data <- remove_empty(data, which = "cols")
-
-names(data) <- gsub("[\\./]", "_", names(data))
-names(data) <-  sub("[\\./]", "_", names(data))
-names(data) <-  sub("[\\./]", "_", names(data))
-
-
-if (length(grep("\\.", names(data), value = T, ignore.case = T)) > 0) {
-  stop("found a dot")
-}
-
-
-
-## Add data to DB  -------------------------------------------------------------
-if (nrow(data) < 10) {
-  stop("You don't want to write")
-}
-
-
-
-## duck db doesn't distinguish capital
-names(data)[names(data) == "Distance"] <- "Distance_1"
-names(data)[names(data) == "distance"] <- "Distance_2"
-names(data)[names(data) == "Calories"] <- "Calories_1"
-names(data)[names(data) == "calories"] <- "Calories_2"
-
-
-if (any(duplicated(tolower(names(data))))) {
-  stop("Duplicate names!! ")
-}
-
-
-## add some stats by file
-data[, records   := .N, by = file]
-data[, locations := sum((!is.na(X)) & (!is.na(Y))), by = file]
-metanames <- unique(c(metanames, "records", "locations"))
-
-##  Split data to adfile##  Split data to add to db
-filesDT <- data.frame(data[, ..metanames] |> distinct())
-recorDT <- c("fid", names(data)[!names(data) %in% metanames])
-recorDT <- data.frame(data[, ..recorDT ])
-
-##  Add data in the db table  --------------------------------------------------
-append_to_table(con = con, table = "files",   filesDT)
-append_to_table(con = con, table = "records", recorDT)
-
-
 
 
 new_rows  <- unlist(tbl(con, "records") |> tally() |> collect())

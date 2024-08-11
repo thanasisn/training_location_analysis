@@ -6,7 +6,7 @@
 ## __ Set environment  ---------------------------------------------------------
 Sys.setenv(TZ = "UTC")
 tic <- Sys.time()
-Script.Name <- "~/CODE/training_location_analysis/DB_build/Build_02_multi_parse.R"
+Script.Name <- "~/CODE/training_location_analysis/DB_build/Build_02_multi_parse_duck.R"
 
 if (!interactive()) {
   dir.create("../runtime/", showWarnings = F, recursive = T)
