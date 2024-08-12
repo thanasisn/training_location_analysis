@@ -40,37 +40,39 @@ if (!file.exists(DB_fl)) {
 con   <- dbConnect(duckdb(dbdir = DB_fl))
 
 ## periodically download of google locations
-goolgepoints_fl  <- "~/DATA/Other/GLH/Count_GlL_3857.Rds"
+googlepoints_fl  <- "~/DATA/Other/GLH/GLH_Records.Rds"
 google_threshold <- 4 * 60
 
 ## TODO check if new there are newer data and remove/append
 
-wegot <- tbl(con, "files") |> filter(grepl("Count_GlL_3857.Rds", file)) |> collect() |> data.table()
+gfi <- basename(googlepoints_fl)
+wegot <- tbl(con, "files") |> filter(grepl(gfi, file)) |> collect() |> data.table()
 
-if (wegot$filemtime < floor_date(file.mtime(goolgepoints_fl), unit = "seconds")) {
+if (wegot$filemtime < floor_date(file.mtime(googlepoints_fl), unit = "seconds")) {
   cat("Remove old files and replace")
   # remove old lines
   # add new data as normal
+  stop("TODO remove old data\n")
 } else {
   cat("No new data to import!\n")
   stop("END HERE!")
 }
 
 
-
-# stop("wait for new data")
-# stop("check for new data")
-
-stop("DD")
-
 ## load data from google locations
-DT2 <- readRDS(goolgepoints_fl)
-names(DT2)[names(DT2) == "file"] <- "filename"
-DT2[, F_mtime := NULL]
-DT2[ time < "1971-01-01", time := NA ]
-# DT2[, type := 2]
-DT2 <- DT2[ !is.na(time), ]
+DT2 <- data.table(readRDS(googlepoints_fl))
+names(DT2)[names(DT2) == "Time"] <- "time"
+DT2$geometry <- NULL
 
+wexp <- c("time",               "Accuracy",      "Altitude",
+          "VerticalAccuracy",   "Velocity",      "Heading",
+          "DetectedActivties",  "Main_activity", "Main_activity_probability",
+          "X_LON",              "Y_LAT",         "X",
+          "Y"       )
+DT2 <- DT2[, ..wexp]
+
+
+## get dates for completion
 DT <- tbl(con, "records")  |> select(time) |> collect() |> data.table()
 DT <- DT[!is.na(time)]
 
@@ -90,11 +92,11 @@ fid <- fid + 1
 
 metadt <- data.table(
   fid       = fid,
-  file      = goolgepoints_fl,
-  filemtime = as.POSIXct(floor_date(file.mtime(goolgepoints_fl), unit = "seconds"), tz = "UTC"),
+  file      = googlepoints_fl,
+  filemtime = as.POSIXct(floor_date(file.mtime(googlepoints_fl), unit = "seconds"), tz = "UTC"),
   parsed    = as.POSIXct(floor_date(Sys.time(),                  unit = "seconds"), tz = "UTC"),
   filetype  = "Rds",
-  filehash  = hash_file(goolgepoints_fl),
+  filehash  = hash_file(googlepoints_fl),
   dataset   = "Google location history"
 )
 
@@ -105,6 +107,8 @@ DT2 <- remove_empty(DT2, "cols")
 # print(tbl(con, "records") |> select(SubSport) |> distinct(), n = 100)
 # print(tbl(con, "records") |> select(Name) |> distinct(), n = 100)
 # tbl(con, "records") |> head() |> select(X,Y,X_LON, Y_LAT)
+
+stop("DD")
 
 ## fix columns
 names(DT2)[names(DT2) == "main_activity"] <- "Name"
