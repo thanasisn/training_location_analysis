@@ -32,8 +32,8 @@ info "Parse source files"
 "$HOME/CODE/training_location_analysis/DB_build/Build_02_multi_parse_duck.R"
 
 ## add preprepared data from google
-info "Add data from google history"
-"$HOME/CODE/training_location_analysis/DB_build/Build_03_add_google_duck.R"
+# info "Add data from google history"
+# "$HOME/CODE/training_location_analysis/DB_build/Build_03_add_google_duck.R"
 
 ## DB stats
 info "Output some database statistics"

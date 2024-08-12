@@ -188,7 +188,7 @@ if (nrow(files) == 0) {
 
 ## read some files for testing and to limit memory usage
 files <- unique(rbind(
-  tail(files[order(files$filemtime), ], 50),
+  tail(files[order(files$filemtime), ], 70),
   files[sample.int(nrow(files),  size = 70, replace = T), ],
   NULL
 ))
