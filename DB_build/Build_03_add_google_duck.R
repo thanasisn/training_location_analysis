@@ -125,7 +125,7 @@ DT2$fid                       <- fid
 
 
 
-stop("DD")
+# stop("DD")
 
 ## Import data to db
 if (nrow(DT2) > 0) {
