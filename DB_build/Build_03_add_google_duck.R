@@ -40,7 +40,7 @@ if (!file.exists(DB_fl)) {
 con   <- dbConnect(duckdb(dbdir = DB_fl))
 
 ## periodically download of google locations
-googlepoints_fl  <- "~/DATA/Other/GLH/GLH_Records.Rds"
+googlepoints_fl  <- "/home/athan/DATA/Other/GLH/GLH_Records.Rds"
 google_threshold <- 4 * 60
 
 ## TODO check if new there are newer data and remove/append
@@ -48,15 +48,15 @@ google_threshold <- 4 * 60
 gfi <- basename(googlepoints_fl)
 wegot <- tbl(con, "files") |> filter(grepl(gfi, file)) |> collect() |> data.table()
 
-if (wegot$filemtime < floor_date(file.mtime(googlepoints_fl), unit = "seconds")) {
-  cat("Remove old files and replace")
-  # remove old lines
-  # add new data as normal
-  stop("TODO remove old data\n")
-} else {
-  cat("No new data to import!\n")
-  stop("END HERE!")
-}
+# if (wegot$filemtime < floor_date(file.mtime(googlepoints_fl), unit = "seconds")) {
+#   cat("Remove old files and replace")
+#   # remove old lines
+#   # add new data as normal
+#   stop("TODO remove old data\n")
+# } else {
+#   cat("No new data to import!\n")
+#   stop("END HERE!")
+# }
 
 
 ## load data from google locations
@@ -108,22 +108,22 @@ DT2 <- remove_empty(DT2, "cols")
 # print(tbl(con, "records") |> select(Name) |> distinct(), n = 100)
 # tbl(con, "records") |> head() |> select(X,Y,X_LON, Y_LAT)
 
-stop("DD")
 
 ## fix columns
-names(DT2)[names(DT2) == "main_activity"] <- "Name"
+names(DT2)[names(DT2) == "Main_activity"] <- "Name"
 names(DT2)[names(DT2) == "dist"]          <- "dist_2D"
-names(DT2)[names(DT2) == "Xdeg"]          <- "X_LON"
-names(DT2)[names(DT2) == "Ydeg"]          <- "Y_LAT"
-names(DT2)[names(DT2) == "altitude"]      <- "ALT"
-names(DT2)[names(DT2) == "velocity"]      <- "speed"
+names(DT2)[names(DT2) == "Altitude"]      <- "ALT"
+names(DT2)[names(DT2) == "Velocity"]      <- "speed"
 
-DT2$geometry         <- NULL
-DT2$filename         <- NULL
-DT2$verticalAccuracy <- NULL
-DT2$fid              <- fid
+DT2$geometry                  <- NULL
+DT2$filename                  <- NULL
+DT2$VerticalAccuracy          <- NULL
+DT2$Heading                   <- NULL
+DT2$Main_activity_probability <- NULL
+DT2$DetectedActivties         <- NULL
+DT2$fid                       <- fid
 
-stop()
+
 
 ## Import data to db
 if (nrow(DT2) > 0) {
