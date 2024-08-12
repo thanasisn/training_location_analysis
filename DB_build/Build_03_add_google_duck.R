@@ -8,10 +8,10 @@ Sys.setenv(TZ = "UTC")
 tic <- Sys.time()
 Script.Name <- "~/CODE/training_location_analysis/DB_build/Build_02_multi_parse_duck.R"
 
-if (!interactive()) {
-  dir.create("../runtime/", showWarnings = F, recursive = T)
-  pdf( file = paste0("../runtime/", basename(sub("\\.R$",".pdf", Script.Name))))
-}
+# if (!interactive()) {
+#   dir.create("../runtime/", showWarnings = F, recursive = T)
+#   pdf( file = paste0("../runtime/", basename(sub("\\.R$",".pdf", Script.Name))))
+# }
 
 #+ echo=F, include=T
 suppressPackageStartupMessages({
@@ -48,6 +48,24 @@ google_threshold <- 4 * 60
 gfi <- basename(googlepoints_fl)
 wegot <- tbl(con, "files") |> filter(grepl(gfi, file)) |> collect() |> data.table()
 
+wegot <- tbl(con, "files") |>
+  filter(grepl(gfi, file)) |>
+  arrange(desc(parsed))    |>
+  collect()                |>
+  data.table()
+
+delfiles <- wegot$fid
+delfiles <- delfiles[-1]
+
+## remove rows
+if (length(delfiles) > 0) {
+  for (afid in delfiles) {
+    cat("DELETE file: ", afid, '\n')
+    dbExecute(con, "DELETE FROM 'records' WHERE fid == ?", params = afid)
+    dbExecute(con, "DELETE FROM 'files'   WHERE fid == ?", params = afid)
+  }
+}
+
 # if (wegot$filemtime < floor_date(file.mtime(googlepoints_fl), unit = "seconds")) {
 #   cat("Remove old files and replace")
 #   # remove old lines
@@ -57,7 +75,9 @@ wegot <- tbl(con, "files") |> filter(grepl(gfi, file)) |> collect() |> data.tabl
 #   cat("No new data to import!\n")
 #   stop("END HERE!")
 # }
-
+#
+#
+# stop("ddds")
 
 ## load data from google locations
 DT2 <- data.table(readRDS(googlepoints_fl))
@@ -97,8 +117,11 @@ metadt <- data.table(
   parsed    = as.POSIXct(floor_date(Sys.time(),                  unit = "seconds"), tz = "UTC"),
   filetype  = "Rds",
   filehash  = hash_file(googlepoints_fl),
-  dataset   = "Google location history"
+  dataset   = "Google location history",
+  locations = sum((!is.na(DT2$X)) & (!is.na(DT2$Y))),
+  records   = nrow(DT2)
 )
+
 
 DT2 <- remove_empty(DT2, "cols")
 
@@ -125,7 +148,7 @@ DT2$fid                       <- fid
 
 
 
-# stop("DD")
+stop("DD")
 
 ## Import data to db
 if (nrow(DT2) > 0) {
