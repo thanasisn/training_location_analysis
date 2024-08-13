@@ -94,7 +94,9 @@ if (FORCE_EXPORT | !file.exists(fl_gis_data) | file.mtime(DB_fl) > file.mtime(fl
     ## __ Count by type  -------------------------------------------------------
     CN <- AG |>
       group_by(X, Y, dataset) |>
-      summarise(N = n()) |>
+      summarise(N          = n(),
+                Last_time  = max(time),
+                First_time = min(time)) |>
       collect()
 
     cat(CN |> ungroup() |> distinct(X, Y) |> tally() |> pull(),
