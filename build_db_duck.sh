@@ -21,7 +21,13 @@ trap 'echo $( date +%F_%T ) ${SECONDS}s :: $0 interrupted ::  >&2;' INT TERM
 info "START :: $0 :: $* ::"
 
 
-#### Run main database build sequence
+##  Gather source files  -------------------------------------------------------
+
+info "Move files from phone to gpx repo"
+"$HOME/CODE/training_location_analysis/process/Gather_source_files.R"
+
+
+##  Run main database build sequence  ------------------------------------------
 
 ## update file and data removals
 info "Clean DB from old files"
@@ -32,14 +38,17 @@ info "Parse source files"
 "$HOME/CODE/training_location_analysis/DB_build/Build_02_multi_parse_duck.R"
 
 ## add preprepared data from google
-# info "Add data from google history"
+info "Add data from google history"
 "$HOME/CODE/training_location_analysis/DB_build/Build_03_add_google_duck.R"
 
 ## DB stats
 info "Output some database statistics"
 "$HOME/CODE/training_location_analysis/DB_build/Stats_01_duck.R"
 
-## Export data for other uses
+
+
+##  Export data for other uses  ------------------------------------------------
+
 info "Export grid data"
 "/home/athan/CODE/training_location_analysis/DB_build/Export_01_grid_duck.R"
 

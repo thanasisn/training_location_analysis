@@ -56,8 +56,16 @@ ignorefid <- tbl(con, "files") |>
 stopifnot(length(ignorefid) == 0)
 
 
-## no need for all data for griding
+# zerofid <- tbl(con, "records") |> filter(abs(X) < 0.0001 & abs(Y) < 0.0001) |> select(fid) |> distinct() |> pull()
+#
+# tbl(con, "files") |> filter(fid %in% zerofid) |>
+#   filter(filetype != "json") |>
+#   select(-filehash, -filemtime)
+
+
+## no need for all data for grid
 DT <- tbl(con, "records") |>
+  filter(abs(X) < 0.0001 & abs(Y) < 0.0001) |>
   select(X, Y, time, Sport, fid) |>
   filter(!is.na(X) & !is.na(Y))
 
