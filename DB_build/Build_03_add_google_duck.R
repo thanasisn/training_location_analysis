@@ -57,7 +57,7 @@ wegot <- tbl(con, "files") |>
 delfiles <- wegot$fid
 delfiles <- delfiles[-1]
 
-## remove rows
+## remove old imports
 if (length(delfiles) > 0) {
   for (afid in delfiles) {
     cat("DELETE file: ", afid, '\n')
@@ -66,18 +66,16 @@ if (length(delfiles) > 0) {
   }
 }
 
-# if (wegot$filemtime < floor_date(file.mtime(googlepoints_fl), unit = "seconds")) {
-#   cat("Remove old files and replace")
-#   # remove old lines
-#   # add new data as normal
-#   stop("TODO remove old data\n")
-# } else {
-#   cat("No new data to import!\n")
-#   stop("END HERE!")
-# }
-#
-#
-# stop("ddds")
+if (wegot$filemtime[1] < floor_date(file.mtime(googlepoints_fl), unit = "seconds")) {
+  cat("Remove old files and replace")
+  # remove old lines
+  # add new data as normal
+  stop("TODO remove old data\n")
+} else {
+  cat("No new data to import!\n")
+  stop("END HERE!")
+}
+
 
 ## load data from google locations
 DT2 <- data.table(readRDS(googlepoints_fl))
@@ -147,8 +145,9 @@ DT2$DetectedActivties         <- NULL
 DT2$fid                       <- fid
 
 
+cat(nrow(DT2), "records to ad\n")
 
-stop("DD")
+stop("DRY RUN!!")
 
 ## Import data to db
 if (nrow(DT2) > 0) {

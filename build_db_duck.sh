@@ -33,15 +33,13 @@ info "Parse source files"
 
 ## add preprepared data from google
 # info "Add data from google history"
-# "$HOME/CODE/training_location_analysis/DB_build/Build_03_add_google_duck.R"
+"$HOME/CODE/training_location_analysis/DB_build/Build_03_add_google_duck.R"
 
 ## DB stats
 info "Output some database statistics"
 "$HOME/CODE/training_location_analysis/DB_build/Stats_01_duck.R"
 
-
-#### Export data for other uses
-
+## Export data for other uses
 info "Export grid data"
 "/home/athan/CODE/training_location_analysis/DB_build/Export_01_grid_duck.R"
 
