@@ -62,7 +62,7 @@ for (af in dups$file) {
 ## remove rows
 if (nrow(delfiles) > 0) {
   for (afid in 1:nrow(delfiles)) {
-    cat("DELETE duplicate file: ", unlist(delfiles[afid]), '\n')
+    cat("REMOVE duplicate file from DB: ", unlist(delfiles[afid]), '\n')
     dbExecute(con, "DELETE FROM 'records' WHERE fid == ?", params = delfiles[afid, fid])
     dbExecute(con, "DELETE FROM 'files'   WHERE fid == ?", params = delfiles[afid, fid])
   }

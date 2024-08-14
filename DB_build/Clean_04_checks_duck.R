@@ -52,17 +52,26 @@ test <- left_join(
   by = "fid"
 )
 
-View(
+records <- left_join(
+  tbl(con, "files")   |>
+    select(-filehash, -parsed),
+  tbl(con, "records") |>
+    mutate(date = as.Date(time)) |>
+    distinct(),
+  by = "fid"
+)
+
+# View(
 test |> filter(SubSport == "ultra" &
                Sport    == "running" &
                Name     == "Race") |> collect()
-)
+# )
 
-View(
+# View(
   test |> filter(SubSport == "ultra" &
                  Sport    == "running" &
                  Name     == "Raceroc") |> collect()
-)
+# )
 
 
 # |     Name     |     SubSport      |       Sport       |  n   |
@@ -90,6 +99,22 @@ View(
 # |   Hill Run   |       ultra       |      running      | 305  |
 # |      NA      |        NA         |        Run        | 1646 |
 # |      NA      |        NA         |        NA         | 5252 |
+
+records |>
+  summarise(
+    across(
+      .cols = everything(),
+      .fns = list(
+        Distinct = ~ n_distinct(.x),
+        n        = ~ n()
+        # ,
+        # n_lt_p   = ~ sum(case_match(.x < p_,
+        #                             TRUE ~ 1L,
+        #                             FALSE ~0L), na.rm = TRUE)
+        )
+    )
+  ) |> collect()
+
 
 
 
