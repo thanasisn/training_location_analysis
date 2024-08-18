@@ -1,22 +1,13 @@
 #!/usr/bin/env Rscript
 # /* Copyright (C) 2023 Athanasios Natsis <natsisphysicist@gmail.com> */
 
-
 rm(list = (ls()[ls() != ""]))
 Script.Name <- "DHI_GHI_01_Input_longterm.R"
 Sys.setenv(TZ = "UTC")
-
-# if (!interactive()) {
-#     pdf( file = paste0("./runtime/",  basename(sub("\\.R$",".pdf", Script.Name))))
-#     sink(file = paste0("./runtime/",  basename(sub("\\.R$",".out", Script.Name))), split = TRUE)
-# }
-
-
-
+tic <- Sys.time()
 
 ## __  Set environment ---------------------------------------------------------
 require(data.table, quietly = TRUE, warn.conflicts = FALSE)
-
 
 
 ##  Move from phone to repo  ---------------------------------------------------
