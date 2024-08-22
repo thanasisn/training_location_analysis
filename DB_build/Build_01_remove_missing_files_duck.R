@@ -136,24 +136,25 @@ garfiles[, key := as.numeric(key)]
 
 setorder(garfiles, key)
 
-## ignore n most recent
-garfiles <- garfiles[1:(nrow(garfiles) - GAR_RETAIN), ]
+if (nrow(garfiles) > 0) {
 
-## find files to remove by key
-filesrm <- garfiles[key %in% ingolden$key, file]
+  ## ignore n most recent
+  garfiles <- garfiles[1:(nrow(garfiles) - GAR_RETAIN), ]
 
-if (length(filesrm) > 0) {
-  ## make sure we see the right folder
-  filesrm <- filesrm[grepl("Garmin_Exports", filesrm)]
-  cat("Will remove", length(filesrm), "files", humanReadable(sum(file.size(filesrm))), "\n")
+  ## find files to remove by key
+  filesrm <- garfiles[key %in% ingolden$key, file]
 
-  ## DELETE SOURCE FILES !!!
-  file.remove(filesrm)
-} else {
-  cat("No files to remove from", FIT_DIR, "\n")
+  if (length(filesrm) > 0) {
+    ## make sure we see the right folder
+    filesrm <- filesrm[grepl("Garmin_Exports", filesrm)]
+    cat("Will remove", length(filesrm), "files", humanReadable(sum(file.size(filesrm))), "\n")
+
+    ## DELETE SOURCE FILES !!!
+    file.remove(filesrm)
+  } else {
+    cat("No files to remove from", FIT_DIR, "\n")
+  }
 }
-
-
 
 
 
