@@ -65,7 +65,7 @@ stopifnot(length(ignorefid) == 0)
 
 ## no need for all data for grid
 DT <- tbl(con, "records") |>
-  filter(abs(X) < 0.0001 & abs(Y) < 0.0001) |>
+  filter(abs(X) > 0.0001 & abs(Y) > 0.0001) |>
   select(X, Y, time, Sport, fid) |>
   filter(!is.na(X) & !is.na(Y))
 
@@ -132,7 +132,10 @@ if (FORCE_EXPORT | !file.exists(fl_gis_data) | file.mtime(DB_fl) > file.mtime(fl
     st_write(OTH, fl_gis_data, layer = sprintf("Other %8d m", res), append = FALSE, delete_layer = TRUE)
     st_write(TRN, fl_gis_data, layer = sprintf("Train %8d m", res), append = FALSE, delete_layer = TRUE)
   }
+} else {
+  cat("No need to export\n")
 }
+
 
 
 ##  Export temporal grid  ------------------------------------------------------
@@ -182,6 +185,8 @@ if (FORCE_EXPORT | !file.exists(fl_gis_data_time) | file.mtime(DB_fl) > file.mti
     st_write(OTH, fl_gis_data_time, layer = sprintf("Other %8d m", res), append = FALSE, delete_layer = TRUE)
     st_write(TRN, fl_gis_data_time, layer = sprintf("Train %8d m", res), append = FALSE, delete_layer = TRUE)
   }
+} else {
+  cat("No need to export\n")
 }
 
 # ##
