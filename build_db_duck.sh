@@ -50,7 +50,7 @@ info "Output some database statistics"
 ##  Export data for other uses  ------------------------------------------------
 
 info "Export grid data"
-"/home/athan/CODE/training_location_analysis/DB_build/Export_01_grid_duck.R"
+"$HOME/CODE/training_location_analysis/DB_build/Export_01_grid_duck.R"
 
 
 ##  END  ##
