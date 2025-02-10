@@ -42,7 +42,7 @@ csv_fls[, target := paste0(gpx_dir,"/",year,"/csv/", basename(file))]
 
 for (al in 1:nrow(csv_fls)) {
   ll <- csv_fls[al,]
-  dir.create(dirname(ll$target), showWarnings = FALSE)
+  dir.create(dirname(ll$target), showWarnings = FALSE, recursive = TRUE)
   file.copy(ll$file, ll$target, overwrite = FALSE)
   if (file.exists(ll$target) &
       digest::digest(ll$file, file = T, serialize = T) == digest::digest(ll$target, file = T, serialize = T) ) {
@@ -59,7 +59,7 @@ gpx_fls[,
 
 for (al in 1:nrow(gpx_fls)) {
   ll <- gpx_fls[al, ]
-  dir.create(dirname(ll$target), showWarnings = FALSE)
+  dir.create(dirname(ll$target), showWarnings = FALSE, recursive = TRUE)
   file.copy(ll$file, ll$target, overwrite = FALSE)
   if (file.exists(ll$target) &
       digest::digest(ll$file, file = T, serialize = T) == digest::digest(ll$target, file = T, serialize = T) ) {
