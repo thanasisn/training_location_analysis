@@ -37,8 +37,6 @@ if (!file.exists(DB_fl)) {
 }
 con   <- dbConnect(duckdb(dbdir = DB_fl))
 
-dbListTables(con,)
-
 tbl(con, "files")   |> glimpse()
 tbl(con, "records") |> glimpse()
 
@@ -72,13 +70,13 @@ for (al in 1:nrow(bad)) {
   cat(badfiles$file, "\n")
   pander::pander(badpoints)
 
-  ## edit bad points
-  if (badfiles$filetype == "gpx") {
-    # system(paste("gvim ", badfiles$file))
-    # format(badpoints$time[1], "%FT%T")
-    system(paste0("gvim -c \"silent! /", format(badpoints$time[1], "%FT%T"), "\" ", badfiles$file),
-           wait = TRUE)
-  }
+  # ## edit bad points
+  # if (badfiles$filetype == "gpx") {
+  #   # system(paste("gvim ", badfiles$file))
+  #   # format(badpoints$time[1], "%FT%T")
+  #   system(paste0("gvim -c \"silent! /", format(badpoints$time[1], "%FT%T"), "\" ", badfiles$file),
+  #          wait = TRUE)
+  # }
 
   ## TODO add bad points to exclusion list
 
