@@ -23,13 +23,20 @@ suppressPackageStartupMessages({
   library(lubridate,  quietly = TRUE, warn.conflicts = FALSE)
   library(stringdist, quietly = TRUE, warn.conflicts = FALSE)
   library(rlang,      quietly = TRUE, warn.conflicts = FALSE)
+  library(pander,     quietly = TRUE, warn.conflicts = FALSE)
   library(gdata,      quietly = TRUE, warn.conflicts = FALSE)
   library(duckdb,     quietly = TRUE, warn.conflicts = FALSE)
   library(sf,         quietly = TRUE, warn.conflicts = FALSE)
   library(ggplot2,    quietly = TRUE, warn.conflicts = FALSE)
 })
 
+
+panderOptions("table.alignment.default", "right")
+panderOptions("table.split.table",        120   )
+
 source("./DEFINITIONS.R")
+
+ignore_fl <- "~/DATA_RAW/Other/Ignore_gpx_points.Rds"
 
 ##  Open dataset  --------------------------------------------------------------
 if (!file.exists(DB_fl)) {
@@ -46,6 +53,9 @@ points <- tbl(con, "records") |>
 
 files <- tbl(con, "files")
 
+
+files |> select(dataset) |> distinct()
+
 # bad <- cbind(
 #   st_read("~/GISdata/badplacesl.gpkg") |> st_coordinates(),
 #   st_read("~/GISdata/badplacesl.gpkg")
@@ -53,10 +63,20 @@ files <- tbl(con, "files")
 
 bad <- readRDS("~/CODE/training_location_analysis/runtime/Points_from_QGIS.Rds")
 
+bad <- cbind(
+  bad |> st_coordinates(),
+  bad
+)
+
+
+if (file.exists(ignore_fl)) {
+  cat("Load and remove from input")
+}
+
+
+gatherbad <- data.table()
 for (al in 1:nrow(bad)) {
   ll <- bad[al,]
-  ll$X + ll$Resolution/2
-  ll$X - ll$Resolution/2
 
   ## find the source of bad points
   badpoints <- points |>
@@ -65,10 +85,28 @@ for (al in 1:nrow(bad)) {
     collect()
   badfiles <- files |> filter(fid %in% badpoints$fid) |> collect()
 
+  ## ignore non existing data
+  if (nrow(badfiles) == 0) { next() }
 
   ## display info on bad points
   cat(badfiles$file, "\n")
   pander::pander(badpoints)
+
+  ignorepoints <- badpoints |> select(X, Y, time, fid)
+
+  # ## open simple gpx files for editing
+  # if (nrow(badfiles) == 1 & badfiles$dataset == "GPX repo") {
+  #   command <- paste0("gvim -c \"silent! /", format(badpoints$time[1], "%FT%T"), "\" ", badfiles$file, "; viking ", badfiles$file )
+  #   system(command)
+  # }
+
+  if (badfiles$dataset == "Google location history") {
+    ## ADD points to ignore list
+    gatherbad <- rbind(gatherbad,
+                       ignorepoints)
+  }
+
+
 
   # ## edit bad points
   # if (badfiles$filetype == "gpx") {
