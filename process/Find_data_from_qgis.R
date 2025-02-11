@@ -48,35 +48,12 @@ points <- tbl(con, "records") |>
 
 files <- tbl(con, "files")
 
-bad <- cbind(
-  st_read("~/GISdata/badplacesl.gpkg") |> st_coordinates(),
-  st_read("~/GISdata/badplacesl.gpkg")
-) |> data.table()
+# bad <- cbind(
+#   st_read("~/GISdata/badplacesl.gpkg") |> st_coordinates(),
+#   st_read("~/GISdata/badplacesl.gpkg")
+# ) |> data.table()
 
-
-left_join(
-  points |>
-    filter(kph_2D > 100),
-  files |>
-    select(fid, filetype, file),
-  by = "fid"
-) |>
-  filter(filetype == "gpx") |>
-  ggplot() +
-  geom_histogram(aes(kph_2D))
-
-
-points |>
-  filter(kph_2D > 100) |>
-  ggplot() +
-  geom_histogram(aes(kph_2D))
-
-points |>
-  filter(dist_2D > 1000) |>
-  ggplot() +
-  geom_histogram(aes(dist_2D))
-
-
+bad <- readRDS("~/CODE/training_location_analysis/runtime/Points_from_QGIS.Rds")
 
 for (al in 1:nrow(bad)) {
   ll <- bad[al,]
@@ -106,6 +83,36 @@ for (al in 1:nrow(bad)) {
   ## TODO add bad points to exclusion list
 
 }
+
+
+
+
+
+stop()
+left_join(
+  points |>
+    filter(kph_2D > 100),
+  files |>
+    select(fid, filetype, file),
+  by = "fid"
+) |>
+  filter(filetype == "gpx") |>
+  ggplot() +
+  geom_histogram(aes(kph_2D))
+
+
+points |>
+  filter(kph_2D > 100) |>
+  ggplot() +
+  geom_histogram(aes(kph_2D))
+
+points |>
+  filter(dist_2D > 1000) |>
+  ggplot() +
+  geom_histogram(aes(dist_2D))
+
+
+
 
 points |> filter(!is.null(kph_2D))
 
