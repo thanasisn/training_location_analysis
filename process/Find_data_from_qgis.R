@@ -43,7 +43,7 @@ tbl(con, "files")   |> glimpse()
 tbl(con, "records") |> glimpse()
 
 points <- tbl(con, "records") |>
-  select(fid, X, Y, X_LON, Y_LAT, time, kph_2D, dist_2D)
+  select(fid, X, Y, X_LON, Y_LAT, time, kph_2D, dist_2D, ALT)
 # points |> tally()
 
 files <- tbl(con, "files")
@@ -52,6 +52,18 @@ bad <- cbind(
   st_read("~/GISdata/badplacesl.gpkg") |> st_coordinates(),
   st_read("~/GISdata/badplacesl.gpkg")
 ) |> data.table()
+
+
+left_join(
+  points |>
+    filter(kph_2D > 100),
+  files |>
+    select(fid, filetype, file),
+  by = "fid"
+) |>
+  filter(filetype == "gpx") |>
+  ggplot() +
+  geom_histogram(aes(kph_2D))
 
 
 points |>
@@ -95,8 +107,59 @@ for (al in 1:nrow(bad)) {
 
 }
 
-stop()
+points |> filter(!is.null(kph_2D))
 
+left_join(
+  points |>
+    filter(!is.null(ALT)) |>
+    filter(!is.na(ALT))   |>
+    filter(ALT > 5000),
+  files |>
+    select(fid, filetype, file),
+  by = "fid"
+) |>
+  filter(filetype == "gpx") |>
+  group_by(file) |>
+  summarise(N = n(), alt = max(ALT, na.rm = T)) |>
+  arrange(alt)
+
+
+left_join(
+  points |>
+    filter(!is.null(dist_2D)) |>
+    filter(!is.na(dist_2D))   |>
+    filter(dist_2D > 6000),
+  files |>
+    select(fid, filetype, file),
+  by = "fid"
+) |>
+  filter(filetype == "gpx") |>
+  group_by(file) |>
+  summarise(N = n(), dist = max(dist_2D,na.rm = T)) |>
+  arrange(-dist)
+
+
+left_join(
+  points |>
+    filter(!is.null(kph_2D)) |>
+    filter(!is.na(kph_2D))   |>
+    filter(kph_2D > 150),
+  files |>
+    select(fid, filetype, file),
+  by = "fid"
+) |>
+  filter(filetype == "gpx") |>
+  group_by(file) |>
+  summarise(N = n()) |>
+  arrange(-N)
+
+
+points |>
+  filter(!is.null(kph_2D)) |>
+  filter(!is.na(kph_2D))   |>
+  filter(kph_2D > 100) |>
+  mutate(across(kph_2D, ~ replace(., is.nan(.), NA)))
+stop()
 
 
 # dbDisconnect(con)
