@@ -9,7 +9,7 @@
 closeAllConnections()
 Sys.setenv(TZ = "UTC")
 tic <- Sys.time()
-Script.Name <- "~/CODE/training_location_analysis/DB_build/Clean_03_vars_checks.R"
+Script.Name <- "~/CODE/training_location_analysis/process/Find_data_for_points.R"
 
 if (!interactive()) {
   dir.create("../runtime/", showWarnings = F, recursive = T)
