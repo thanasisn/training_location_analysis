@@ -42,25 +42,21 @@ ignore_fl <- "~/DATA_RAW/Other/Ignore_gpx_points.Rds"
 if (!file.exists(DB_fl)) {
   stop("NO DB!\n")
 }
-con   <- dbConnect(duckdb(dbdir = DB_fl))
+con   <- dbConnect(duckdb(dbdir = DB_fl, read_only = TRUE))
 
 tbl(con, "files")   |> glimpse()
 tbl(con, "records") |> glimpse()
 
 points <- tbl(con, "records") |>
   select(fid, X, Y, X_LON, Y_LAT, time, kph_2D, dist_2D, ALT)
-# points |> tally()
+
 
 files <- tbl(con, "files")
 
 
 files |> select(dataset) |> distinct()
 
-# bad <- cbind(
-#   st_read("~/GISdata/badplacesl.gpkg") |> st_coordinates(),
-#   st_read("~/GISdata/badplacesl.gpkg")
-# ) |> data.table()
-
+## points exported manula from qgis as bad
 bad <- readRDS("~/CODE/training_location_analysis/runtime/Points_from_QGIS.Rds")
 
 bad <- cbind(
@@ -68,9 +64,11 @@ bad <- cbind(
   bad
 )
 
-
+## Ignore bad points
 if (file.exists(ignore_fl)) {
-  cat("Load and remove from input")
+  DATA   <- readRDS(ignore_fl)
+  points <- anti_join(points, DATA, copy = T)
+  ## TODO remove points from QGIS data creation
 }
 
 
@@ -100,13 +98,14 @@ for (al in 1:nrow(bad)) {
   #   system(command)
   # }
 
-  if (badfiles$dataset == "Google location history") {
+  if (nrow(badfiles) == 1 & badfiles$dataset == "Google location history") {
     ## ADD points to ignore list
     gatherbad <- rbind(gatherbad,
                        ignorepoints)
   }
 
 
+  badfiles
 
   # ## edit bad points
   # if (badfiles$filetype == "gpx") {
@@ -116,10 +115,17 @@ for (al in 1:nrow(bad)) {
   #          wait = TRUE)
   # }
 
-  ## TODO add bad points to exclusion list
 
 }
 
+if (file.exists(ignore_fl)) {
+  DATA <- unique(rbind(
+    readRDS(ignore_fl),
+    gatherbad))
+  saveRDS(DATA, ignore_fl)
+} else {
+  saveRDS(gatherbad, ignore_fl)
+}
 
 
 

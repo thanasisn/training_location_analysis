@@ -35,14 +35,14 @@ source("/home/athan/CODE/training_location_analysis/FUNCTIONS.R")
 FORCE_EXPORT <- TRUE
 FORCE_EXPORT <- FALSE
 
-
+ignore_fl <- "~/DATA_RAW/Other/Ignore_gpx_points.Rds"
 
 ##  Open dataset  --------------------------------------------------------------
 if (!file.exists(DB_fl)) {
   stop("NO DB!\n")
 }
-con   <- dbConnect(duckdb(dbdir = DB_fl, read_only = TRUE))
-
+con <- dbConnect(duckdb(dbdir = DB_fl, read_only = TRUE))
+DT  <- tbl(con, "records")
 
 
 ##  Bin points in grids  -------------------------------------------------------
@@ -64,10 +64,17 @@ stopifnot(length(ignorefid) == 0)
 
 
 ## no need for all data for grid
-DT <- tbl(con, "records") |>
+DT <- DT |>
   filter(abs(X) > 0.0001 & abs(Y) > 0.0001) |>
   select(X, Y, time, Sport, fid) |>
   filter(!is.na(X) & !is.na(Y))
+
+## Ignore bad points from grid export
+if (file.exists(ignore_fl)) {
+  DATA <- readRDS(ignore_fl)
+  DT   <- anti_join(DT, DATA, copy = T)
+}
+
 
 ## keep only existing coordinates
 cat(paste(DT |> tally() |> pull(), "points to bin\n" ))
