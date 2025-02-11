@@ -81,7 +81,7 @@ for (al in 1:nrow(bad)) {
     filter(X < ll$X + ll$Resolution/2 & X > ll$X - ll$Resolution/2) |>
     filter(Y < ll$Y + ll$Resolution/2 & Y > ll$Y - ll$Resolution/2) |>
     collect()
-  badfiles <- files |> filter(fid %in% badpoints$fid) |> collect()
+  badfiles <- files |> filter(fid %in% badpoints$fid) |> collect() |> data.table()
 
   ## ignore non existing data
   if (nrow(badfiles) == 0) { next() }
@@ -98,12 +98,19 @@ for (al in 1:nrow(bad)) {
   #   system(command)
   # }
 
-  if (nrow(badfiles) == 1 & badfiles$dataset == "Google location history") {
+  if (any(badfiles$dataset == "Google location history")) {
     ## ADD points to ignore list
     gatherbad <- rbind(gatherbad,
                        ignorepoints)
   }
 
+  if (any(badfiles$dataset == "GoldenCheetah imports")) {
+    afile <- badfiles[filetype == "gpx"]
+    command <- paste0("gvim -c \"silent! /", format(badpoints$time[1], "%FT%T"), "\" ", afile$file, "; viking ", afile$file )
+    # system(command)
+
+    stop("ee")
+  }
 
   badfiles
 
