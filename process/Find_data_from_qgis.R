@@ -120,10 +120,11 @@ for (al in 1:nrow(bad)) {
 
 
   ## edit bad points in
-  if (nrow(badfiles) == 1 & badfiles$dataset == "GPX repo") {
+  if (all(badfiles$dataset == "GPX repo")) {
     ignorepoints <- badpoints |>
       filter(fid %in% badfiles$fid) |>
       select(X, Y, time, fid)
+
     system(paste0("gvim -c \"silent! /", format(ignorepoints$time[1], "%FT%T"), "\" ", badfiles$file, "; viking ", badfiles$file ),
            wait = TRUE)
   }
@@ -144,6 +145,31 @@ if (file.exists(ignore_fl)) {
 
 stop()
 ##  Check data by characteristics  ---------------------------------------------
+
+## __ Too high  ----------------------------------------------------------------
+toohigh <- left_join(
+  points |>
+    filter(!is.null(ALT)) |>
+    filter(!is.na(ALT))   |>
+    filter(ALT > 5000),
+  files |>
+    select(fid, filetype, file),
+  by = "fid"
+) |>
+  filter(filetype == "gpx") |>
+  group_by(file) |>
+  summarise(N = n(), alt = max(ALT, na.rm = T)) |>
+  arrange(alt) |> collect() |> data.table()
+
+for (afile in toohigh$file) {
+  cat("Edit file:", afile, "\n\n")
+    command <- paste0("gvim ",  afile, "; viking ", afile)
+    system(command)
+}
+
+
+
+
 
 left_join(
   points |>
@@ -172,19 +198,6 @@ points |>
 
 points |> filter(!is.null(kph_2D))
 
-left_join(
-  points |>
-    filter(!is.null(ALT)) |>
-    filter(!is.na(ALT))   |>
-    filter(ALT > 5000),
-  files |>
-    select(fid, filetype, file),
-  by = "fid"
-) |>
-  filter(filetype == "gpx") |>
-  group_by(file) |>
-  summarise(N = n(), alt = max(ALT, na.rm = T)) |>
-  arrange(alt)
 
 
 left_join(
