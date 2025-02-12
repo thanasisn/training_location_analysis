@@ -170,17 +170,31 @@ for (afile in toohigh$file) {
 
 
 
-
-left_join(
+## get data to a data table to deal with NAN
+toofast <- left_join(
   points |>
-    filter(kph_2D > 100),
+    filter(kph_2D > 150),
   files |>
     select(fid, filetype, file),
   by = "fid"
 ) |>
   filter(filetype == "gpx") |>
-  ggplot() +
-  geom_histogram(aes(kph_2D))
+  collect() |>
+  data.table()
+
+toofast <- toofast[!is.na(kph_2D)]
+
+toofast <- toofast[, .(kph_2D = max(kph_2D)), by = file]
+setorder(toofast, -kph_2D)
+
+
+toofast[is.infinite(kph_2D)][1:3]
+
+toofast[!is.infinite(kph_2D)][1:3]
+
+
+
+
 
 
 points |>
