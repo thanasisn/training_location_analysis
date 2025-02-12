@@ -145,7 +145,7 @@ if (file.exists(ignore_fl)) {
 
 stop()
 ##  Check data by characteristics  ---------------------------------------------
-
+menu(c("Yes", "No"), title="Do you want this?")
 ## __ Too high  ----------------------------------------------------------------
 toohigh <- left_join(
   points |>
