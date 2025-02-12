@@ -151,7 +151,7 @@ toohigh <- left_join(
   points |>
     filter(!is.null(ALT)) |>
     filter(!is.na(ALT))   |>
-    filter(ALT > 5000),
+    filter(ALT > 5000 | ALT < -500),
   files |>
     select(fid, filetype, file),
   by = "fid"
@@ -163,7 +163,7 @@ toohigh <- left_join(
 
 for (afile in toohigh$file) {
   cat("Edit file:", afile, "\n\n")
-    command <- paste0("gvim ",  afile, "; viking ", afile)
+    command <- paste0("gvim ", afile, "; viking ", afile)
     system(command)
 }
 
@@ -190,7 +190,18 @@ setorder(toofast, -kph_2D)
 
 toofast[is.infinite(kph_2D)][1:3]
 
-toofast[!is.infinite(kph_2D)][1:3]
+for (afile in toofast[is.infinite(kph_2D), file][1:3]) {
+  cat("Edit file:", afile, "\n\n")
+  command <- paste0("gvim ", afile, "; viking ", afile)
+  system(command)
+}
+
+for (afile in toofast[!is.infinite(kph_2D), file][1:3]) {
+  cat("Edit file:", afile, "\n\n")
+  command <- paste0("gvim ", afile, "; viking ", afile)
+  system(command)
+}
+
 
 
 
