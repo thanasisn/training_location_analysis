@@ -56,7 +56,7 @@ files <- tbl(con, "files")
 
 files |> select(dataset) |> distinct()
 
-## points exported manula from qgis as bad
+## Points exported manual from qgis as bad  ------------------------------------
 bad <- readRDS("~/CODE/training_location_analysis/runtime/Points_from_QGIS.Rds")
 
 bad <- cbind(
@@ -92,38 +92,41 @@ for (al in 1:nrow(bad)) {
 
   ignorepoints <- badpoints |> select(X, Y, time, fid)
 
-  # ## open simple gpx files for editing
-  # if (nrow(badfiles) == 1 & badfiles$dataset == "GPX repo") {
-  #   command <- paste0("gvim -c \"silent! /", format(badpoints$time[1], "%FT%T"), "\" ", badfiles$file, "; viking ", badfiles$file )
-  #   system(command)
-  # }
 
   if (any(badfiles$dataset == "Google location history")) {
+    ignorepoints <- badpoints |>
+      filter(fid %in% badfiles$fid) |>
+      select(X, Y, time, fid)
 
-    stop("select points only for this file")
     ## ADD points to ignore list
     gatherbad <- rbind(gatherbad,
                        ignorepoints)
   }
 
-  if (any(badfiles$dataset == "GoldenCheetah imports")) {
-    afile <- badfiles[filetype == "gpx"]
-    command <- paste0("gvim -c \"silent! /", format(badpoints$time[1], "%FT%T"), "\" ", afile$file, "; viking ", afile$file )
-    # system(command)
 
-    stop("ee")
+  if (any(badfiles$dataset == "GoldenCheetah imports")) {
+    cat("Edit files in GoldenCheetah\n\n")
+
+    afile <- badfiles[badfiles$filetype == "gpx"]
+
+    ignorepoints <- badpoints |>
+      filter(fid %in% badfiles$fid) |>
+      select(X, Y, time, fid)
+
+    afile <- badfiles[filetype == "gpx"]
+    command <- paste0("gvim -c \"silent! /", format(ignorepoints$time[1], "%FT%T"), "\" ", afile$file, "; viking ", afile$file )
+    system(command)
   }
 
-  badfiles
 
-  # ## edit bad points
-  # if (badfiles$filetype == "gpx") {
-  #   # system(paste("gvim ", badfiles$file))
-  #   # format(badpoints$time[1], "%FT%T")
-  #   system(paste0("gvim -c \"silent! /", format(badpoints$time[1], "%FT%T"), "\" ", badfiles$file),
-  #          wait = TRUE)
-  # }
-
+  ## edit bad points in
+  if (nrow(badfiles) == 1 & badfiles$dataset == "GPX repo") {
+    ignorepoints <- badpoints |>
+      filter(fid %in% badfiles$fid) |>
+      select(X, Y, time, fid)
+    system(paste0("gvim -c \"silent! /", format(ignorepoints$time[1], "%FT%T"), "\" ", badfiles$file, "; viking ", badfiles$file ),
+           wait = TRUE)
+  }
 
 }
 
@@ -140,6 +143,8 @@ if (file.exists(ignore_fl)) {
 
 
 stop()
+##  Check data by characteristics  ---------------------------------------------
+
 left_join(
   points |>
     filter(kph_2D > 100),
