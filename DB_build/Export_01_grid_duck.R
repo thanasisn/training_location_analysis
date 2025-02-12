@@ -90,7 +90,7 @@ DT <- right_join(
 
 ##  Export static grid  --------------------------------------------------------
 if (FORCE_EXPORT | !file.exists(fl_gis_data) | file.mtime(DB_fl) > file.mtime(fl_gis_data)) {
-  for (res in unique(c(5, rsls))) {
+  for (res in unique(c(rsls))) {
     ##  Aggregate spacetime  ---------------------------------------------------
     # ff <- paste(rsltemp / 60, "minutes")
     ##  Create a relative time resolution in seconds

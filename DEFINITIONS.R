@@ -79,8 +79,8 @@ SPEED_RES_kmh <- 3
 
 ## Spatial aggregation static
 rsls <- unique(c(
-      5,
-     15,
+     10,
+     20,
      50,
     100,
     500,
@@ -94,7 +94,7 @@ rsls <- unique(c(
 
 ## Spatial aggregation temporal
 rsls_T <- unique(c(
-     25,
+     30,
      50,
     100,
     500,
