@@ -99,6 +99,8 @@ for (al in 1:nrow(bad)) {
   # }
 
   if (any(badfiles$dataset == "Google location history")) {
+
+    stop("select points only for this file")
     ## ADD points to ignore list
     gatherbad <- rbind(gatherbad,
                        ignorepoints)
