@@ -95,9 +95,10 @@ for (afile in toohigh$file) {
 
 
 ## get data to a data table to deal with NAN
+max_speed <- 150
 toofast <- left_join(
   points |>
-    filter(kph_2D > 150),
+    filter(kph_2D > max_speed),
   files |>
     select(fid, filetype, file),
   by = "fid"
@@ -115,15 +116,27 @@ setorder(toofast, -kph_2D)
 toofast[is.infinite(kph_2D)][1:3]
 toofast[!is.infinite(kph_2D)][1:30]
 
+
+
 for (afile in toofast[is.infinite(kph_2D), file][1:3]) {
   cat("Edit file:", afile, "\n\n")
   command <- paste0("gvim ", afile, "; viking ", afile)
   system(command)
 }
 
-for (afile in toofast[!is.infinite(kph_2D), file][1:10]) {
-  cat("Edit file:", afile, "\n\n")
-  command <- paste0("gvim ", afile, "; viking ", afile)
+todo <- sample(toofast[, which(!is.infinite(kph_2D))], 30)
+for (al in todo) {
+  ll <- toofast[al, ]
+  cat("Edit file:", ll$file, "\n\n")
+
+  afid <- files |> filter(file == ll$file) |> select(fid) |> pull()
+  daypoints <- points |>
+    filter(fid == afid) |>
+    filter(kph_2D > max_speed) |>
+    collect() |> data.table()
+
+  stop()
+  command <- paste0("gvim ", ll$file, "; viking ", ll$file)
   system(command)
 }
 
