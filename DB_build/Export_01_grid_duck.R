@@ -91,7 +91,7 @@ DT <- right_join(
 ##  Export static grid  --------------------------------------------------------
 if (FORCE_EXPORT | !file.exists(fl_gis_data) | file.mtime(DB_fl) > file.mtime(fl_gis_data)) {
   for (res in unique(c(rsls))) {
-    cat("Static at:", res, "meters\n\n") 
+    cat("Static at:", res, "meters\n\n")
     ##  Aggregate spacetime  ---------------------------------------------------
     # ff <- paste(rsltemp / 60, "minutes")
     ##  Create a relative time resolution in seconds
@@ -149,7 +149,7 @@ if (FORCE_EXPORT | !file.exists(fl_gis_data) | file.mtime(DB_fl) > file.mtime(fl
 ##  Export temporal grid  ------------------------------------------------------
 if (FORCE_EXPORT | !file.exists(fl_gis_data_time) | file.mtime(DB_fl) > file.mtime(fl_gis_data_time)) {
   for (res in rsls_T) {
-    cat("Temporal at:", res, "meters\n\n") 
+    cat("Temporal at:", res, "meters\n\n")
     ##  Aggregate spacetime  -------
     # ff <- paste(rsltemp / 60, "minutes")
     ff <- nice_duration(res)
