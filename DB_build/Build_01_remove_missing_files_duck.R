@@ -52,6 +52,7 @@ stopifnot(any(duplicated(wehave$fid)) == FALSE)
 
 ##  Remove duplicate files  ----------------------------------------------------
 ## get duplicate filenames
+cat("Search for files to remove from DB")
 dups <- wehave[file %in% wehave[, .N, by = file][N>1, file], ]
 ## get fids to remove
 delfiles <- data.table()
@@ -159,13 +160,9 @@ if (nrow(garfiles) > 0) {
 
 
 dbDisconnect(con)
-# stop("DD")
-
 
 
 ##  Detect empty variable  -----------------------------------------------------
-
-
 
 
 

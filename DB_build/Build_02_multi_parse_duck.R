@@ -675,8 +675,18 @@ for (i in 1:nrow(files)) {
       rm(da)
       cat(" .")
 
+      ##  FIXME
       ##  For multiple var table
       if (all(c("VALUES", "UNITS")  %in% names(xdata))) {
+
+        xdata$NAME
+        xdata$VALUES
+        xdata$UNITS
+        xdata$SAMPLES
+
+        length(xdata$VALUES)
+        length(xdata$UNITS)
+        length(xdata$SAMPLES)
 
         values  <- xdata$VALUES
         units   <- xdata$UNITS
@@ -691,6 +701,12 @@ for (i in 1:nrow(files)) {
           da <- xsampls[[i]]
 
           dd        <- data.table(Reduce(rbind, da$VALUES))
+
+          ## workaround for single rows
+          if (ncol(dd) == 1) {
+            dd <- data.table( t(dd))
+          }
+
           names(dd) <- nn
 
           res <- data.table(time = da$SECS + act_ME$time,
