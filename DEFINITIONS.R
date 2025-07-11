@@ -74,7 +74,7 @@ fl_gis_data_time <-  "~/DATA/GIS/GRID_POINTS/Grid_temporal.gpkg"
 
 
 ## get time resolution from speed and spatial resolution
-SPEED_RES_kmh <- 3
+SPEED_RES_kmh <- 4
 
 
 ## Spatial aggregation static
@@ -92,7 +92,7 @@ rsls <- unique(c(
   50000
 ))
 
-## Spatial aggregation temporal
+## Spatial and temporal aggregation
 rsls_T <- unique(c(
      30,
      50,

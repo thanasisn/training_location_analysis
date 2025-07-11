@@ -104,7 +104,7 @@ if (FORCE_EXPORT | !file.exists(fl_gis_data) | file.mtime(DB_fl) > file.mtime(fl
     ) |>
       distinct() |>
       compute()
-    cat(AG |> tally() |> collect() |> pull(), "spacetime points\n")
+    cat(AG |> tally() |> collect() |> pull(), "static spacetime points\n")
 
 
     ## __ Count by type  -------------------------------------------------------
@@ -116,7 +116,7 @@ if (FORCE_EXPORT | !file.exists(fl_gis_data) | file.mtime(DB_fl) > file.mtime(fl
       collect()
 
     cat(CN |> ungroup() |> distinct(X, Y) |> tally() |> pull(),
-        "grid points for", res, "m at", ff, "\n")
+        "static grid points for", res, "m at", ff, "\n")
 
     ## __ Split by dataset  ----------------------------------------------------
     # CN |> ungroup() |> select(dataset) |> distinct()
@@ -151,7 +151,6 @@ if (FORCE_EXPORT | !file.exists(fl_gis_data_time) | file.mtime(DB_fl) > file.mti
   for (res in rsls_T) {
     cat("Temporal at:", res, "meters\n\n")
     ##  Aggregate spacetime  -------
-    # ff <- paste(rsltemp / 60, "minutes")
     ff <- nice_duration(res)
     AG <- DT |> to_arrow() |> mutate(
       time = floor_date(time, unit = ff),
@@ -198,16 +197,6 @@ if (FORCE_EXPORT | !file.exists(fl_gis_data_time) | file.mtime(DB_fl) > file.mti
   cat("No need to export\n")
 }
 
-# ##
-# rsls * 36 / 40
-#
-# rsls * 3600 / (1000 * SPEED_RES_kmh)
-#
-# formatSeconds( rsls * 3600 / (1000 * SPEED_RES_kmh))
-# times <- rsls * 3600 / (1000 * SPEED_RES_kmh)
-# times
-
-
 
 # for (at in times) {
 #   cat(at, nice_duration(at), "\n")
@@ -218,10 +207,8 @@ if (FORCE_EXPORT | !file.exists(fl_gis_data_time) | file.mtime(DB_fl) > file.mti
 
                         #
 # floor_date(Sys.time(), unit = "4.5 seconds")
-# floor_date(Sys.time(), unit = "450 aseconds")
+# floor_date(Sys.time(), unit = "450 seconds")
 # floor_date(Sys.time(), unit = "45000 aseconds")
-
-
 
 #' **END**
 #+ include=T, echo=F
