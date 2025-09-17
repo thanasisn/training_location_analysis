@@ -52,12 +52,12 @@ stopifnot(any(duplicated(wehave$fid)) == FALSE)
 
 ##  Remove duplicate files  ----------------------------------------------------
 ## get duplicate filenames
-cat("Search for files to remove from DB")
+cat("Search for duplicate files to remove from DB", "\n")
 dups <- wehave[file %in% wehave[, .N, by = file][N>1, file], ]
 ## get fids to remove
 delfiles <- data.table()
 for (af in dups$file) {
-  aft <- wehave[file == af ]
+  aft      <- wehave[file == af ]
   delfiles <- unique(rbind(delfiles, aft[filemtime < max(filemtime)]))
 }
 ## remove rows
@@ -73,6 +73,7 @@ rm(delfiles)
 
 ##  Remove deleted files  ------------------------------------------------------
 ##  Check files exist
+cat("Search for missing files to remove from DB", "\n")
 existing <- wehave[, exists := file.exists(file)]
 notexist <- existing[exists == F, ]
 ## remove rows
@@ -87,6 +88,7 @@ rm(notexist, existing)
 
 
 ##  Remove edited files  -------------------------------------------------------
+cat("Search for changed files to remove from DB", "\n")
 wehave[, currenct := filemtime == floor_date(file.mtime(file), unit = "seconds")]
 removefl <- wehave[exists == F | currenct == F]
 ## remove rows

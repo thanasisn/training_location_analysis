@@ -191,6 +191,14 @@ filelist <- tbl(con, "files") |> select(file) |> distinct() |> collect()
 cat("Source Size:",
     humanReadable(sum(file.size(filelist$file), na.rm = T)), "\n")
 
+
+
+
+# tbl(con, "files") |> arrange(desc(filemtime))
+
+
+
+
 dbDisconnect(con)
 
 
