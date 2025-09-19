@@ -386,6 +386,8 @@ for (i in 1:nrow(files)) {
       names(re)[names(re) == "cadence"]            <- "CAD"
       names(re)[names(re) == "fractional_cadence"] <- "CADfract"
       names(re)[names(re) == "enhanced_altitude"]  <- "ALT"
+      names(re)[names(re) == "GRIT"]               <- "grit"
+      names(re)[names(re) == "FLOW"]               <- "flow"
       act_ME <- cbind(metadt, re)
       rm(re)
     } else {
@@ -947,11 +949,12 @@ if (nrow(data) > 0) {
   names(data)[names(data) == "Calories"] <- "Calories_1"
   names(data)[names(data) == "calories"] <- "Calories_2"
 
-
   if (any(duplicated(tolower(names(data))))) {
+    print(names(data)[duplicated(tolower(names(data)))])
     stop("Duplicate names!! ")
   }
 
+  test <- data |> select(contains("grit", ignore.case = T ), file)
 
   ## add some stats by file
   data[, records   := .N, by = file]
