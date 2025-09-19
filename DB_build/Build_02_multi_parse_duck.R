@@ -844,6 +844,8 @@ if (nrow(data) > 0) {
         "hrv_hr.bpm"      , "hrv_hr"      ,
         "hrv_s.ms"        , "hrv_s"       ,
         "temperature"     , "TEMP"        ,
+        "grit"            , "GRIT"        ,
+        "flow"            , "FLOW"        ,
         NULL),
       byrow = TRUE,
       ncol = 2))
