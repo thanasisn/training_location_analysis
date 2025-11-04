@@ -926,10 +926,24 @@ if (nrow(data) > 0) {
   data[, locations := sum((!is.na(X)) & (!is.na(Y))), by = file]
   metanames <- unique(c(metanames, "records", "locations"))
 
-  ##  Split data to adfile##  Split data to add to db
-  filesDT <- data.frame(data[, ..metanames] |> distinct())
-  recorDT <- c("fid", names(data)[!names(data) %in% metanames])
-  recorDT <- data.frame(data[, ..recorDT ])
+
+  ## get time range of each file
+  data <- data |>
+    group_by(fid) |>
+    mutate(filedatastart = min(time, na.rm = T),
+           filedataend   = max(time, na.rm = T))
+  metanames <- unique(c(metanames, "filedataend", "filedatastart"))
+
+  ##  Split data and metadata to add to db
+  filesDT <- data |>
+    select(   all_of(metanames)) |> distinct() |> data.frame()
+  recorDT <- data |>
+    select( ! all_of(metanames), fid) |> distinct() |> data.frame()
+
+  ##  Split data and metadata to add to db
+  # filesDT <- data.frame(data[, ..metanames] |> distinct())
+  # recorDT <- c("fid", names(data)[!names(data) %in% metanames])
+  # recorDT <- data.frame(data[, ..recorDT ])
 
   ##  Add data in the db table  --------------------------------------------------
   append_to_table(con = con, table = "files",   filesDT)
