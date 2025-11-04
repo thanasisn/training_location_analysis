@@ -36,14 +36,16 @@ source("./DEFINITIONS.R")
 if (!file.exists(DB_fl)) {
   stop("NO DB!\n")
 }
-con   <- dbConnect(duckdb(dbdir = DB_fl))
+con <- dbConnect(duckdb(dbdir = DB_fl))
 
 
 
 ##  Remove deleted files from the DB  ------------------------------------------
 
 ##  Get file list
-wehave <- tbl(con, "files") |> select(fid, file, filemtime) |> distinct() |> collect() |> data.table()
+wehave <- tbl(con, "files") |>
+  select(fid, file, filemtime) |>
+  distinct() |> collect() |> data.table()
 
 
 ##  Check for duplicate fid
@@ -103,14 +105,12 @@ rm(removefl)
 
 
 
-
 ##   Remove files from list  --------------
 # if (file.exists(REMOVEFL)) {
 #   exrarm   <- read.csv2(REMOVEFL)
 #   removefl <- unique(data.table(plyr::rbind.fill(removefl, exrarm)))
 #   removefl <- unique(removefl[!is.na(year), ])
 # }
-
 
 
 
