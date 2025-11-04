@@ -7,7 +7,6 @@
 #'
 #+ echo=FALSE, include=TRUE
 
-
 ## TODO explore this tools
 # library(cycleRtools)
 # https://github.com/trackerproject/trackeR
@@ -50,8 +49,6 @@ suppressPackageStartupMessages({
 source("~/CODE/training_location_analysis/DEFINITIONS.R")
 source("~/CODE/training_location_analysis/FUNCTIONS.R")
 
-
-
 ## unzip in memory
 tempfl     <- "/dev/shm/tmp_loc_db/"
 unlink(tempfl, recursive = T)
@@ -59,7 +56,6 @@ dir.create(tempfl, showWarnings = F, recursive = T)
 
 ##  Open dataset  --------------------------------------------------------------
 con   <- dbConnect(duckdb(dbdir = DB_fl))
-
 
 ## get last fid
 if (dbExistsTable(con, "files")) {
@@ -73,7 +69,6 @@ if (dbExistsTable(con, "files")) {
   db_days  <- 0
   db_vars  <- 0
 }
-
 
 ##  List all files to parse  ---------------------------------------------------
 files <- list.files(
@@ -93,7 +88,6 @@ files <- list.files(
 cat("\nAll files ", length(files))
 print(table(file_ext(files)))
 
-
 ## ignore previous failed files
 if (file.exists(FAILED_fl)) {
   cat("Will ignore failed files from", FAILED_fl, "\n")
@@ -101,7 +95,6 @@ if (file.exists(FAILED_fl)) {
   failed_files <- unique(failed_files$file)
   files        <- files[!files %in% failed_files]
 }
-
 
 ## non relevant files
 files <- grep("\\.csv$",     files, invert = T, value = T, ignore.case = T)
@@ -130,8 +123,6 @@ files[grepl("/GISdata/",                   files$file), dataset := "GPX repo"   
 files[grepl("/original/",                  files$file), dataset := "Garmin Original"         ]
 files[grepl("GoldenCheetah/.*/imports",    files$file), dataset := "GoldenCheetah imports"   ]
 files[grepl("GoldenCheetah/.*/activities", files$file), dataset := "GoldenCheetah activities"]
-
-
 
 ##  Open dataset  --------------------------------------------------------------
 if (dbExistsTable(con, "files")) {
@@ -179,7 +170,6 @@ if (dbExistsTable(con, "files")) {
 cat("\nData files to parse ", length(files$file_ext))
 print(table(files$file_ext))
 
-
 ## Read a set of files with each run  ------------------------------------------
 if (nrow(files) == 0) {
   cat("No more files to parse\n")
@@ -197,7 +187,6 @@ if (nrow(files) < 1) { stop("Nothing to do!") }
 
 cat("\nWill parse ", length(files$file_ext))
 print(table(files$file_ext))
-
 
 cn   <- 0
 data <- data.table()
@@ -280,9 +269,6 @@ for (i in 1:nrow(files)) {
     next()
   }
 
-
-
-
   ##  FIT  ---------------------------------------------------------------------
   if (px == "fit") {
     ##  Open file for read
@@ -330,8 +316,6 @@ for (i in 1:nrow(files)) {
       #   message("Some other message at the end")
       # }
     )
-
-
 
     # stopifnot(nrow(re) > 0)
 
@@ -464,9 +448,6 @@ for (i in 1:nrow(files)) {
     store <- act_ME
   } ## -- FIT --
 
-
-
-
   ##  GPX  ---------------------------------------------------------------------
   if (px == "gpx") {
     ## get geo data mainly
@@ -555,9 +536,6 @@ for (i in 1:nrow(files)) {
     store <- samples
     rm(samples)
   } ## -- GPX --
-
-
-
 
   ##  JSON  --------------------------------------------------------------------
   if (px == "json") {
@@ -652,7 +630,6 @@ for (i in 1:nrow(files)) {
     } else {
       cat(" NO LOCATION .")
     }
-
 
     ## Read extra data  --------------------------------------------------------
     if (!is.null(jride$XDATA)) {
@@ -755,8 +732,6 @@ for (i in 1:nrow(files)) {
     }
   } ## -- JSON --
 
-
-
   ## Gather data  --------------------------------------------------------------
   if (exists("store")) {
     # if (!exists("data") | nrow(data) == 0) {
@@ -788,9 +763,7 @@ cat("\n")
 ## remove temporary directory
 unlink(tempfl, recursive = T)
 
-
 if (nrow(data) > 0) {
-
 
   ## Prepare for import to DB  ---------------------------------------------------
   data <- data.table(data)
@@ -823,7 +796,6 @@ if (nrow(data) > 0) {
   #
   #   data[, temperature := NULL]
   # }
-
 
   subst <- data.frame(
     matrix(
@@ -867,7 +839,6 @@ if (nrow(data) > 0) {
     }
   }
 
-
   # stopifnot(sum(c("heart_rate", "HR")    %in% names(data))<2)
   # stopifnot(sum(c("temperature", "TEMP") %in% names(data))<2)
 
@@ -893,9 +864,6 @@ if (nrow(data) > 0) {
   class(data$TEMP)                 <- "double"
   class(data$`Ectopic-R`)          <- "double"
   class(data$hrv_hr)               <- "integer"
-
-
-
 
   ## Drop data
   data <- remove_empty(data, which = "cols")
@@ -924,7 +892,6 @@ if (nrow(data) > 0) {
   # which(names(data) == names(data)[(duplicated(names(data)))])
   stopifnot(!any(duplicated(names(data))))
 
-
   data <- remove_empty(data, which = "cols")
 
   names(data) <- gsub("[\\./]", "_", names(data))
@@ -936,14 +903,10 @@ if (nrow(data) > 0) {
     stop("found a dot")
   }
 
-
-
   ## Add data to DB  -------------------------------------------------------------
   if (nrow(data) < 10) {
     stop("You don't want to write")
   }
-
-
 
   ## duck db doesn't distinguish capital
   names(data)[names(data) == "Distance"] <- "Distance_1"
@@ -1001,7 +964,6 @@ if (file.exists(FAILED_fl)) {
 
 toparse_fl <- "~/CODE/training_location_analysis/runtime/Files_to_parse.csv"
 write.csv2(files, toparse_fl, row.names = FALSE, quote = FALSE)
-
 
 dbDisconnect(con)
 #' **END**
