@@ -2,21 +2,27 @@
 # /* Copyright (C) 2023 Athanasios Natsis <natsisphysicist@gmail.com> */
 
 rm(list = (ls()[ls() != ""]))
-Script.Name <- "DHI_GHI_01_Input_longterm.R"
+Script.Name <- "~/CODE/training_location_analysis/process/Gather_source_files.R"
 Sys.setenv(TZ = "UTC")
 tic <- Sys.time()
 
 ## __  Set environment ---------------------------------------------------------
 require(data.table, quietly = TRUE, warn.conflicts = FALSE)
 
-
 ##  Move from phone to repo  ---------------------------------------------------
-phone_dir <- "~/MISC/a34_export/gpxlog/"
-gpx_dir   <- "~/GISdata/GPX/"
+phone_dir_1 <- "~/MISC/Redmi6_export/gpxlog/"
+phone_dir_2 <- "~/MISC/a34_export/gpxlog/"
 
-files <- list.files(path       = phone_dir,
-                    pattern    = ".csv$|.gpx$",
-                    full.names = TRUE)
+gpx_dir     <- "~/GISdata/GPX/"
+
+files <- unique(c(
+  list.files(path       = phone_dir_1,
+             pattern    = ".csv$|.gpx$",
+             full.names = TRUE),
+  list.files(path       = phone_dir_2,
+             pattern    = ".csv$|.gpx$",
+             full.names = TRUE)
+))
 
 files <- data.table(
   file = files,
@@ -36,7 +42,6 @@ files[, year := year(date)]
 csv_fls <- files[grepl(".csv$", file), ]
 gpx_fls <- files[grepl(".gpx$", file), ]
 
-
 ## move csv
 csv_fls[, target := paste0(gpx_dir,"/",year,"/csv/", basename(file))]
 
@@ -50,12 +55,12 @@ for (al in 1:nrow(csv_fls)) {
   }
 }
 
-
 ## move gpx
 gpx_fls[,
         target :=
           paste0(gpx_dir,"/",year,"/", date, "_",
-                 sub("_.*.gpx", "", basename(file)), ".gpx")]
+                 sub("_.*.gpx", "", basename(file)), ".gpx")
+]
 
 for (al in 1:nrow(gpx_fls)) {
   ll <- gpx_fls[al, ]
@@ -66,7 +71,6 @@ for (al in 1:nrow(gpx_fls)) {
     file.remove(ll$file)
   }
 }
-
 
 #' **END**
 #+ include=T, echo=F
