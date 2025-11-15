@@ -10,15 +10,13 @@ else
   exit
 fi
 
-## update package
-echo update package 
+echo "Update garmindb package"
 pip install --upgrade garmindb
 
-## download data and update database
+echo "Download data and update database"
 garmindb_cli.py --all --download --import --analyze --latest
 
-## remove old files
-echo remove old files
+echo "Remove old files"
 "$HOME/CODE/training_location_analysis/process/Remove_garminDB_files.R"
 
 ##  END  ##
