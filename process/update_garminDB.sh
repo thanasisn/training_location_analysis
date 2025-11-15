@@ -15,7 +15,6 @@ echo update package
 pip install --upgrade garmindb
 
 ## download data and update database
-echodownload data and update database 
 garmindb_cli.py --all --download --import --analyze --latest
 
 ## remove old files
