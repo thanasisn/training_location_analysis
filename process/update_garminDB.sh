@@ -14,7 +14,8 @@ echo "Update garmindb package"
 pip install --upgrade garmindb
 
 echo "Download data and update database"
-garmindb_cli.py --all --download --import --analyze --latest
+# garmindb_cli.py --all --download --import --analyze --latest
+garmindb_cli.py --all --download --import --latest
 
 echo "Remove old files"
 "$HOME/CODE/training_location_analysis/process/Remove_garminDB_files.R"
