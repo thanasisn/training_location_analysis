@@ -20,4 +20,4 @@ echo "Remove old files"
 "$HOME/CODE/training_location_analysis/process/Remove_garminDB_files.R"
 
 ##  END  ##
-exit 0 
+exit 0
