@@ -1,8 +1,47 @@
-#!/usr/bin/env Rscript
-# /* Copyright (C) 2022 Athanasios Natsis <natsisphysicist@gmail.com> */
+# /* Copyright (C) 2023 Athanasios Natsis <natsisphysicist@gmail.com> */
+#' ---
+#' title:  "Process"
+#' date:   "`r strftime(Sys.time(), '%F %R %Z', tz= 'Europe/Athens')`"
+#' author: ""
 #'
-#' Delete files downloaded by garmindb
+#' output:
+#'   bookdown::pdf_document2:
+#'     number_sections:  yes
+#'     fig_caption:      no
+#'     keep_tex:         no
+#'     keep_md:          no
+#'     latex_engine:     xelatex
+#'     toc:              yes
+#'     toc_depth:        4
+#'     fig_width:        8
+#'     fig_height:       5
+#'     dev:              cairo_pdf
+#'   html_document:
+#'     toc:             true
+#'     number_sections: false
+#'     fig_width:       6
+#'     fig_height:      4
+#'     keep_md:         no
 #'
+#' header-includes:
+#'   - \usepackage{fontspec}
+#'   - \usepackage{xunicode}
+#'   - \usepackage{xltxtra}
+#'   - \usepackage{placeins}
+#'   - \geometry{
+#'      a4paper,
+#'      left     = 25mm,
+#'      right    = 25mm,
+#'      top      = 30mm,
+#'      bottom   = 30mm,
+#'      headsep  = 3\baselineskip,
+#'      footskip = 4\baselineskip
+#'    }
+#'   - \setmainfont[Scale=1.1]{Linux Libertine O}
+#' ---
+
+
+
 
 #+ echo=FALSE, include=TRUE
 ## __ Set environment  ---------------------------------------------------------
@@ -10,10 +49,16 @@ Sys.setenv(TZ = "UTC")
 tic <- Sys.time()
 Script.Name <- "~/CODE/training_location_analysis/process/GarminDB_tt.R"
 
-# if (!interactive()) {
-#   dir.create("../runtime/", showWarnings = F, recursive = T)
-#   pdf( file = paste0("../runtime/", basename(sub("\\.R$",".pdf", Script.Name))))
-# }
+## __ Document options ---------------------------------------------------------
+#+ echo=FALSE, include=TRUE
+knitr::opts_chunk$set(comment    = ""       )
+# knitr::opts_chunk$set(dev        = c("pdf", "png")) ## expected option
+knitr::opts_chunk$set(dev        = "png"    )       ## for too much data
+knitr::opts_chunk$set(out.width  = "100%"   )
+knitr::opts_chunk$set(fig.align  = "center" )
+knitr::opts_chunk$set(fig.cap    = " - empty caption - " )
+knitr::opts_chunk$set(cache      =  FALSE   )  ## !! breaks calculations
+knitr::opts_chunk$set(fig.pos    = 'h!'    )
 
 #+ echo=F, include=T
 suppressPackageStartupMessages({
@@ -23,66 +68,34 @@ suppressPackageStartupMessages({
   library(janitor,    quietly = TRUE, warn.conflicts = FALSE)
   library(rlang,      quietly = TRUE, warn.conflicts = FALSE)
   library(gdata,      quietly = TRUE, warn.conflicts = FALSE)
+  library(ggplot2,    quietly = TRUE, warn.conflicts = FALSE)
   library(tools,      quietly = TRUE, warn.conflicts = FALSE)
   library(RSQLite,    quietly = TRUE, warn.conflicts = FALSE)
-  library(purr,       quietly = TRUE, warn.conflicts = FALSE)
+  library(purrr,      quietly = TRUE, warn.conflicts = FALSE)
 })
 
 dbs <- list.files("~/DATA/Other/GarmingDB/DBs/", full.names = T)
 
-list_sqlite_tables <- function(db_path) {
-  con <- dbConnect(RSQLite::SQLite(), db_path)
-
-  tables <- tbl(con, "sqlite_master") %>%
-    filter(type == "table") %>%
-    select(table_name = name) %>%
-    collect()
-
-
-
-  dbDisconnect(con)
-  return(tables)
-}
-
-# Function to get column names for a table
-get_table_columns <- function(table_name) {
-  col_names <- dbListFields(con, table_name)
-  tibble(table_name = table_name, column_name = col_names)
-}
-
-get_database_schema <- function(db_path) {
-  con <- dbConnect(RSQLite::SQLite(), db_path)
-
-  # Get tables and their columns
-  schema <- tbl(con, "sqlite_master") %>%
-    filter(type == "table") %>%
-    select(table_name = name) %>%
-    collect() %>%
-    mutate(
-      columns = map(table_name, ~ dbListFields(con, .x)),
-      row_count = map_int(table_name, ~ {
-        tbl(con, .x) %>% tally() %>% pull(n) %>% as.integer()
-      })
-    )
-
-  dbDisconnect(con)
-  return(schema)
-}
-
+starttime <- Sys.time() - years(1)
+starttime <- Sys.time() - months(2)
 
 for (af in dbs) {
-  cat("\n -- ", basename(af)," -- \n\n")
-  print(data.table(list_sqlite_tables(af)))
-
-  list_sqlite_tables(af)
+  cat("\n==", basename(af), "\n")
+  con    <- dbConnect(RSQLite::SQLite(), af)
+  tables <- dbListTables(con)
+  for (at in tables) {
+    cat("\n   |-- ", at," -- \n")
+    cat(paste0("         ", tbl(con, at) |> colnames() ,"\n"))
+  }
+  dbDisconnect(con)
 }
 
 
-get_database_schema(af)
 
 
-cat("\n ==", basename(af),"\n")
-con    <- dbConnect(RSQLite::SQLite(), af)
+
+
+con <- dbConnect(RSQLite::SQLite(), "~/DATA/Other/GarmingDB/DBs/garmin_monitoring.db")
 tables <- dbListTables(con)
 for (at in tables) {
   cat("\n   |-- ", at," -- \n")
@@ -90,13 +103,60 @@ for (at in tables) {
 }
 
 
-con <- dbConnect(RSQLite::SQLite(), "~/DATA/Other/GarmingDB/DBs/garmin_monitoring.db")
+
+tables <- tables[!tables %in% c("monitoring_rr")]
+
+for (at in tables) {
+  if (!any(tbl(con, at) |> colnames() %in% "timestamp")) {
+    cat(at, "No timestamps", "\n")
+    next
+  }
+
+   ddd <- tbl(con, at) |>
+    mutate(
+      timestamp = datetime(timestamp),
+    ) |> collect()|> data.table()
 
 
-stop()
+  atbl <- tbl(con, at) |>
+    mutate(
+      timestamp = datetime(timestamp),
+    ) |>
+    filter(timestamp >= starttime)
 
 
-dbListTables(con)
+  if (atbl |> tally() |> pull() <= 1) {
+    cat(at, "No rows", "\n")
+    next
+  }
+
+
+
+}
+
+
+
+
+tbl(con, "monitoring_rr") |>
+  mutate(
+    timestamp = datetime(timestamp),
+    # date_only = date(timestamp)
+  ) |>
+  filter(timestamp >= starttime) |>
+  ggplot(aes(x = timestamp)) +
+  geom_point(aes(y = rr))
+
+
+# tbl(con, "monitoring_rr") |>
+#   mutate(
+#     timestamp = datetime(timestamp),
+#     # date_only = date(timestamp)
+#   ) |>
+#   filter(timestamp >= starttime) |> summarise(min(rr))
+
+
+
+
 
 
 
