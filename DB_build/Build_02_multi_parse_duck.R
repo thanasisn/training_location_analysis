@@ -691,7 +691,12 @@ for (i in 1:nrow(files)) {
           res <- data.table(time = da$SECS + act_ME$time,
                             dd)
 
-          samples <- merge(samples, res, all = T)
+          if (exists("samples")){
+            samples <- merge(samples, res, all = T)
+          } else {
+            warning("Samples was empty for fit file")
+            samples <- res
+          }
         }
         rm(res, dd, da, nn)
       }
