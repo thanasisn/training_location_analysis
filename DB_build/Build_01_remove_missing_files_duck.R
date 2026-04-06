@@ -19,15 +19,16 @@ if (!interactive()) {
 
 #+ echo=F, include=T
 suppressPackageStartupMessages({
-  library(arrow,      quietly = TRUE, warn.conflicts = FALSE)
-  library(data.table, quietly = TRUE, warn.conflicts = FALSE)
-  library(dplyr,      quietly = TRUE, warn.conflicts = FALSE)
-  library(filelock,   quietly = TRUE, warn.conflicts = FALSE)
-  library(gdata,      quietly = TRUE, warn.conflicts = FALSE)
-  library(lubridate,  quietly = TRUE, warn.conflicts = FALSE)
-  library(rlang,      quietly = TRUE, warn.conflicts = FALSE)
-  library(stringdist, quietly = TRUE, warn.conflicts = FALSE)
+  require(arrow,      quietly = TRUE, warn.conflicts = FALSE)
+  require(data.table, quietly = TRUE, warn.conflicts = FALSE)
+  require(dplyr,      quietly = TRUE, warn.conflicts = FALSE)
+  require(filelock,   quietly = TRUE, warn.conflicts = FALSE)
+  require(gdata,      quietly = TRUE, warn.conflicts = FALSE)
+  require(lubridate,  quietly = TRUE, warn.conflicts = FALSE)
+  require(rlang,      quietly = TRUE, warn.conflicts = FALSE)
+  require(stringdist, quietly = TRUE, warn.conflicts = FALSE)
   require(duckdb,     quietly = TRUE, warn.conflicts = FALSE)
+  require(DBI,        quietly = TRUE, warn.conflicts = FALSE)
 })
 source("./DEFINITIONS.R")
 
