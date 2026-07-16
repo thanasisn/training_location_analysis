@@ -8,7 +8,7 @@
 ## __ Set environment  ---------------------------------------------------------
 Sys.setenv(TZ = "UTC")
 tic <- Sys.time()
-Script.Name <- "~/CODE/training_location_analysis/DB_build/Stats_01.R"
+Script.Name <- "~/CODE/training_location_analysis/DB_build/Stats_01_duck.R"
 
 if (!interactive()) {
   dir.create("../runtime/", showWarnings = F, recursive = T)
@@ -153,7 +153,20 @@ cat(pander(
     collect(),
   style   = "rmarkdown"))
 
+tt <- full_join(
+  tbl(con, "files")   |> select(-filehash),
+  tbl(con, "records") |> select(fid, year) |> distinct(),
+  by = "fid"
+) |>
+  filter(year > 2026) |> collect()
 
+
+ss <- full_join(
+  tbl(con, "files")   |> select(-filehash),
+  tbl(con, "records") |> select(fid, year) |> distinct(),
+  by = "fid"
+) |>
+  filter(is.na(year)) |> collect()
 
 ## count number of NA/!na by variable by dataset by filetype
 
